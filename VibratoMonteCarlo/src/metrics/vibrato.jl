@@ -1,6 +1,3 @@
-using DualNumbers, FinancialMonteCarlo;
-include("lrm.jl");
-include("simulate_with_last_vol.jl");
 
 function vibrato(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato)
     FinancialMonteCarlo.set_seed!(mcBaseData)

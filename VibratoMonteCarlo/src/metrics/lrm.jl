@@ -1,5 +1,5 @@
 using DualNumbers, HyperDualNumbers, Sobol, StatsFuns, ForwardDiff;
-include("utils.jl")
+
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
 v_value(x::Dual) = DualNumbers.value(x)
 v_value(x::AbstractFloat) = x

@@ -1,7 +1,3 @@
-using FinancialMonteCarlo;
-include("simulate_with_jump_times.jl");
-include("simulate_with_sub.jl");
-include("lrm.jl");
 
 function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato) where {finiteActivityProcess<:FinancialMonteCarlo.FiniteActivityProcess}
     FinancialMonteCarlo.set_seed!(mcBaseData)
