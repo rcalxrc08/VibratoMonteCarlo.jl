@@ -1,6 +1,4 @@
-using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, ForwardDiff, Statistics, Distributions, FinancialToolbox
-include("vibrato_saltando.jl");
-include("vibrato.jl");
+using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, ForwardDiff, FinancialToolbox
 @show "KouModel"
 #S0 = 100.0;
 S0 = ForwardDiff.Dual(100.0, 0.0, 1.0, 0.0, 0.0);

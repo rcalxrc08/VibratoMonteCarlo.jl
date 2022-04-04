@@ -1,4 +1,4 @@
-using FinancialMonteCarlo, Random;
+using FinancialMonteCarlo, Random, Distributions;
 
 function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb<:Number}
     Nsim = mcBaseData.Nsim

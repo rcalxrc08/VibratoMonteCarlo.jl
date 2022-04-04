@@ -1,6 +1,4 @@
-using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, FinancialFFT, Statistics, Distributions, FinancialToolbox
-include("vibrato_saltando.jl");
-include("vibrato.jl");
+using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, FinancialFFT, FinancialToolbox
 @show "KouModel"
 # S0 = 100.0;
 #S0 = dual(100.0, 1.0);

@@ -1,14 +1,7 @@
-using DualNumbers, HyperDualNumbers, Sobol, StatsFuns, ForwardDiff;
+# using Sobol, StatsFuns;
 
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
-v_value(x::Dual) = DualNumbers.value(x)
 v_value(x::AbstractFloat) = x
-v_value(x::Hyper) = x.value
-v_value(x::ForwardDiff.Dual{Tg,T,N}) where {Tg,T<:Real,N} = ForwardDiff.value(x)
-
-v_mod(x::Dual) = x.epsilon
-v_mod(x::Hyper) = dual(x.epsilon1, x.epsilon12 + x.epsilon1 * x.epsilon2)
-v_mod(x::ForwardDiff.Dual{Tg,T,N}) where {Tg,T<:Real,N} = collect(ForwardDiff.partials(x))
 
 payout_f(z, mu, sigma, eu_opt, r) = exp(-r * eu_opt.T) * FinancialMonteCarlo.payout(exp(mu + sigma * z), eu_opt)
 integrand_lrm(z, mu, sigma, eu_opt, r) = v_value(payout_f(z, mu, sigma, eu_opt, r)) * v_mod(log_density(v_value(mu + sigma * z), mu, sigma) - r * eu_opt.T)
@@ -37,9 +30,9 @@ function lrm_vec_mc!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, m
     return output
 end
 
-function lrm_vec_mc!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig, r)
-    seq = SobolSeq(length(Z))
-    next!(seq, Z)
-    output = mean(integrand_lrm(norminvcdf(z), mu, sigma, eu_opt, r) for z in Z)
-    return output
-end
+# function lrm_vec_mc!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig, r)
+    # seq = SobolSeq(length(Z))
+    # next!(seq, Z)
+    # output = mean(integrand_lrm(norminvcdf(z), mu, sigma, eu_opt, r) for z in Z)
+    # return output
+# end
