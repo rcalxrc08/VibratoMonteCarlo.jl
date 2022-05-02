@@ -1,5 +1,5 @@
 # using Sobol, StatsFuns;
-
+using FastGaussQuadrature
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
 v_value(x::AbstractFloat) = x
 
@@ -21,6 +21,12 @@ end
 function lrm_vec_semi_analytic!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, r)
     f(z) = integrand_lrm(z, mu, sigma, eu_opt, r) * exp(log_density(z, 0, 1))
     return midpoint_definite_integral(Z, f)
+end
+
+function lrm_vec_gauss_analytic!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, r)
+	x,w=Z
+	integrand(z) = integrand_lrm(z, mu, sigma, eu_opt, r)
+	return sum(@. w*integrand(x*sqrt(2)))/sqrt(pi)
 end
 
 
