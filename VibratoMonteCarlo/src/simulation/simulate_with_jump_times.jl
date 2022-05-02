@@ -32,13 +32,8 @@ function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::Fin
             x_jump = X[i, jump_idx]
             t_i += randexp(mcBaseData.parallelMode.rng) / λ
         end
-		if(T_jump>T-dt)
-			@views T_jumps[i] = T_jump
-			@views S_jumps[i] = S0 * exp(x_jump)
-		else
-			@views T_jumps[i] = T-dt
-			@views S_jumps[i] = S0 * exp(X[i, end-1])
-		end
+		@views T_jumps[i] = T_jump
+		@views S_jumps[i] = S0 * exp(x_jump)
     end
 
     return (T_jumps, S_jumps)

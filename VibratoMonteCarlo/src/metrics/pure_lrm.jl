@@ -8,5 +8,5 @@ function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialM
 	mu=log(mcProcess.underlying.S0)+drift_rn*T
     Z = init_lrm_vec(vb_mc, mu)
 	sigma_jump=σ*sqrt(T)
-    return lrm_vec_gauss_analytic!(Z, mu, sigma_jump, eu_opt, mcBaseData, r)
+    return lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, r,vb_mc)
 end

@@ -1,4 +1,4 @@
-using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, FinancialFFT, FinancialToolbox
+using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, FinancialFFT, FinancialToolbox,VibratoMonteCarlo
 @show "KouModel"
 # S0 = 100.0;
 #S0 = dual(100.0, 1.0);
