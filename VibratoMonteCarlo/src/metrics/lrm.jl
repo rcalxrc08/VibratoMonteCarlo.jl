@@ -1,5 +1,6 @@
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
 v_value(x::AbstractFloat) = x
+v_mod(x::AbstractFloat) = 1.0
 
 payout_f(z, mu, sigma, eu_opt, r) = exp(-r * eu_opt.T) * FinancialMonteCarlo.payout(exp(mu + sigma * z), eu_opt)
 integrand_lrm(z, mu, sigma, eu_opt, r) = v_value(payout_f(z, mu, sigma, eu_opt, r)) * v_mod(log_density(v_value(mu + sigma * z), mu, sigma) - r * eu_opt.T)
