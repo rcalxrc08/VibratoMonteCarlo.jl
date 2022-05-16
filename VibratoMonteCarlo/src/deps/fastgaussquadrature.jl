@@ -10,8 +10,10 @@ end
 
 function lrm_interface!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, r,mc::VibratoMonteCarloGaussHermite)
 	x,w=Z
-	integrand(z) = integrand_lrm(z, mu, sigma, eu_opt, r)
-	return sum(@. w*integrand(x*sqrt(2)))/sqrt(pi)
+	zero_typed=FinancialMonteCarlo.predict_output_type_zero(mu,sigma,eu_opt)
+	integrand(z)::typeof(zero_typed) = integrand_lrm(z, mu, sigma, eu_opt, r)
+	output=sum(@. w*integrand(x*sqrt(2)))/sqrt(pi)
+	return output
 end
 
 function init_lrm_vec(x::VibratoMonteCarloGaussHermite, ::Any)

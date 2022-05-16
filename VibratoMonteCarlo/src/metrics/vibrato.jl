@@ -30,3 +30,16 @@ function vibrato(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financia
     result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, r,vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump))
     return result
 end
+
+function vibrato(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato)
+    FinancialMonteCarlo.set_seed!(mcBaseData)
+    r = rfCurve.r
+    T = eu_opt.T
+    dt = T / mcBaseData.Nstep
+	step_vibrato=dt;
+    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
+    S_end = @views S[:, end]
+    Z=spline_density(mcProcess,step_vibrato,r,18,20.0);
+    result = mean(lrm_interface_aug!(mcProcess,Z, eu_opt, mcBaseData, r,vb_mc,St) for St in S_end)
+    return result
+end
