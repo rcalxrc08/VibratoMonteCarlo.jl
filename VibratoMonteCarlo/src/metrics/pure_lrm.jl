@@ -18,7 +18,6 @@ include("lrm_aug.jl")
 function pure_lrm(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato)
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
 	Z=spline_density(mcProcess,eu_opt.T,r,18,15.0);
     return lrm_interface_aug!(mcProcess,Z, eu_opt, mcBaseData, r,vb_mc)
 end
