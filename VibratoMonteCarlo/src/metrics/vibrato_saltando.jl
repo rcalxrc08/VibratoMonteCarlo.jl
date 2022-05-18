@@ -1,4 +1,4 @@
-function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato) where {finiteActivityProcess<:FinancialMonteCarlo.FiniteActivityProcess}
+function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess}
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -12,12 +12,12 @@ function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMo
     dt_jump = @. T - T_jump
     mu_jump = @. log(S_jump) + drift_rn * dt_jump
     sigma_jump = @. σ * sqrt(dt_jump)
-    Z = init_lrm_vec(vb_mc, mu_jump[1])
-    result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, r,vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump))
+    Z = init_lrm_vec(vb_mc, mcBaseData)
+    result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, r, vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump))
     return result
 end
 
-function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato) where {infiniteActivityProcess<:FinancialMonteCarlo.InfiniteActivityProcess}
+function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato) where {infiniteActivityProcess <: FinancialMonteCarlo.InfiniteActivityProcess}
     # Not confirmed theoretically
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
@@ -33,6 +33,6 @@ function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::Financial
     mu_jump = @. log(S_jump[:, end-1]) + drift_rn * dt_jump
     sigma_jump = @. σ * sqrt(dt_jump)
     Z = init_lrm_vec(vb_mc, mu_jump[1])
-    result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, r,vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump))
+    result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, r, vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump))
     return result
 end
