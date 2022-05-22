@@ -12,7 +12,8 @@ function characteristic_function_to_density(phi, N, A)
     @. Y *= exp(1im * vec * dt * A)
     fft!(Y)
     density_vals = @. FinancialFFT.real_mod(dt / (2 * pi) * exp(-1im * c * x) * Y)
-    @. density_vals = max(density_vals, eps())
+	eps_mod=zero(first(density_vals))+eps();
+    @. density_vals = max(density_vals, eps_mod)
     return (x, density_vals)
 end
 
@@ -38,7 +39,8 @@ end
 
 function adapt_spline(spline_cub, St, x_eval)
     result = @. spline_cub(x_eval - log(St))
-    y_mod::Array{eltype(result)} = @. max(result, eps())
+	eps_mod=zero(first(result))+eps();
+    y_mod = @. max(result, eps_mod)
     return y_mod
 end
 
@@ -47,6 +49,6 @@ function lrm_interface_aug!(mcProcess, spline_dens, eu_opt::FinancialMonteCarlo.
     density_val = adapt_spline(spline_dens, St, x)
     dx = x.step.hi
     f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt, r) for (log_s, dens) in zip(x, density_val)]
-    @views result::eltype(density_val) = 0.5 * dx * (f_vals[1] + f_vals[end] + 2.0 * sum(f_vals[2:(end-1)]))
+    @views result = 0.5 * dx * (f_vals[1] + f_vals[end] + 2.0 * sum(f_vals[2:(end-1)]))
     return result
 end
