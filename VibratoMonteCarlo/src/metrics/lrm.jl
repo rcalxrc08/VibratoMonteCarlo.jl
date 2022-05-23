@@ -1,6 +1,10 @@
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
 v_value(x::AbstractFloat) = x
-v_mod(x::AbstractFloat) = 1.0
+# v_mod(x::AbstractFloat) = 1.0
+function v_mod(x)
+	val=exp(v_value(x))
+	return exp(x)/val;
+end
 
 payout_f(z, eu_opt, r) = exp(-r * eu_opt.T) * FinancialMonteCarlo.payout(exp(z), eu_opt)
 integrand_lrm_base(log_s, log_density_val, eu_opt, r) = v_value(payout_f(log_s, eu_opt, r)) * v_mod(log_density_val - r * eu_opt.T)
