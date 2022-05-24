@@ -1,7 +1,7 @@
 using .ReverseDiff
 
 
-function v_value(x::ReverseDiff.TrackedReal)
+function v_value(x::ReverseDiff.TrackedReal{V, D, O}) where {V <: Real, D <: Real, O}
     return x.value
 end
 
