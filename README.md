@@ -13,13 +13,26 @@ It currently contains the following capabilities:
     - Merton
     - Normal Inverse Gaussian
     - Variance Gamma
-- Support for non costant zero rates and dividends
-- Support for the following Option families:
-    - European Options 
+- Support for the following payoffs:
+    - European Options
+    - Binary European Options
+- Support for the following metrics:
+    - likelihood ratio method
+    - vibrato montecarlo method (for any type of process, not just Ito).
+	- vibrato saltando montecarlo method (for Finite Activity Levy).
+- Support for the following integration methods:
+    - pure numerical
+    - montecarlo (standard, antithetic, sobol where feasible).
+    - gaussian hermite (where feasible)
+	
+Currently supports:
+	- [DualNumbers.jl](https://github.com/JuliaDiff/DualNumbers.jl), 
+	- [HyperDualNumbers.jl](https://github.com/JuliaDiff/HyperDualNumbers.jl)
+	- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
+	- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
+	- [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
 
-Currently supports [DualNumbers.jl](https://github.com/JuliaDiff/DualNumbers.jl), [HyperDualNumbers.jl](https://github.com/JuliaDiff/HyperDualNumbers.jl)
-for Automatic Differentiation (where it makes sense).
-
+To be noticed that the methods are C^inf, not as standard montecarlo methods.
 ## How to Install
 To install the package simply type on the Julia REPL the following:
 ```julia
@@ -34,10 +47,10 @@ After the installation, to test the package type on the Julia REPL the following
 The following example shows how to price a european call option with underlying varying according to the Black Scholes Model, given the volatility:
 ```julia
 #Import the Package
-using VibratoMonteCarlo;
+using VibratoMonteCarlo,FinancialMonteCarlo, DualNumbers;
 
 #Define Spot Datas
-S0=100.0;
+S0=dual(100.0,1.0);
 K=100.0;
 r=0.02;
 T=1.0;
@@ -51,7 +64,7 @@ Nstep=30;
 #Build the Structs
 A = 600.0;
 N = 18;
-method_cm = CarrMadanMethod(A, N); #Configurator
+mc = MonteCarloConfiguration(Nsim, Nstep);
 zeroRate=ZeroRate(r);
 underlying=Underlying(S0,d); #Underlying relative data
 
@@ -61,11 +74,5 @@ EU_payoff=EuropeanOption(T,K)
 Model=BlackScholesProcess(σ,underlying);
 
 #Price
-@show EuPrice=pricer(Model,zeroRate,method_cm,EU_payoff);
+@show EuPrice=pure_lrm(Model,zeroRate,mc,EU_payoff, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000,-9.0,19.0));
 ```
-
-## Curve Support
-Non constant zero rates and dividend are managed.
-An implied curve is built at time zero, such implied curve is able to return the right implied zero/dividend at a given time,
-Without the need to carry the integral structure of the curve.
-No support for multicurrency.

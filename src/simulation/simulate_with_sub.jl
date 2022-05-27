@@ -1,6 +1,6 @@
 using FinancialMonteCarlo, Random, Distributions;
 
-function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb<:Number}
+function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb <: Number}
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     drift = mcProcess.drift * T / mcBaseData.Nstep
@@ -25,7 +25,7 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     return (dt_s, X)
 end
 
-function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, T::numb) where {numb<:Number}
+function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, T::numb) where {numb <: Number}
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     drift = mcProcess.drift * T / mcBaseData.Nstep
@@ -55,7 +55,7 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     return (cat(dt_s, dt_s, dims = 1), X)
 end
 
-function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialSobolMonteCarloConfig, T::numb) where {numb<:Number}
+function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::FinancialMonteCarlo.SerialSobolMonteCarloConfig, T::numb) where {numb <: Number}
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     drift = mcProcess.drift * T / Nstep
@@ -112,7 +112,6 @@ function subordinator(mcProcess::NormalInverseGaussianProcess, mcBaseData, T)
     dt = T / Nstep
     return InverseGaussian(dt, (dt^2) / κ)
 end
-
 
 function simulate_with_sub(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::Number)
     r = rfCurve.r

@@ -11,6 +11,7 @@ end
 using FinancialMonteCarlo, Statistics
 include("utils.jl")
 include("metrics/lrm.jl")
+include("metrics/lrm_aug.jl")
 include("metrics/vibrato.jl")
 include("metrics/pure_lrm.jl")
 include("metrics/vibrato_saltando.jl")

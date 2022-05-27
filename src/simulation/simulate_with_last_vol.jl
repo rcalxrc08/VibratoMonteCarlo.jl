@@ -1,5 +1,5 @@
 using FinancialMonteCarlo, Random;
-function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb<:Number}
+function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -44,7 +44,7 @@ function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMont
     return (v_m, X)
 end
 
-function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, T::numb) where {numb<:Number}
+function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)

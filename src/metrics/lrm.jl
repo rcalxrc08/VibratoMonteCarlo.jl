@@ -1,9 +1,19 @@
 log_density(x, mu, sigma) = -0.5 * (((x - mu) / sigma)^2 + log(2 * π * sigma^2))
+"""
+    v_value(x::AbstractFloat)
+
+Returns the value of a generic Number, must be implemented for different backends.
+"""
 v_value(x::AbstractFloat) = x
-# v_mod(x::AbstractFloat) = 1.0
+
+"""
+    v_mod(x)
+
+Returns the modified values of derivatives in order to automatically implement faa di bruno formula.
+"""
 function v_mod(x)
-	val=exp(v_value(x))
-	return exp(x)/val;
+    val = exp(v_value(x))
+    return exp(x) / val
 end
 
 payout_f(z, eu_opt, r) = exp(-r * eu_opt.T) * FinancialMonteCarlo.payout(exp(z), eu_opt)
