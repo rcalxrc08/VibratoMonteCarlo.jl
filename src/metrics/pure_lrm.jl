@@ -1,4 +1,3 @@
-include("lrm_aug.jl")
 function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato)
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
