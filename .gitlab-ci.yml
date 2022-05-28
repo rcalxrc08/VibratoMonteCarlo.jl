@@ -18,11 +18,11 @@ before_script:
 
 .test_template: &build_definition
   script:
-    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.build(); using VibratoMonteCarlo'
+    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.add("LocalRegistry"); using LocalRegistry; pkg"registry add git@github.com:rxcalxrc08/LocalRegistry.git"; Pkg.build(); using VibratoMonteCarlo'
 
 .test_template: &test_definition
   script:
-    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.build(); using VibratoMonteCarlo'
+    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.add("LocalRegistry"); using LocalRegistry; pkg"registry add git@github.com:rxcalxrc08/LocalRegistry.git"; Pkg.build(); using VibratoMonteCarlo'
     - /usr/local/julia/bin/julia --project=@. -e 'import Pkg; Pkg.test(; coverage = true)'
   artifacts:
     when: on_success
