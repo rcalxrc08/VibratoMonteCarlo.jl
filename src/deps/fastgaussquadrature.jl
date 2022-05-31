@@ -8,10 +8,10 @@ struct VibratoMonteCarloGaussHermite <: AbstractVibrato
     end
 end
 
-function lrm_interface!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, r, mc::VibratoMonteCarloGaussHermite)
+function lrm_interface!(Z, mu, sigma, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, mc::VibratoMonteCarloGaussHermite)
     x, w = Z
     zero_typed = FinancialMonteCarlo.predict_output_type_zero(mu, sigma, eu_opt)
-    integrand(z)::typeof(zero_typed) = integrand_lrm(z, mu, sigma, eu_opt, r)
+    integrand(z)::typeof(zero_typed) = integrand_lrm(z, mu, sigma, eu_opt)
     output = sum(w_ * integrand(x_ * sqrt(2)) for (x_, w_) in zip(x, w)) / sqrt(pi)
     return output
 end

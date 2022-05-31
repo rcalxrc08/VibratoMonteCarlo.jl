@@ -8,12 +8,14 @@ function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialM
     mu = log(mcProcess.underlying.S0) + drift_rn * T
     Z = init_lrm_vec(vb_mc, mcBaseData)
     sigma_jump = σ * sqrt(T)
-    return lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, r, vb_mc)
+    return lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, vb_mc)*exp(-r*T)
+    # return lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, r, vb_mc)
 end
 
 function pure_lrm(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt::FinancialMonteCarlo.EuropeanPayoff, vb_mc::AbstractVibrato)
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
+	T = eu_opt.T
     Z = spline_density(mcProcess, eu_opt.T, r, 18, 15.0)
-    return lrm_interface_aug!(mcProcess, Z, eu_opt, mcBaseData, r, vb_mc)
+    return lrm_interface_aug!(mcProcess, Z, eu_opt, mcBaseData, vb_mc)*exp(-r*T)
 end

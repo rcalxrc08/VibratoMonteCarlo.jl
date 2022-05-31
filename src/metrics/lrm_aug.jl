@@ -44,11 +44,11 @@ function adapt_spline(spline_cub, St, x_eval)
     return y_mod
 end
 
-function lrm_interface_aug!(mcProcess, spline_dens, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, r, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
+function lrm_interface_aug!(mcProcess, spline_dens, eu_opt::FinancialMonteCarlo.EuropeanPayoff, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
     x = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
     density_val = adapt_spline(spline_dens, St, x)
     dx = x.step.hi
-    f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt, r) for (log_s, dens) in zip(x, density_val)]
+    f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt) for (log_s, dens) in zip(x, density_val)]
     @views result = 0.5 * dx * (f_vals[1] + f_vals[end] + 2.0 * sum(f_vals[2:(end-1)]))
     return result
 end
