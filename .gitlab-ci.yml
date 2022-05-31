@@ -18,12 +18,12 @@ before_script:
 
 .test_template: &build_definition
   script:
-    - /usr/local/julia/bin/julia -e 'using InteractiveUtils; versioninfo(); using Pkg; Pkg.add("https://github.com/rcalxrc08/FinancialFFT.jl.git");'
+    - /usr/local/julia/bin/julia -e 'using InteractiveUtils; versioninfo(); using Pkg; Pkg.add("https://gitlab.com/rcalxrc08/FinancialFFT.jl.git");'
     - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.build(); using VibratoMonteCarlo'
 
 .test_template: &test_definition
   script:
-    - /usr/local/julia/bin/julia -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.add("https://github.com/rcalxrc08/FinancialFFT.jl.git");'
+    - /usr/local/julia/bin/julia -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.add("https://gitlab.com/rcalxrc08/FinancialFFT.jl.git");'
     - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.build(); using VibratoMonteCarlo'
     - /usr/local/julia/bin/julia --project=@. -e 'import Pkg; Pkg.test(; coverage = true)'
   artifacts:
