@@ -5,6 +5,9 @@
 [![codecov](https://codecov.io/gl/rcalxrc08/VibratoMonteCarlo.jl/branch/\x6d6173746572/graph/badge.svg?token=7SOI4KWB60)](https://codecov.io/gl/rcalxrc08/VibratoMonteCarlo.jl)
 ##### This is a Julia package containing some useful Financial function for Pricing and Risk Management for Equity products.
 
+This package is built on top of [FinancialMonteCarlo.jl](https://github.com/JuliaDiff/DualNumbers.jl) and [FinancialFFT.jl](https://github.com/JuliaDiff/DualNumbers.jl).
+Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless.
+The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.
 It currently contains the following capabilities:
 
 - Support for the following Single Name Models:
@@ -16,6 +19,7 @@ It currently contains the following capabilities:
 - Support for the following payoffs:
     - European Options
     - Binary European Options
+	- American Options (WIP)
 - Support for the following metrics:
     - likelihood ratio method
     - vibrato montecarlo method (for any type of process, not just Ito).
@@ -25,14 +29,14 @@ It currently contains the following capabilities:
     - montecarlo (standard, antithetic, sobol where feasible).
     - gaussian hermite (where feasible)
 	
-Currently supports:
-	- [DualNumbers.jl](https://github.com/JuliaDiff/DualNumbers.jl), 
+- Currently supports:
+	- [DualNumbers.jl](https://github.com/JuliaDiff/DualNumbers.jl)
 	- [HyperDualNumbers.jl](https://github.com/JuliaDiff/HyperDualNumbers.jl)
 	- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
 	- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
 	- [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
 
-To be noticed that the methods are C^inf, not as standard montecarlo methods.
+To be noticed that the methods are $C^{\infty}$, not as standard montecarlo methods.
 ## How to Install
 To install the package simply type on the Julia REPL the following:
 ```julia
@@ -73,6 +77,6 @@ EU_payoff=EuropeanOption(T,K)
 #Define the Model
 Model=BlackScholesProcess(σ,underlying);
 
-#Price
+#Price and sensitivity
 @show EuPrice=pure_lrm(Model,zeroRate,mc,EU_payoff, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000,-9.0,19.0));
 ```
