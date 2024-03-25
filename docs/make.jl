@@ -1,4 +1,4 @@
-using Documenter, VibratoMonteCarlo, Literate, FinancialMonteCarlo
+using Documenter, VibratoMonteCarlo, Literate
 # EXAMPLE = joinpath(@__DIR__, "..", "examples", "getting_started.jl")
 # OUTPUT = joinpath(@__DIR__, "src")
 # Literate.markdown(EXAMPLE, OUTPUT; documenter = true)
