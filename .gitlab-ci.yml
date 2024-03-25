@@ -1,4 +1,4 @@
-#FinancialFFT.jl
+#VibratoMonteCarlo.jl
 variables:
   JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia/"
 stages:
@@ -19,11 +19,11 @@ before_script:
 
 .test_template: &build_definition
   script:
-    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using FinancialFFT'
+    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using VibratoMonteCarlo'
 
 .test_template: &test_definition
   script:
-    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using FinancialFFT'
+    - /usr/local/julia/bin/julia --project=@. -e 'using InteractiveUtils; versioninfo(); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using VibratoMonteCarlo'
     - /usr/local/julia/bin/julia --project=@. -e 'import Pkg; Pkg.test(; coverage = true)'
   artifacts:
     when: on_success
@@ -38,10 +38,10 @@ before_script:
 .test_template: &cov_definition
   script:
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
-    - /usr/local/julia/bin/julia --project=@. -e 'using Pkg; Pkg.add("Coverage"); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using FinancialFFT;
+    - /usr/local/julia/bin/julia --project=@. -e 'using Pkg; Pkg.add("Coverage"); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using VibratoMonteCarlo;
       using Coverage; cl, tl = get_summary(process_folder());
       println("(", cl/tl*100, "%) covered");
-      using Pkg; cd(Pkg.dir("FinancialFFT")); Codecov.submit_local(Codecov.process_folder())'
+      using Pkg; cd(Pkg.dir("VibratoMonteCarlo")); Codecov.submit_local(Codecov.process_folder())'
   artifacts:
     when: on_success
     paths:
