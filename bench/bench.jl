@@ -1,6 +1,4 @@
 using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, Statistics, BenchmarkTools
-include("vibrato_saltando.jl");
-include("vibrato.jl");
 @show "KouModel"
 # S0 = 100.0;
 # S0 = dual(100.0, 1.0);
@@ -12,8 +10,8 @@ T = 1.0;
 d = 0.01;
 D = 90.0;
 
-Nsim = 10000;
-Nsim2 = 100;
+Nsim = 10_000;
+Nsim2 = 20;
 Nstep = 30;
 # sigma = dual(0.2, 1.0);
 sigma = 0.2;
