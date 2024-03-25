@@ -1,4 +1,4 @@
-using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, Statistics, BenchmarkTools
+using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, Statistics, BenchmarkTools, VibratoMonteCarlo
 @show "KouModel"
 # S0 = 100.0;
 # S0 = dual(100.0, 1.0);
