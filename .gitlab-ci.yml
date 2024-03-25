@@ -53,7 +53,7 @@ before_script:
 .test_template: &bench_definition
   script:
     - julia --project=benchmark -e 'using Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
-    - julia --project=benchmark -e 'using Pkg; Pkg.instantiate(); include("benchmark/benchmarks.jl");'
+    - julia --project=benchmark -e 'using Pkg; Pkg.instantiate(); include("benchmark/bench.jl");'
 
 # Name a test and select an appropriate image.
 build:1.7:
