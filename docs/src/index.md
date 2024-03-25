@@ -25,7 +25,11 @@ After the installation, to test the package type on the Julia REPL the following
 ```julia
 ] test VibratoMonteCarlo
 ```
-
+## Docs
+```@docs
+VibratoMonteCarlo.v_mod
+VibratoMonteCarlo.v_value
+```
 ## Index
 
 ```@index
