@@ -8,7 +8,7 @@ function __init__()
     @require TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea" include("deps/taylorseries_dependencies.jl")
     @require FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838" include("deps/fastgaussquadrature.jl")
 end
-using FinancialMonteCarlo, Statistics
+using FinancialMonteCarlo, Statistics, MuladdMacro, IrrationalConstants
 include("utils.jl")
 include("metrics/lrm.jl")
 include("metrics/lrm_aug.jl")

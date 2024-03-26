@@ -1,4 +1,7 @@
 using .HyperDualNumbers
 
 v_value(x::Hyper) = x.value
-v_mod(x::Hyper) = hyper(1.0, x.epsilon1, x.epsilon2, x.epsilon12 + x.epsilon1 * x.epsilon2)
+function v_mod(x::Hyper{T}) where {T}
+    der_2 = @muladd x.epsilon12 + x.epsilon1 * x.epsilon2
+    return hyper(one(T), x.epsilon1, x.epsilon2, der_2)
+end
