@@ -12,7 +12,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 DualNumbers = "0.5, 0.6"
 FinancialMonteCarlo = "0.3"
-FinancialToolbox = "0.5"
+FinancialToolbox = "0.6"
 ForwardDiff = "0.10"
 HyperDualNumbers = "2, 3, 4"
 julia = "1"
