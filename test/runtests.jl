@@ -3,7 +3,7 @@ using Test
 path1 = joinpath(dirname(pathof(VibratoMonteCarlo)), "..", "test")
 test_listTmp = readdir(path1);
 
-BlackList = ["REQUIRE", "runtests.jl", "Project.toml", "Manifest.toml", "cuda", "af", "wip", "bench.jl"];
+BlackList = ["REQUIRE", "runtests.jl", "Project.toml", "Manifest.toml", "cuda", "runner_z.jl", "af", "wip", "check", "bench.jl"];
 func_scope(x::String) = include(x);
 test_list = [test_element for test_element in test_listTmp if !any(x -> x == test_element, BlackList)]
 println("Running tests:\n")

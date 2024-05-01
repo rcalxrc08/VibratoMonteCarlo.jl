@@ -15,7 +15,7 @@ function generate_last_jump_time_and_value(row_X_i, λ, zero_time, zero_drift, T
     return T_jump, x_jump
 end
 
-function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
+function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
     σ = mcProcess.σ
@@ -33,14 +33,20 @@ function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::Fin
     S0 = mcProcess.underlying.S0
     dt = T / Nsteps
     T_jumps = Array{typeof(λ)}(undef, Nsim)
-    S_jumps = Array{typeof(zero_drift * S0)}(undef, Nsim)
+    S_jumps = Array{typeof(zero_drift)}(undef, Nsim)
     zero_time = 0 * λ
     @inbounds for i = 1:Nsim
         @views row_X_i = X[i, :]
         T_jump, x_jump = generate_last_jump_time_and_value(row_X_i, λ, zero_time, zero_drift, T, mcProcess, dt, mcBaseData)
         @views T_jumps[i] = T_jump
-        @views S_jumps[i] = S0 * exp(x_jump)
+        @views S_jumps[i] = x_jump
     end
-
+    log_S0 = log(S0)
+    X_f = @. log_S0 + S_jumps
+    return T_jumps, X_f
+end
+function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
+    T_jumps, X_f = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
+    S_jumps = @. exp(X_f)
     return T_jumps, S_jumps
 end

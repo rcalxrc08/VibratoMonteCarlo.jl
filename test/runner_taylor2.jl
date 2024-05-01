@@ -1,6 +1,6 @@
-using TaylorSeries, FinancialMonteCarlo, FinancialToolbox,VibratoMonteCarlo,HyperDualNumbers,FinancialFFT,FastGaussQuadrature
+using TaylorSeries, FinancialMonteCarlo, FinancialToolbox, VibratoMonteCarlo, HyperDualNumbers, FinancialFFT, FastGaussQuadrature
 #S0 = 100.0;
-S0 = taylor_expand(identity,100.0,order=5);
+S0 = taylor_expand(identity, 100.0, order = 5);
 K = 105.0;
 r = 0.02;
 T = 1.0;
@@ -29,6 +29,5 @@ N = 20000;
 method = LewisMethod(A, N);
 
 @show result1 = vibrato_saltando(Model, rfCurve, mc, EUData, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200));
-@show result4 = [derivative(pricer(Model, rfCurve, method, EUData),i)[0]; for i in 0:5];
+@show result4 = [derivative(pricer(Model, rfCurve, method, EUData), i)[0] for i = 0:5];
 @show result5 = pricer(Model, rfCurve, mc, EUData);
-
