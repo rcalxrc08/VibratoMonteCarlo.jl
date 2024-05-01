@@ -2,7 +2,8 @@ using DualNumbers, HyperDualNumbers, FinancialMonteCarlo, FinancialFFT, Financia
 @show "KouModel"
 # S0 = 100.0;
 #S0 = dual(100.0, 1.0);
-S0 = hyper(100.0, 1.0, 1.0, 0.0);
+S0_v = 100.0
+S0 = hyper(S0_v, 1.0, 1.0, 0.0);
 K = 80.0;
 r = 0.01;
 # r = dual(0.02, 1.0);
@@ -35,8 +36,10 @@ rfCurve = ZeroRate(r);
 
 EUData = EuropeanOption(T, K)
 Model = KouProcess(sigma, lam, p, lamp, lamm, Underlying(S0, d));
+Model_v = KouProcess(sigma, lam, p, lamp, lamm, Underlying(S0_v, d));
 # Model = MertonProcess(sigma, lam, mu1, sigma1, Underlying(S0, d));
 @show result = vibrato_saltando(Model, rfCurve, mc, EUData, VibratoMonteCarloStandard(Nsim2));
+@show result = vibrato_saltando(Model_v, rfCurve, mc, EUData, VibratoMonteCarloStandard(Nsim2));
 @show EuPrice = pricer(Model, rfCurve, mc, EUData);
 @show EuPrice2 = pricer(Model, rfCurve, method_lewis, EUData);
 
