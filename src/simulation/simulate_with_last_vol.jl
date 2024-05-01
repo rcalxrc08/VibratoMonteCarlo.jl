@@ -11,7 +11,7 @@ function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMont
     κ = mcProcess.κ
     ρ = mcProcess.ρ
     θ = mcProcess.θ
-    @assert T > 0.0
+    @assert T > 0
 
     ## Simulate
     κ_s = κ + λ1
@@ -34,7 +34,7 @@ function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMont
         randn!(mcBaseData.parallelMode.rng, e1)
         randn!(mcBaseData.parallelMode.rng, e2_rho)
         @. e2 = e1 * ρ + e2_rho * tmp_cost
-        @views @. X[:, j+1] = X[:, j] + ((r - d) - 0.5 * v_m) * dt + sqrt(v_m) * sqrt(dt) * e1
+        @views @. X[:, j+1] = X[:, j] + ((r - d) - v_m / 2) * dt + sqrt(v_m) * sqrt(dt) * e1
         @. v_m += κ_s * (θ_s - v_m) * dt + σ * sqrt(v_m) * sqrt(dt) * e2
         #when v_m = 0.0, the derivative becomes NaN
         @. v_m = max(v_m, isDualZero_eps)
@@ -56,7 +56,7 @@ function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMont
     κ = mcProcess.κ
     ρ = mcProcess.ρ
     θ = mcProcess.θ
-    @assert T > 0.0
+    @assert T > 0
 
     ####Simulation
     ## Simulate

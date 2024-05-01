@@ -6,7 +6,7 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     drift = mcProcess.drift * T / mcBaseData.Nstep
     sigma = mcProcess.sigma
 
-    @assert T > 0.0
+    @assert T > 0
 
     type_sub = typeof(rand(mcBaseData.parallelMode.rng, mcProcess.subordinator_))
     isDualZero = drift * zero(type_sub)
@@ -31,10 +31,10 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     drift = mcProcess.drift * T / mcBaseData.Nstep
     sigma = mcProcess.sigma
 
-    @assert T > 0.0
+    @assert T > 0
 
     type_sub = typeof(rand(mcBaseData.parallelMode.rng, mcProcess.subordinator_))
-    isDualZero = drift * sigma * zero(type_sub) * 0.0
+    isDualZero = drift * sigma * zero(type_sub) * 0
     X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
     @views X[:, 1] .= isDualZero
     Nsim_2 = div(Nsim, 2)
@@ -61,8 +61,9 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     drift = mcProcess.drift * T / Nstep
     sigma = mcProcess.sigma
     @assert T > 0
+    #TODO: adjust type
     type_sub = typeof(quantile(mcProcess.subordinator_, 0.5))
-    isDualZero = drift * zero(type_sub) * 0.0
+    isDualZero = drift * zero(type_sub)
     X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
     @views X[:, 1] .= isDualZero
     seq = SobolSeq(Nstep - 1)

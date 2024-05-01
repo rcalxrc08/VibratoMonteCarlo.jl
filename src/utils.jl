@@ -24,7 +24,11 @@ struct VibratoMonteCarloAnalytic <: AbstractVibrato
         return new(Npoints, x_min, x_max)
     end
 end
+Base.broadcastable(x::T) where {T <: AbstractVibrato} = Ref(x)
 
 function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any)
     return range(x.x_min, length = x.Npoints, stop = x.x_max)
 end
+
+get_unique_maturity(euopt) = euopt.T
+get_unique_maturity(euopts::Array) = only(unique([get_unique_maturity(euopt) for euopt in euopts]))

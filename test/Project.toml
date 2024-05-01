@@ -6,6 +6,7 @@ FinancialMonteCarlo = "078f23cc-2637-5a1d-aba6-8a9ba9a6ff83"
 FinancialToolbox = "2edd74a5-e968-5e45-af77-76d29aa6a478"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 HyperDualNumbers = "50ceba7f-c3ee-5a84-a6e8-3ad40456ec97"
+Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
 TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
