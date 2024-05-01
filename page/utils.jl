@@ -6,7 +6,7 @@ using PkgPage
 # you might want to use in your site here
 #
 # Includes the Package, bringing the lx_functions into scope
-using FranklinTheorems
+# using FranklinTheorems
 
 # Includes the custom markdown files, bringing the `\newcommand` and `\newenvironment` definitions into scope.
-Franklin.include_external_config(FranklinTheorems.config_path()) 
+# Franklin.include_external_config(FranklinTheorems.config_path()) 

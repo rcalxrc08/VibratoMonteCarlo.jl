@@ -21,10 +21,9 @@ The latter allows you to plug in values that you would have defined here.
 @def title       = "VibratoMonteCarlo.jl"
 @def prepath     = "VibratoMonteCarlo.jl"
 @def description = """
-                   Create a beautiful landing page for your package in less
-                   than 10 minutes.
+                   Differentiable MonteCarlo Methods.
                    """
-@def authors     = "Thibaut Lienart and Zlatan Vasović"
+@def authors     = "rcalxrc08"
 
 <!--  NAVBAR SPECS
   NOTE:
