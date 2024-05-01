@@ -4,7 +4,7 @@
   <!-- META -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Thibaut Lienart and Zlatan Vasović">
+  <meta name="author" content="rcalxrc08">
   <title>VibratoMonteCarlo.jl</title>
 
   <link rel="icon" type="image/png"  href="/VibratoMonteCarlo.jl/assets/favicon.ico">
@@ -12,8 +12,7 @@
   <!-- CSS -->
    <link rel="stylesheet" href="/VibratoMonteCarlo.jl/libs/katex/katex.min.css">
      
-   <link rel="stylesheet" href="/VibratoMonteCarlo.jl/libs/highlight/styles/atom-one-dark.css">
-   
+  
   <link rel="stylesheet" href="/VibratoMonteCarlo.jl/css/bootstrap.min.css">
   <style>.bg-primary {
   background-color: #3f6388 !important;
@@ -102,11 +101,11 @@ padding-right:  10px;
         </li>
         
         <li class="nav-item">
-          <a class="nav-link" href="#conditional_expectation_method">Conditional Expectation Method</a>
+          <a class="nav-link" href="#conditional_expectation">Conditional Expectation</a>
         </li>
         
         <li class="nav-item">
-          <a class="nav-link" href="#conditional_saltando_expectation_method">Conditional Saltando Expectation Method</a>
+          <a class="nav-link" href="#conditional_saltando_expectation">Conditional Saltando Expectation</a>
         </li>
         
         <li class="nav-item">
@@ -114,23 +113,7 @@ padding-right:  10px;
         </li>
         
         <li class="nav-item">
-          <a class="nav-link" href="#vibrato_saltando_montecarlo_method">Vibrato Saltando Montecarlo Method</a>
-        </li>
-        
-        <li class="nav-item">
-          <a class="nav-link" href="#getting_started">Getting started</a>
-        </li>
-        
-        <li class="nav-item">
-          <a class="nav-link" href="#commands">Commands</a>
-        </li>
-        
-        <li class="nav-item">
-          <a class="nav-link" href="#showing_code">Showing Code</a>
-        </li>
-        
-        <li class="nav-item">
-          <a class="nav-link" href="#deployment">Deployment</a>
+          <a class="nav-link" href="#vibrato_saltando_montecarlo">Vibrato Saltando Montecarlo</a>
         </li>
         
       </ul>
@@ -143,8 +126,7 @@ padding-right:  10px;
     <div class="jumbotron jumbotron-fluid container-fluid bg-primary">
   
     <h1>VibratoMonteCarlo.jl</h1>
-    <div class="lead">Create a beautiful landing page for your package in less
-than 10 minutes.
+    <div class="lead">Differentiable MonteCarlo Methods.
 </div>
     
       <a class="github-button" href="https://github.com/rcalxrc08/VibratoMonteCarlo.jl" data-size="large" aria-label="View VibratoMonteCarlo.jl on GitHub">View on GitHub</a>
@@ -156,37 +138,11 @@ than 10 minutes.
 </header>
 
   <!-- Content appended here -->
-<div class="franklin-content">  
-<section id="about" class="scrollspy">
+<div class="franklin-content"><section id="about" class="scrollspy">
   <div class="container">
     <div class="row">
       <div class="col-lg-10 mx-auto">
-        <h2>About this Package</h2></p>
-<div class="lead">PkgPage.jl is based upon <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a> and makes it easy to create a beautiful landing page for a package in less than 10 minutes.</div>
-<p>PkgPage uses <a href="https://getbootstrap.com/docs/4.5/getting-started/introduction/">Bootstrap 4.5</a> and is meant to be particularly easy to use with minimal need to tweak HTML or CSS to get a great-looking result. With it you can:</p>
-<ul>
-<li><p>easily insert and style figures and tables,</p>
-</li>
-<li><p>easily initiate a multi-columns environment,</p>
-</li>
-<li><p>easily control the layout, colors, code theme etc from the config file,</p>
-</li>
-<li><p>automatic insertion of new sections into the navbar,</p>
-</li>
-<li><p>automatic purging of bootstrap css to remove unused rules,</p>
-</li>
-<li><p>all the goodies from <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a>:</p>
-<ul>
-<li><p>live-rendering,</p>
-</li>
-<li><p>support for <a href="https://github.com/KaTeX/KaTeX">KaTeX</a> and <a href="https://highlightjs.org/">highlight.js</a> and automatic pre-rendering,</p>
-</li>
-<li><p>and <a href="https://franklinjl.org/">much more</a>.</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>      </div>
+        <h2>About this Package</h2> <div class="lead">VibratoMonteCarlo.jl is a Julia package containing some useful Financial functions for sensitivity computation.</div> VibratoMonteCarlo.jl is built on top of <a href="https://github.com/JuliaDiff/DualNumbers.jl">FinancialMonteCarlo.jl</a> and <a href="https://github.com/JuliaDiff/DualNumbers.jl">FinancialFFT.jl</a>. Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless. The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.       </div>
     </div>
   </div>
 </section>
@@ -387,22 +343,22 @@ M834 80h400000v40h-400000z'/></svg></span></span></span><span class="vlist-s">�
     </div>
   </div>
 </section>
-<section id="conditional_expectation_method" class="scrollspy section-bg-color">
+<section id="conditional_expectation" class="scrollspy section-bg-color">
   <div class="container">
     <div class="row">
       <div class="col-lg-10 mx-auto">
-        <h2>Conditional Expectation Method</h2> Let&#39;s fix a positive number <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><mi>T</mi></mrow><annotation encoding="application/x-tex">\tau &lt; T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> and let&#39;s assume now that the underlying process is a Levy process.<br/> Since:</p>
+        <h2>Conditional Expectation</h2> Let&#39;s fix a positive number <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><mi>T</mi></mrow><annotation encoding="application/x-tex">\tau &lt; T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> and let&#39;s assume now that the underlying process is a Levy process.<br/> Since:</p>
 <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mn>0</mn></msub><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">V_0=\mathbb{E}(\Phi(X_T))=\mathbb{E}(\mathbb{E}(\Phi(X_T)|X_{\tau}))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span>
 <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><msub><mi>V</mi><mn>0</mn></msub><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\partial_{\theta} V_0=\mathbb{E}(\Phi(X_T))=\partial_{\theta} \mathbb{E}(\mathbb{E}(\Phi(X_T)|X_{\tau}))=\mathbb{E}(\partial_{\theta} \mathbb{E}(\Phi(X_{T})|X_{\tau}))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span>
 <p>      </div>
     </div>
   </div>
 </section>
-<section id="conditional_saltando_expectation_method" class="scrollspy">
+<section id="conditional_saltando_expectation" class="scrollspy">
   <div class="container">
     <div class="row">
       <div class="col-lg-10 mx-auto">
-        <h2>Conditional Saltando Expectation Method</h2> Let&#39;s assume <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> is a stopping time st <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><mi>T</mi></mrow><annotation encoding="application/x-tex">\tau &lt; T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> a.s., and let&#39;s assume now that the underlying process is a Levy process.<br/> Since:</p>
+        <h2>Conditional Saltando Expectation</h2> Let&#39;s assume <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> is a stopping time st <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&lt;</mo><mi>T</mi></mrow><annotation encoding="application/x-tex">\tau &lt; T</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span></span></span></span> a.s., and let&#39;s assume now that the underlying process is a Levy process.<br/> Since:</p>
 <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mn>0</mn></msub><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">V_0=\mathbb{E}(\Phi(X_T))=\mathbb{E}(\mathbb{E}(\Phi(X_T)|X_{\tau}))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span>
 <span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><msub><mi>V</mi><mn>0</mn></msub><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><msub><mi mathvariant="normal">∂</mi><mi>θ</mi></msub><mi mathvariant="double-struck">E</mi><mo stretchy="false">(</mo><mi mathvariant="normal">Φ</mi><mo stretchy="false">(</mo><msub><mi>X</mi><mi>T</mi></msub><mo stretchy="false">)</mo><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\partial_{\theta} V_0=\mathbb{E}(\Phi(X_T))=\partial_{\theta} \mathbb{E}(\mathbb{E}(\Phi(X_T)|X_{\tau}))=\mathbb{E}(\partial_{\theta} \mathbb{E}(\Phi(X_{T})|X_{\tau}))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.84444em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.22222em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord"><span class="mord" style="margin-right:0.05556em;">∂</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.05556em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">θ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord"><span class="mord mathbb">E</span></span><span class="mopen">(</span><span class="mord">Φ</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">T</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose">)</span></span></span></span></span>
 <p>Furthemore, if we assume that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">X_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a finite activity Levy process, a smart choice of the law of the stopping time can benefit the computation of the inner expectation. Indeed, if we take <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> as the stopping time corresponding to the last jump of the process, we have that:</p>
@@ -430,271 +386,18 @@ M834 80h400000v40h-400000z'/></svg></span></span></span><span class="vlist-s">�
     </div>
   </div>
 </section>
-<section id="vibrato_saltando_montecarlo_method" class="scrollspy">
+<section id="vibrato_saltando_montecarlo" class="scrollspy">
   <div class="container">
     <div class="row">
       <div class="col-lg-10 mx-auto">
-        <h2>Vibrato Saltando Montecarlo Method</h2> Since what we stated above applies also to a generic stopping time <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span>, we investigate some smart choice of the law of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> in order to exploit some property of the underlying process. Let&#39;s assume now that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">X_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a Finite Activity Levy process and that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> is the stopping time corresponding to the last jump of the underlying. We know already that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">X_t|X_{\tau}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a Ito process. On such process we are able to apply the standard LRM or VBM since we know the corresponding law of the increments &#40;powers of gaussians&#41;.</p>
+        <h2>Vibrato Saltando Montecarlo</h2> Since what we stated above applies also to a generic stopping time <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span>, we investigate some smart choice of the law of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> in order to exploit some property of the underlying process. Let&#39;s assume now that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">X_t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a Finite Activity Levy process and that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi></mrow><annotation encoding="application/x-tex">\tau</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.1132em;">τ</span></span></span></span> is the stopping time corresponding to the last jump of the underlying. We know already that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>t</mi></msub><mi mathvariant="normal">∣</mi><msub><mi>X</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">X_t|X_{\tau}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2805559999999999em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.07847em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.1132em;">τ</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a Ito process. On such process we are able to apply the standard LRM or VBM since we know the corresponding law of the increments &#40;powers of gaussians&#41;.</p>
 <p>      </div>
     </div>
   </div>
 </section>
-<section id="getting_started" class="scrollspy section-bg-color">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-10 mx-auto">
-        <h2>Getting started</h2></p>
-<p>In order to get started, just add the package &#40;with <strong>Julia ≥ 1.3</strong>&#41; and</p>
-<pre><code class="julia-repl hljs"><span class="hljs-meta prompt_">julia&gt;</span><span class="language-julia"> <span class="hljs-keyword">using</span> PkgPage
-</span><span class="hljs-meta prompt_">julia&gt;</span><span class="language-julia"> newpage()
-</span><span class="hljs-meta prompt_">julia&gt;</span><span class="language-julia"> serve()</span></code></pre>
-<br/>
-<p>The <code>newpage</code> call will</p>
-<ul>
-<li><p>generate a <code>page/</code> folder in your current directory which contains all the material to generate your site,</p>
-<ul>
-<li><p>modify <code>page/config.md</code> to change the description, layout, colors etc.,</p>
-</li>
-<li><p>modify <code>page/index.md</code> to change the content.</p>
-</li>
-</ul>
-</li>
-<li><p>place a <code>.github/workflows/DeployPage.yml</code> to enable the github action that will help deploy your page.</p>
-</li>
-</ul>
-<p>The <code>serve</code> call will render your page and make it available for live-preview in your browser when you make modifications to either <code>config.md</code> or <code>index.md</code>.</p>
-<div class="alert alert-info" role="alert">
-You can specify another folder name via <code>newpage&#40;path&#61;&quot;page2&quot;&#41;</code> but don&#39;t forget to modify this in the <code>DeployPage.yml</code> as well &#40;in 2 spots&#41;.</div>
-<p>      </div>
-    </div>
-  </div>
-</section>
-<section id="commands" class="scrollspy">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-10 mx-auto">
-        <h2>Commands</h2></p>
-<div class="lead">PkgPage makes a few special commands available to you to simplify the insertion of common useful environments.</div>
-<ul>
-<li><p><a href="#com-sections">Sections</a></p>
-</li>
-<li><p><a href="#com-figures">Figures</a></p>
-</li>
-<li><p><a href="#com-tables">Tables</a></p>
-</li>
-<li><p><a href="#com-columns">Columns</a></p>
-</li>
-<li><p><a href="#com-maths">Maths</a></p>
-</li>
-<li><p><a href="#com-misc">Misc</a></p>
-</li>
-</ul>
-<p><a id="com-sections" class="anchor"></a> <strong>Sections</strong>: you can indicate a section as follows:</p>
-<pre><code class="plaintext hljs">\begin{section}{opts...}
-text
-\end{section}</code></pre>
-<p>where the available options are:</p>
-<ul>
-<li><p><code>title&#61;&quot;...&quot;</code> to add a heading to the section, this should be provided,</p>
-</li>
-<li><p><code>name&#61;&quot;...&quot;</code> to add a specific name that will appear in the navbar &#40;if not given, it will use the given title&#41;.</p>
-</li>
-<li><p><code>width&#61;8</code> an integer number controlling the width of the section with respect to the body, increase it to get a wider section.</p>
-</li>
-</ul>
-<p><a id="com-figures" class="anchor"></a> <strong>Figures</strong>: you can indicate a figure as follows:</p>
-<pre><code class="plaintext hljs">\figure{path=&quot;...&quot;, opts...}</code></pre>
-<p>where <code>path</code> is a valid path to the image &#40;e.g. <code>/assets/image.png</code>&#41; and the other available options are:</p>
-<ul>
-<li><p><code>width&#61;&quot;...&quot;</code> to specify the width of the image &#40;e.g. <code>100&#37;</code>&#41;,</p>
-</li>
-<li><p><code>alt&#61;&quot;...&quot;</code> to specify the image <code>alt</code>,</p>
-</li>
-<li><p><code>caption&#61;&quot;...&quot;</code> to specify the figure caption if any,</p>
-</li>
-<li><p><code>style&#61;&quot;...&quot;</code> to add any specific CSS styling to the image &#40;e.g. <code>border-radius:5px</code>&#41;.</p>
-</li>
-</ul>
- <div style="text-align:center;"> <figure class="figure">
-  <img src="/VibratoMonteCarlo.jl/assets/nice_image.jpg" alt="Panoramic view of the Tara Cathedrals (taken from Wikimedia)." class="figure-img img-fluid " width="100%" style="border-radius:5px;">
-  <figcaption class="figure-caption ">
-Panoramic view of the Tara Cathedrals (taken from Wikimedia).
-</figcaption>
-
-</figure>
-  </div>
-<p><a id="com-tables" class="anchor"></a> <strong>Tables</strong>: you can insert a table as follows:</p>
-<pre><code class="plaintext hljs">\begin{table}{opts...}
-| Column One | Column Two | Column Three |
-|----------: | ---------- |:------------:|
-| Row `1`    | Column `2` |              |
-| *Row* 2    | **Row** 2  | Column ``3`` |
-\end{table}</code></pre>
-<p>where the available options are:</p>
-<ul>
-<li><p><code>caption&#61;&quot;...&quot;</code>: to add a caption to the table,</p>
-</li>
-<li><p><code>class&#61;&quot;...&quot;</code>: to add specific bootstrap classes to the table &#40;e.g. <code>table-striped</code>&#41;,</p>
-</li>
-<li><p><code>style&#61;&quot;...&quot;</code>: for any further styling.</p>
-</li>
-</ul>
- <div style="text-align:center;"> <table class="table table-striped"><caption>A simple table</caption> <thead><tr><th align="left">Column One</th><th align="left">Column Two</th><th align="center">Column Three</th></tr></thead><tbody><tr><td align="left">Row <code>1</code></td><td align="left">Column <code>2</code></td><td align="center"></td></tr><tr><td align="left"><em>Row</em> 2</td><td align="left"><strong>Row</strong> 2</td><td align="center">Column <code>3</code></td></tr></tbody></table>  </div>
-<p><a id="com-columns" class="anchor"></a> <strong>Columns</strong>: you can declare an environment with columns with:</p>
-<pre><code class="plaintext hljs">\begin{columns}
-\begin{column}{}
-...
-\end{column}
-\begin{column}{}
-...
-\end{column}
-\end{columns}</code></pre>
-<p>For instance you can use this to produce:</p>
- <div class="container"><div class="row"> <div class="col "> <strong><em>Content of a first column here</em></strong></p>
-<p>Here is some more content for that first column. </div> <div class="col "> <strong><em>Content of a second column here</em></strong></p>
-<p>Here is some more content for that second column. </div>  </div></div>
-<br/>
-<p><a id="com-maths" class="anchor"></a> <strong>Maths</strong></p>
-<p>Just use <code>&#36;&#36; ... &#36;&#36;</code> for display math and <code>&#36; ... &#36;</code> for inline maths:</p>
-<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>i</mi></msub><mo>=</mo><mfrac><mn>2</mn><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msubsup><mi>x</mi><mi>i</mi><mn>2</mn></msubsup><mo stretchy="false">)</mo><mo stretchy="false">[</mo><msubsup><mi>P</mi><mi>n</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msubsup><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo stretchy="false">)</mo><msup><mo stretchy="false">]</mo><mn>2</mn></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex"> w_i = {2 \over (1-x_i^2)[P&#x27;_n(x_i)]^2} </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.02691em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.2843039999999997em;vertical-align:-0.9628639999999999em;"></span><span class="mord"><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.32144em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7959080000000001em;"><span style="top:-2.4231360000000004em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span><span style="top:-3.0448000000000004em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.27686399999999994em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mopen">[</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677892em;"><span style="top:-2.4530000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mclose"><span class="mclose">]</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.740108em;"><span style="top:-2.9890000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9628639999999999em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></span>
-<p>where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>n</mi></msub></mrow><annotation encoding="application/x-tex">P_n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">n</span></span></span></span>-th <a href="https://en.wikipedia.org/wiki/Legendre_polynomials">Legendre polynomial</a> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">x_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is it&#39;s <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathdefault">i</span></span></span></span>-th root.</p>
-<p><a id="com-misc" class="anchor"></a> <strong>Misc</strong></p>
-<ul>
-<li><p>you can use <code>\\</code> to add some vertical space &#40;skip a line&#41;</p>
-</li>
-</ul>
-<br/>
-<ul>
-<li><p>you can use <code>\begin&#123;center&#125;...\end&#123;center&#125;</code> to center some content</p>
-</li>
-</ul>
- <div style="text-align:center;"> <em>some centered content</em> <br/><br/>  </div>
-<ul>
-<li><p>you can use <code>\style&#123;css&#125;&#123;content&#125;</code> to get css-styled text for instance <code>\style&#123;color:red;text-transform:uppercase;&#125;&#123;hello&#125;</code> gives <span style="color:red;text-transform:uppercase;">hello</span></p>
-</li>
-<li><p>you can use <code>\alert&#123;...&#125;</code> to draw attention to some text via a coloured box.</p>
-</li>
-</ul>
-<div class="alert alert-info" role="alert">
-this is an alert</div>
-<p>You can also define your own commands which can be as complex as you might want, see the <a href="https://franklinjl.org">Franklin docs</a> for more information.</p>
-<p>      </div>
-    </div>
-  </div>
-</section>
-<section id="showing_code" class="scrollspy section-bg-color">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-10 mx-auto">
-        <h2>Showing Code</h2></p>
-<div class="lead">Franklin can run your Julia code on the fly and show the output.</div>
-<p><strong>Setting up the environment</strong>: the first step is to ensure that the folder with your source has the proper environment including your package. To do so, in the Julia REPL, navigate to the source &#40;e.g. <code>cd&#40;&quot;page/&quot;&#41;</code>&#41;, activate the environment &#40;e.g. <code>using Pkg; Pkg.activate&#40;&#41;</code>&#41; and add the package&#40;s&#41; that you need &#40;e.g. <code>Pkg.add&#40;&quot;DataFrames&quot;&#41;</code>&#41;. If you check the status or the Project.toml, you will see that <code>Franklin</code> is already in there on top of whatever packages you might have chosen to add. In our current case:</p>
-<pre><code class="julia hljs">Status <span class="hljs-string">`~/.julia/dev/PkgPage/page/Project.toml`</span>
-  [a93c6f00] DataFrames v0<span class="hljs-number">.21</span><span class="hljs-number">.2</span>
-  [<span class="hljs-number">713</span>c75ef] Franklin v0<span class="hljs-number">.8</span><span class="hljs-number">.2</span></code></pre>
-<p>Also add the package in the <code>DeployPage.yml</code> e.g. in our case there is:</p>
-<pre><code class="julia hljs">Pkg.add([<span class="hljs-string">&quot;NodeJS&quot;</span>, <span class="hljs-string">&quot;DataFrames&quot;</span>]);</code></pre>
-<p>Once that&#39;s set up, you can use &quot;named&quot; code blocks i.e. code blocks that look like</p>
-<pre><code class="julia hljs"><span class="hljs-string">``</span><span class="hljs-string">`julia:ex
-using DataFrames
-df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
-first(df, 3)
-`</span><span class="hljs-string">``</span></code></pre>
-<p>where <code>:ex</code> is the &quot;named part&quot; &#40;<code>ex</code> being the name, which should be unique on the page&#41;.</p>
-<pre><code class="julia hljs"><span class="hljs-keyword">using</span> DataFrames
-df = DataFrame(A = <span class="hljs-number">1</span>:<span class="hljs-number">4</span>, B = [<span class="hljs-string">&quot;M&quot;</span>, <span class="hljs-string">&quot;F&quot;</span>, <span class="hljs-string">&quot;F&quot;</span>, <span class="hljs-string">&quot;M&quot;</span>])
-first(df, <span class="hljs-number">3</span>)</code></pre><pre><code class="plaintext hljs">3×2 DataFrame
- Row │ A      B
-     │ Int64  String
-─────┼───────────────
-   1 │     1  M
-   2 │     2  F
-   3 │     3  F</code></pre>
-<p>You can control the indentation and appearance of the output block in the <code>config.md</code> too.</p>
-<p>      </div>
-    </div>
-  </div>
-</section>
-<section id="deployment" class="scrollspy">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-10 mx-auto">
-        <h2>Deployment</h2></p>
-<div class="lead">Make your page available online easily by leveraging GitHub Actions and GitHub Pages.</div>
-<p>By following these instructions, the content of the rendered website will be copied to a <code>gh-pages</code> branch where it will be deployed by GitHub. If you would like to deploy the page with your own URL or using something else than GitHub, have a look at the specific instructions further on.</p>
-<p><strong>Adjust DeployPage</strong>: start by checking the <code>.github/workflows/DeployPage.yml</code> in particular:</p>
-<ul>
-<li><p>if you want to use Python or matplotlib, uncomment the relevant lines</p>
-</li>
-<li><p>in the <code>run</code> block ensure that</p>
-<ul>
-<li><p><code>NodeJS</code> and <code>PkgPage</code> are added,</p>
-</li>
-<li><p>any packages that your page might rely on are added,</p>
-</li>
-<li><p>the <code>optimize</code> call has the appropriate <code>input</code> and <code>output</code> path &#40;if you&#39;re in the default setting, leave as is&#41;.</p>
-</li>
-</ul>
-</li>
-</ul>
-<p><strong>GitIgnore</strong>: it&#39;s important you specify that <code>page/__site</code> should be ignored by git and not pushed to your repository otherwise the build process might not work properly. To do so create a file <code>.gitignore</code> containing the line</p>
-<pre><code class="julia hljs">page/__site</code></pre>
-<p>as shown <a href="https://github.com/tlienart/PkgPage.jl/blob/cce098535eb95c2c3ba919d605792abfee57710c/.gitignore#L3">here</a>.</p>
-<p><strong>GitAttributes</strong>: in order for GitHub to ignore <code>page</code> folder it the language statistics for your repository, make sure to add a file <code>.gitattributes</code> with content</p>
-<pre><code class="julia hljs">page/* linguist-vendored</code></pre>
-<p>like <a href="https://github.com/tlienart/PkgPage.jl/blob/master/.gitattributes">this</a>.</p>
-<p>Now whenever you push changes to the <code>master</code> branch of your package, the  build process will be triggered and your page updated and deployed. <strong>That&#39;s it</strong>.</p>
-<p><strong>Avoiding clashes with Documenter.jl</strong>: if you already use <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> you might want your page to be deployed in a specific folder of <code>gh-pages</code> as Documenter also generates files in <code>gh-pages</code>.</p>
-<div class="alert alert-info" role="alert">
-This will typically not be necessary as the names created by PkgPage and Documenter don&#39;t clash, but you might still prefer to avoid mixing the two &#40;in which case, read on&#41;.</div>
-<p>you can do so in two steps:</p>
-<ol>
-<li><p>change the <code>run</code> part of <code>DeployPage.yml</code> by specifying the <code>output</code> keyword argument  in <code>PkgPage.optimize</code> for instance: <code>PkgPage.optimize&#40;input&#61;&quot;page&quot;, output&#61;&quot;page&quot;&#41;</code>,</p>
-</li>
-<li><p>change the <code>prepath</code> in <code>config.md</code> to reflect that the base URL will contain that additional folder, for instance <code>@def prepath &#61; &quot;YourPackage.jl/page&quot;</code>.</p>
-</li>
-</ol>
-<p><strong>Use your own URL</strong>: you can usually get host services like Netlify to deploy a specific branch of a GitHub repo, do make sure to set <code>@def prepath &#61; &quot;&quot;</code> in your <code>config.md</code> though.</p>
-<p>If you want to do the deployment without GitHub actions then you will need to:</p>
-<ul>
-<li><p>ensure you have <code>purgecss</code> and <code>highlights</code> installed and available to <code>NodeJS</code>, the simplest way to do this is to install them via <code>NodeJS</code> with</p>
-</li>
-</ul>
-<pre><code class="julia hljs"><span class="hljs-keyword">using</span> NodeJS;
-run(<span class="hljs-string">`<span class="hljs-subst">$(npm_cmd()</span>) install highlight.js`</span>);
-run(<span class="hljs-string">`<span class="hljs-subst">$(npm_cmd()</span>) install purgecss`</span>);</code></pre>
-<br/>
-<ul>
-<li><p>run <code>PkgPage.optimize&#40;input&#61;&quot;page&quot;, output&#61;&quot;&quot;&#41;</code> &#40;adapting <code>input</code> as required&#41;</p>
-</li>
-<li><p>place the content of <code>page/__site</code> wherever your server requires it.</p>
-</li>
-</ul>
-<p>      </div>
-    </div>
-  </div>
-</section>
-
-<script>
-var acc = document.getElementsByClassName("theorem-accordion");
-var i;
-
-for (i = 0; i < acc.length; i++) {
-  acc[i].addEventListener("click", function() {
-    this.classList.toggle("active");
-    var panel = this.nextElementSibling;
-    if (panel.style.maxHeight) {
-      panel.style.maxHeight = null;
-    } else {
-      panel.style.maxHeight = panel.scrollHeight + "px";
-    }
-  });
-}
-</script>
-
 <footer class="py-5 bg-dark">
   <div class="container">
-    <p class="m-0 text-center text-white">&copy; Thibaut Lienart and Zlatan Vasović. Website powered by <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a>, <a href="https://github.com/tlienart/PkgPage.jl">PkgPage.jl</a> and the <a href="https://julialang.org">Julia</a> programming language.</p>
+    <p class="m-0 text-center text-white">&copy; rcalxrc08. Website powered by <a href="https://github.com/tlienart/Franklin.jl">Franklin.jl</a>, <a href="https://github.com/tlienart/PkgPage.jl">PkgPage.jl</a> and the <a href="https://julialang.org">Julia</a> programming language.</p>
   </div>
 </footer>
 </div><!-- CONTENT ENDS HERE -->
@@ -704,10 +407,6 @@ for (i = 0; i < acc.length; i++) {
 
 
   
-  
-      
-
-
   
   <script src="/VibratoMonteCarlo.jl/libs/simple-scrollspy.min.js"></script>
   <script>
