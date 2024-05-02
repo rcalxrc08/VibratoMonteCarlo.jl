@@ -28,6 +28,7 @@ Interpolations = "0.12, 0.13, 0.14, 0.15"
 IrrationalConstants = "0.2"
 MuladdMacro = "0.2"
 Requires = "1"
+Sobol = "1"
 Statistics = "1"
 julia = "1"
 
