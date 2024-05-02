@@ -29,6 +29,7 @@ IrrationalConstants = "0.2"
 MuladdMacro = "0.2"
 Requires = "1"
 Statistics = "1"
+StatsFuns = "1"
 julia = "1"
 
 [extras]
