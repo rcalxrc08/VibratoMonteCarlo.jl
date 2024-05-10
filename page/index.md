@@ -160,6 +160,32 @@ $$\Phi(x)=e^x$$
 
 Since $\Delta = e^{(r-d)T}$:
 $$\mathbb{E}(e^{-\frac{\sigma^2}{2} T + \sigma W_T}\,W_T) = \sigma T$$
+
+\end{section}
+\begin{section}{title="Spectral Theorem for Black and Scholes"}
+
+Let's observe something, $\log(f(x,\theta))$ is a second order polymial in $x$:
+
+$$\log{f(X_T,\theta)}= \sum_{i=0}^2 b_i(\theta) X_T^i = b_0(\theta) + b_1(\theta)\,X_T +  b_2(\theta)\,X_T^2$$
+
+Then all al of the partial derivatives will be second order polynomials as well:
+
+$$\partial_{\theta^i} \log{f(X_T,\theta)}= \partial_{\theta^i}b_0(\theta) + \partial_{\theta^i}b_1(\theta)\,X_T +  \partial_{\theta^i}b_2(\theta)\,X_T^2$$
+
+And the Bell exponential polymial will be a polynomial of degree $2 n$ in terms of $X_T$:
+
+$$B_n(\{\partial_{\theta^i} \log{f(X_T,\theta)}\}_{i = 1 : n}) = \sum_{i=0}^{2 n} a_i(\theta,n) X_T^i $$
+
+And finally:
+
+$$\partial_{\theta^n} V_0  = a_0(\theta,n) V_0 + \sum_{i=1}^{2 n} a_i(\theta,n) \mathbb{E}(\Phi(X_T) X_T^i) $$
+
+\alert{**Spectral Theorem**: Given a European Option with payoff $\Phi$, an underlying varying according to Black and Scholes model, then we can express a generic $n$ order sensitivity as follows:
+$$\partial_{\theta^n} V_0  = a_0(\theta,n) V_0 + \sum_{i=1}^{2 n} a_i(\theta,n) \mathbb{E}(\Phi(X_T) X_T^i) $$
+
+Hence a generic $n$ order sensitivity can be express as a linear combination of the prices of $2 n + 1$ contracts.
+}
+To be noticed that the various coefficients $a_i(\theta,n)$ do not depend on the payoff, hence with $2n + 1$ prices we are able to compute all of the partial derivatives with respect to any parameter up to order $n$.
 \end{section}
 \begin{section}{title="Conditional Expectation"}
 Let's fix a positive number $\tau < T$ and let's assume now that the underlying process is a Levy process.\\
