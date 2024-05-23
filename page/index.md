@@ -1,9 +1,6 @@
 <!-- =============================
      ABOUT
     ============================== -->
-~~~
-<meta name="google-site-verification" content="FVEFrtyMEkm_djcN6i1kMz9SeX-92yXSVGYioZeAa2s" />
-~~~
 \begin{section}{title="About this Package", name="About"}
 \lead{VibratoMonteCarlo.jl is a Julia package containing some useful Financial functions for sensitivity computation.}
 VibratoMonteCarlo.jl is built on top of [FinancialMonteCarlo.jl](https://github.com/JuliaDiff/DualNumbers.jl) and [FinancialFFT.jl](https://github.com/JuliaDiff/DualNumbers.jl).
