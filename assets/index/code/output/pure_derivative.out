@@ -1,4 +1,4 @@
 \begin{equation}
-\frac{\partial^{3} V}{\partial\theta^{3}} = \mathbb{E}\left( \frac{\left(  - 3 T W_{T} + W_{T}^{3} \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{3}} \right)
+\frac{\partial^{6} V}{\partial\theta^{6}} = \mathbb{E}\left( \frac{\left(  - 15 T^{3} + 45 W_{T}^{2} T^{2} - 15 W_{T}^{4} T + W_{T}^{6} \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{6}} \right)
 \end{equation}
 
