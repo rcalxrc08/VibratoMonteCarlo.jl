@@ -276,18 +276,11 @@ end
 tgt_var=r
 tgt_var2=r
 max_order=2
-max_order2=1
+max_order2=4
 expr_el=generate_latex_expression_base(S_0,r,d,σ,T,tgt_var,max_order+max_order2)
 # expr_el=generate_latex_expression_base_mix(S_0,r,d,σ,T,tgt_var,max_order,tgt_var2,max_order2)
 println(expr_el)
 ```
-Let's assume $\theta = r$, from the Spectral Theorem:
-\textoutput{pure_derivative}
-Hence we need to price 4 contracts to get the sixth order sensitivitity. To be noticed that one of the contract to be priced is the option itself.
-
-
-
-### Application for third order mixed derivative
 ```julia:mixed_derivative
 #hideall
 @variables S_0 r d σ T
@@ -299,9 +292,10 @@ max_order2=1
 expr_el=generate_latex_expression_base_mix(S_0,r,d,σ,T,tgt_var,max_order,tgt_var2,max_order2)
 println(expr_el)
 ```
-Let's assume $\theta_1 = r$ and $\theta_2 = \sigma$, from the Spectral Theorem:
-\textoutput{mixed_derivative}
+Let's assume $\theta = r$, from the Spectral Theorem:
+\textoutput{pure_derivative}
 Hence we need to price 4 contracts to get the sixth order sensitivitity. To be noticed that one of the contract to be priced is the option itself.
+
 
 \end{section}
 \begin{section}{title="Conditional Expectation"}
