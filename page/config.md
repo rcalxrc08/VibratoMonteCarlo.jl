@@ -144,7 +144,7 @@ commands that are defined and used in VibratoMonteCarlo.jl
 -->
 @def sections        = Pair{String,String}[]
 @def section_counter = 1
-@def showall         = true
+@def showall         = false
 
 \newcommand{\html}[1]{~~~#1~~~}
 
