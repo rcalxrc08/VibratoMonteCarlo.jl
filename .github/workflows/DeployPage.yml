@@ -15,7 +15,9 @@ jobs:
       with:
         version: 1.7
     - run: julia -e '
-            import Pkg; Pkg.activate("page/Project.toml"); Pkg.instantiate();
+            import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General");
+            Pkg.add("VibratoMonteCarlo"); using VibratoMonteCarlo;
+            Pkg.activate("page/Project.toml"); Pkg.instantiate();
             using NodeJS;
             run(`$(npm_cmd()) install highlight.js purgecss`);
             import PkgPage;
