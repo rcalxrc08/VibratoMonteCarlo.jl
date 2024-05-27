@@ -1,3 +1,4 @@
-ArgumentError: Package VibratoMonteCarlo not found in current path:
-- Run `import Pkg; Pkg.add("VibratoMonteCarlo")` to install the VibratoMonteCarlo package.
+\begin{equation}
+\frac{\partial^{3} V}{\partial\theta^{3}} = \mathbb{E}\left( \frac{\left(  - 3 T W_{T} + W_{T}^{3} \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{3}} \right)
+\end{equation}
 
