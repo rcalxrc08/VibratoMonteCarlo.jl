@@ -7,6 +7,8 @@ VibratoMonteCarlo.jl is built on top of [FinancialMonteCarlo.jl](https://github.
 Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless.
 The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.
 
+The implementation for Vibrato Montecarlo is heavily based on the Master Thesis of Nicola Scaramuzzino (that is me) and the subsequent development.
+
 \end{section}
 \begin{section}{title="The basic settings"}
 Let's assume we have an underlying stock price varying as a stochastic process called $S_t$ and
