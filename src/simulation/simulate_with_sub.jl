@@ -88,7 +88,7 @@ function compute_drift(mcProcess::VarianceGammaProcess)
     σ = mcProcess.σ
     θ = mcProcess.θ
     κ = mcProcess.κ
-    ψ = -1 / κ * log(1 - σ^2 * κ / 2 - θ * κ)
+    ψ = -inv(κ) * log(1 - κ * (σ^2 / 2 + θ))
     return ψ
 end
 
