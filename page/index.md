@@ -199,7 +199,7 @@ To be noticed that the various coefficients $a_i(\theta,n)$ do not depend on the
 
 In case $b_2(\theta)$ doesn't depend $\theta$ then the corresponding $n$ order sensitivity can be expressed as a linear combination of the prices of $n + 1$ contracts.
 
-### Application for third order derivative
+### Application for sixth order derivative
 ```julia:pure_derivative
 #hideall
 using Symbolics,Latexify,VibratoMonteCarlo
@@ -214,9 +214,7 @@ end
 
 function generate_faa_di_bruno(z_better,d_tgt_var)
     init_val=exp(z_better)
-    der_z_better=init_val
-    der_z_better=d_tgt_var(der_z_better)
-    return expand_derivatives(der_z_better)/init_val
+    return expand_derivatives(d_tgt_var(init_val))/init_val
 end
 
 function generate_faa_di_bruno_exp(z_better,tgt_var,order)
@@ -240,13 +238,13 @@ end
 function generate_latex_expression_base(S_0,r,d,σ,T,tgt_var,max_order)
     @variables mu,sigma,x
 	z=VibratoMonteCarlo.log_density(x, mu, sigma)
-    @variables V ∂ ∂θ
     @variables W_T
     X_T=log(S_0)+(r-d-σ^2/2)*T+σ*W_T
     z_better=generate_and_adjust(z,mu,sigma,S_0,r,d,σ,T)
     final_der=simplify(generate_faa_di_bruno_exp(z_better,tgt_var,max_order))
     adjusted_final_der=simplify_fractions(adjust_sqrt2(final_der,X_T,T,x,max_order),polyform=true)
     # der_num=∂ᵣ^max_order*V
+    @variables V ∂ ∂θ
     der_num=∂^max_order*V / (∂θ^max_order)
     @variables Φ(X_T)
     ress_=Φ*adjusted_final_der
