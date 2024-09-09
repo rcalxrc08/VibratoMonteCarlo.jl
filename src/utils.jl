@@ -1,5 +1,5 @@
 abstract type AbstractVibrato end
-
+using FinancialToolbox
 struct VibratoMonteCarloStandard <: AbstractVibrato
     Nsim_lrm::Int
     mode::FinancialMonteCarlo.SerialMode
@@ -32,3 +32,10 @@ end
 
 get_unique_maturity(euopt) = euopt.T
 get_unique_maturity(euopts::Array) = only(unique([get_unique_maturity(euopt) for euopt in euopts]))
+
+function analytic_pricer(S_jump, eu_opt::EuropeanOption, r, T, T_jump, σ, d, drift_rn)
+    blsprice(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
+end
+function analytic_pricer(S_jump, eu_opt::BinaryEuropeanOption, r, T, T_jump, σ, d, drift_rn)
+    blsbin(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
+end

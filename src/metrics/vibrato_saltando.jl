@@ -39,13 +39,6 @@ function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::Financial
     return result
 end
 
-function analytic_pricer(S_jump, eu_opt::EuropeanOption, r, T, T_jump, σ, d, drift_rn)
-    blsprice(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
-end
-function analytic_pricer(S_jump, eu_opt::BinaryEuropeanOption, r, T, T_jump, σ, d, drift_rn)
-    blsbin(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
-end
-
 function conditional_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess}
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r

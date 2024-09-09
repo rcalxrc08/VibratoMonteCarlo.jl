@@ -28,24 +28,17 @@ function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Ab
     return result
 end
 
-function conditional(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function conditional(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt)
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
-    S0 = mcProcess.underlying.S0
     σ = mcProcess.σ
-    T = get_unique_maturity(eu_opt)
-    drift_rn = (r - d) - σ^2 / 2
-    dt = T / mcBaseData.Nstep
-    step_vibrato = dt
-    X = FinancialMonteCarlo.simulate(BrownianMotion(σ, drift_rn), mcBaseData, T - step_vibrato)
-    mu_jump = @views @. X[:, end] + drift_rn * step_vibrato + log(S0)
-    sigma_jump = σ * sqrt(step_vibrato)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
-    #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
-    args = LRMInterfaceArguments(Z, eu_opt)
-    # @code_warntype mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
-    result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    T = eu_opt.T
+    T_jump = T - T / mcBaseData.Nstep
+    S_jump = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T_jump)
+    S_jump_T = @views S_jump[:, end]
+    drift_rn = 0
+    result = mean(@. analytic_pricer(S_jump_T, eu_opt, r, T, T_jump, σ, d, drift_rn)) * exp(-r * T_jump)
     return result
 end
 
