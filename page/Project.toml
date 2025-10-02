@@ -5,3 +5,6 @@ Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 NodeJS = "2bd173c7-0d6d-553b-b6af-13a54713934c"
 PkgPage = "e7214860-93a8-4f22-b43d-bd447d1a2094"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[compat]
+NodeJS = "2"
