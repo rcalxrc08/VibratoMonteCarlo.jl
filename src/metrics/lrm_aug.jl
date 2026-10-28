@@ -42,8 +42,9 @@ struct DensitySpline{S, F}
 end
 (d::DensitySpline)(y) = d.spline(y)
 
-function spline_density(mcProcess, T, r, N = 18, xmax = 15.0)
-    (x, density_val) = density_unadapted(mcProcess, T, r, N, xmax)
+spline_density(mcProcess, T, r, N = 18, xmax = 15.0) = density_spline(density_unadapted(mcProcess, T, r, N, xmax)...)
+
+function density_spline(x, density_val)
     spline_cub = CubicSplineInterpolation(x, density_val, extrapolation_bc = Throw())
     w = v_value.(density_val) .* step(x)
     m = sum(x .* w)

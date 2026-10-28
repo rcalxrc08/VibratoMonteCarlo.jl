@@ -7,6 +7,7 @@ include("utils.jl")
     include("taylor.jl")
     include("regressions.jl")
     include("levy.jl")
+    include("american.jl")
     # Tight accuracy checks, slow and currently failing, run with VIBRATO_TEST_ACCURACY=true.
     if get(ENV, "VIBRATO_TEST_ACCURACY", "false") == "true"
         include("check/accuracy.jl")
