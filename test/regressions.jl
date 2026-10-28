@@ -31,4 +31,21 @@ using Statistics
         res = vibrato_saltando(model, rfCurve, mc, eu_opt, VibratoMonteCarloAnalytic(200, -6.0, 6.0))
         @test rel_err(res, ref) < 1e-2
     end
+
+    # All outer paths shared the same inner samples, so their error did not average out (delta -15%, gamma -127% here).
+    @testset "vibrato saltando on VG with MC inner integration" begin
+        model = variance_gamma(0.2, hyper(100.0, 1.0, 1.0, 0.0), 0.01)
+        opt = EuropeanOption(1.0, 80.0)
+        ref = pricer(model, ZeroRate(0.01), LewisMethod(400.0, 200000), opt)
+        res = vibrato_saltando(model, ZeroRate(0.01), MonteCarloConfiguration(40_000, 10), opt, VibratoMonteCarloStandard(200))
+        test_value_and_derivatives(res, ref; rtol = 1e-2)
+    end
+
+    # The default Analytic grid stopped at ±5 standard deviations and missed part of the score terms in the upper tail (volga -45% here).
+    @testset "vibrato saltando VG volga with default Analytic grid" begin
+        model = VarianceGammaProcess(hyper(0.2, 1.0, 1.0, 0.0), 0.1, 0.01, Underlying(100.0, 0.01))
+        ref = pricer(model, ZeroRate(0.01), LewisMethod(400.0, 200000), eu_opt)
+        res = vibrato_saltando(model, ZeroRate(0.01), MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC()), eu_opt, VibratoMonteCarloAnalytic())
+        test_value_and_derivatives(res, ref; rtol = 3e-2)
+    end
 end

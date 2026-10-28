@@ -63,10 +63,12 @@ function lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, eu_opt, mcBas
     # As for Gaussian processes, x_min and x_max are in standard deviations of the log increment around its mean.
     # The grid is built from values only, so it carries no derivative.
     z = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
-    x = @. v_value(log(St)) + spline_dens.mean + spline_dens.std * z
+    centre = v_value(log(St)) + spline_dens.mean
+    x = @. centre + spline_dens.std * z
     density_val = adapt_spline(spline_dens, St, x)
     dx = spline_dens.std * step(z)
-    f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt) for (log_s, dens) in zip(x, density_val)]
+    baseline = payout_f(centre, eu_opt)
+    f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt, baseline) for (log_s, dens) in zip(x, density_val)]
     @views result = dx * (f_vals[1] + f_vals[end] + 2 * sum(f_vals[2:(end-1)])) / 2
     return result
 end

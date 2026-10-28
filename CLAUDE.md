@@ -40,7 +40,7 @@ The files:
 - `vibrato_models.jl`: Kou/BS/Heston/VG × {standard+analytic, standard+MC, antithetic+MC, Sobol+MC}. Compares against Lewis, `blsprice`, or the MC pricer (Heston).
 - `forwarddiff.jl`: multi-partial ForwardDiff duals (Merton, BS).
 - `taylor.jl`: `Taylor1` inputs with Gauss–Hermite integration.
-- `regressions.jl`: one case per fixed bug (Heston antithetic correlation sign, `pure_lrm` default Analytic grid, Kou last-jump-time alignment).
+- `regressions.jl`: one case per fixed bug (Heston antithetic correlation sign, `pure_lrm` default Analytic grid, Kou last-jump-time alignment, shared inner samples, ±5σ default Analytic bounds).
 - `levy.jl`: VG and NIG value, delta and gamma against Lewis, for `vibrato_saltando` and the FFT `vibrato`.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
@@ -51,8 +51,8 @@ The suite uses fixed seeds (`set_seed!`), so results are deterministic. Toleranc
 Known package bugs are pinned with `@test_broken`, which turns into an error once a bug is fixed. That is the signal to change it to `@test`. There are none at the moment.
 
 Method limits measured against Lewis (they are not bugs, keep them in mind when choosing test settings):
-- With `VibratoMonteCarloStandard` (MC inner integration) all outer paths share the same `Nsim_lrm` inner points, so the inner error does not average out: at `Nstep = 300` deltas are ≈ 8% off for every MC config, gammas are unusable. Use `Analytic` or `GaussHermite` when derivatives matter.
-- `vibrato_saltando` on Kou/Merton: `T - τ` can be arbitrarily small, so MC inner integration gives very noisy gammas; quadrature is accurate (≤ 0.5%).
+- With `VibratoMonteCarloStandard` (MC inner integration) gammas are noisier than with quadrature: up to ≈ 4% at 100k paths, `Nstep = 300` (values and deltas within 2e-3).
+- `VibratoMonteCarloAnalytic` bounds must reach far enough in the upper tail, where a call payoff is large: at ±5σ the VG volga was 3-45% off, at ±7σ (the default) it is within noise. Finer spacing does not help.
 - The FFT `vibrato` on Lévy processes needs a smooth density of the last step: for VG keep `dt / κ ≳ 2.5` (below 1 the density is singular and the derivatives are garbage), for NIG and Kou gamma degrades with small `dt` (-21% for NIG at `dt / κ = 0.05`, -8% for Kou at 100 steps). For VG and NIG prefer `vibrato_saltando`, which is exact for any `Nstep`.
 
 Known issues in `check/accuracy.jl`:
@@ -71,15 +71,17 @@ Entry point: [src/VibratoMonteCarlo.jl](src/VibratoMonteCarlo.jl). Exports `vibr
 1. Simulate the path with ordinary Monte Carlo up to `T - dt` (or up to the last jump time).
 2. Price the last step by integrating the payoff against the known transition density, using the **likelihood ratio method (LRM)**. Sample points are built from `v_value(mu) + v_value(sigma) * z`, so the payoff argument carries no derivative. All parameter dependence flows through the density weight.
 3. The density weight is `v_mod(log_density)`, where `v_mod(x) = exp(x - v_value(x))`. It has value 1, and its derivatives are the score terms at every order (an automatic Faà di Bruno).
+4. The integrand is `(payoff - baseline) * v_mod(log_density) + baseline`, with `baseline` the payoff at the centre of the density (no derivative). The value is unchanged; the score terms have zero mean, so the derivatives lose the baseline times their integration error. This is the vibrato control variate: it cuts the MC-inner gamma noise 10-80×.
 
 All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 - **`v_value(x)`** strips the derivative part off an AD number. Each AD backend extension **must** implement it.
 - **`v_mod(x)`** has a generic `exp`-based fallback. Backends may specialize it for speed or exactness (Dual, Hyper).
 - **`lrm_interface_vec!(mu, sigma, args, mcBaseData, vb_mc)`** does the inner integration. It dispatches on the **MC config type × integration method**:
+  - With `VibratoMonteCarloStandard` the inner samples are drawn again for every outer path from `mcBaseData.parallelMode.rng` (the `Z` from `init_lrm_vec` is only a buffer). Sharing them across paths turns their error into a bias that does not average out (deltas were 8-15% off).
   - `SerialMonteCarloConfig` × `VibratoMonteCarloStandard`: plain MC average.
   - `SerialAntitheticMonteCarloConfig` × `Standard`: antithetic average.
-  - `SerialSobolMonteCarloConfig` × `Standard`: inner points from a 1-D Sobol sequence through `norminvcdf`, each paired with its reflection (zero mean), built once in `init_lrm_vec`.
-  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints`, always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
+  - `SerialSobolMonteCarloConfig` × `Standard`: `cld(Nsim_lrm, 2)` points of a 1-D Sobol sequence, randomly shifted modulo 1 per path (Cranley-Patterson), through `norminvcdf`, each paired with its reflection.
+  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints` (default 200 on ±7), always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
   - `VibratoMonteCarloGaussHermite`: Gauss–Hermite. The type always exists, but it only works once FastGaussQuadrature is loaded (that is what provides `init_lrm_vec`). It is not exported.
 
 ### Integration-method types ([src/utils.jl](src/utils.jl))
@@ -137,6 +139,7 @@ Don't wire them into the module, and don't delete them, unless asked.
 
 - **GitLab** (`.gitlab-ci.yml`, Julia 1.10; coverage collects `src/` and `ext/`) is the main CI: build, test with coverage, codecov, benchmark, and a Documenter site (`docs/make.jl`) published to GitLab Pages.
 - **GitHub Actions**:
+  - `CI.yml` runs the test suite on every push (Julia 1.10 and latest), with the private registry added through `julia-buildpkg`'s `localregistry` input.
   - `CompatHelper.yml` runs nightly and opens the compat-bump PRs that make up most recent commits.
   - `DeployPage.yml` builds the Franklin/PkgPage site in `page/` (math write-up in `page/index.md`) to `gh-pages`.
 - Remotes: `origin` is GitHub and `origin2` is GitLab.
