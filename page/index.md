@@ -347,3 +347,39 @@ We know already that $X_t|X_{\tau}$ is a Ito process.
 On such process we are able to apply the standard LRM or VBM since we know the corresponding law of the increments (powers of gaussians).
 
 \end{section}
+
+\begin{section}{title="Numerical Refinements"}
+The previous sections are exact in theory; the following refinements make the inner expectation accurate in practice.
+In all of them the inner law is Gaussian, $X_T | X_{\tau} \sim \mathcal{N}(\mu, s^2)$, and the inner expectation is computed on the standardized variable $Z = (X_T - \mu)/s$.
+
+### Payoff Centering
+For every $\theta$ the density integrates to one:
+$$\int_{\mathbb{R}} f(x,\theta) dx = 1$$
+hence all of its derivatives vanish and, for $n \geq 1$:
+$$\mathbb{E}(B_n(\{\partial^{i}_{\theta} \log{f(X_T,\theta)}\}_{i = 1 : n})) = 0$$
+Therefore any constant $c$ not depending on $\theta$ can be subtracted from the payoff without changing the sensitivities:
+$$\partial^{n}_{\theta} V_0 = \mathbb{E}((\Phi(X_T) - c) B_n(\{\partial^{i}_{\theta} \log{f(X_T,\theta)}\}_{i = 1 : n}))$$
+We take $c = \Phi(\mu)$, the payoff at the centre of the inner density, and add it back to the price.
+The price is unchanged, while the score terms are now multiplied by $\Phi(\mu + s Z) - \Phi(\mu) \approx \Phi'(\mu) s Z$ instead of $\Phi(\mu + s Z)$.
+In vibrato $s = \sigma \sqrt{T - \tau}$ is small and the score terms grow like $s^{-n}$, so without centering the variance of the delta estimator grows like $s^{-2}$; with centering it stays bounded.
+Together with antithetic pairs $\pm Z$, the second order term becomes $\frac{1}{2}(\Phi(\mu + s Z) + \Phi(\mu - s Z)) - \Phi(\mu) \approx \frac{1}{2}\Phi''(\mu) s^2 Z^2$, which compensates the $s^{-2}$ of the gamma score.
+In practice this reduces the noise of the gamma estimated with inner Monte Carlo by a factor 10 to 80.
+
+### Independent Inner Samples
+The inner expectation is estimated with $M$ samples $Z_1, \dots, Z_M$ for each of the $N$ outer paths.
+If the same samples were used for every outer path, the inner error would be the same for all paths and would not average out: the estimator would converge, as $N \to \infty$, to a biased value with error of order $M^{-1/2}$ (deltas 8-15% off with $M = 200$).
+Drawing new inner samples for every outer path makes the inner errors independent, and the total error decreases with both $N$ and $M$.
+With quasi Monte Carlo inner samples, the same Sobol points are randomly shifted modulo 1 for every outer path (Cranley-Patterson rotation), which keeps each inner estimate unbiased.
+
+### Quadrature
+Alternatively, the inner expectation can be computed as a deterministic integral on a uniform grid in $Z$.
+The grid must reach far enough in the tails: for a call the payoff grows exponentially in the upper tail, and truncating at $\pm 5$ standard deviations loses enough of the second order score terms to bias the volga by 3% to 45% on Variance Gamma. The default grid spans $\pm 7$ standard deviations.
+
+### Vibrato Saltando for Subordinated Processes
+Infinite activity processes like Variance Gamma and Normal Inverse Gaussian have no last jump, but they can be written as a Brownian motion with drift evaluated at a random time $G_t$ (the subordinator):
+$$X_t = \log(S_0) + (r - d - \psi) t + \beta G_t + \sigma W_{G_t}$$
+where $\beta$ and $\sigma$ are model parameters (called `θ` and `σ` in FinancialMonteCarlo), and $\psi$ is the drift correction such that $\mathbb{E}(S_T) = S_0 e^{(r-d)T}$.
+Conditioning on the subordinator instead of on a stopping time, the inner law is exactly Gaussian:
+$$X_T | G_T \sim \mathcal{N}(\log(S_0) + (r - d - \psi) T + \beta G_T, \sigma^2 G_T)$$
+Hence only $G_T$ has to be simulated (Gamma for Variance Gamma, Inverse Gaussian for Normal Inverse Gaussian), and the LRM applies to the Gaussian inner expectation with no time discretization.
+\end{section}
