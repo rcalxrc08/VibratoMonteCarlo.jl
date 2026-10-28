@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v2
+      # FinancialMonteCarlo, FinancialFFT and FinancialToolbox are registered in the private registry.
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          localregistry: https://github.com/rcalxrc08/LocalRegistry.git
+      - uses: julia-actions/julia-runtest@v1
