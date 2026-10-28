@@ -40,19 +40,25 @@ The files:
 - `vibrato_models.jl`: Kou/BS/Heston/VG × {standard+analytic, standard+MC, antithetic+MC, Sobol+MC}. Compares against Lewis, `blsprice`, or the MC pricer (Heston).
 - `forwarddiff.jl`: multi-partial ForwardDiff duals (Merton, BS).
 - `taylor.jl`: `Taylor1` inputs with Gauss–Hermite integration.
+- `regressions.jl`: one case per fixed bug (Heston antithetic correlation sign, `pure_lrm` default Analytic grid, Kou last-jump-time alignment).
+- `levy.jl`: VG and NIG value, delta and gamma against Lewis, for `vibrato_saltando` and the FFT `vibrato`.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
 `runner_z.jl` is not included: it needs `vibrato_z` from the untracked Zygote experiments.
 
 The suite uses fixed seeds (`set_seed!`), so results are deterministic. Tolerances were set from observed errors with roughly 2× margin. If a numerics change trips one, check the error size before loosening it.
 
-Known package bugs are pinned with `@test_broken`, which turns into an error once a bug is fixed. That is the signal to change it to `@test`:
-- `SerialSobolMonteCarloConfig` × `VibratoMonteCarloStandard` (`lrm.jl`) uses a fresh `SobolSeq(length(Z))` per call. Its first point is 0.5 in every dimension, so every inner sample is z = 0. As a result all derivatives are 0, and the Kou price is about 3% off.
-- The VG `vibrato_saltando` second derivative is garbage (≈1e7–1e12).
+Known package bugs are pinned with `@test_broken`, which turns into an error once a bug is fixed. That is the signal to change it to `@test`. There are none at the moment.
 
-Known issues in `check/accuracy.jl` (all `Hyper` `pure_lrm` cases pass):
+Method limits measured against Lewis (they are not bugs, keep them in mind when choosing test settings):
+- With `VibratoMonteCarloStandard` (MC inner integration) all outer paths share the same `Nsim_lrm` inner points, so the inner error does not average out: at `Nstep = 300` deltas are ≈ 8% off for every MC config, gammas are unusable. Use `Analytic` or `GaussHermite` when derivatives matter.
+- `vibrato_saltando` on Kou/Merton: `T - τ` can be arbitrarily small, so MC inner integration gives very noisy gammas; quadrature is accurate (≤ 0.5%).
+- The FFT `vibrato` on Lévy processes needs a smooth density of the last step: for VG keep `dt / κ ≳ 2.5` (below 1 the density is singular and the derivatives are garbage), for NIG and Kou gamma degrades with small `dt` (-21% for NIG at `dt / κ = 0.05`, -8% for Kou at 100 steps). For VG and NIG prefer `vibrato_saltando`, which is exact for any `Nstep`.
+
+Known issues in `check/accuracy.jl`:
 - `pure_lrm` on non-Ito processes with `Taylor1` inputs throws: `eps(::Type{Taylor1})` in `lrm_aug.jl`, and Interpolations calls `round(::Taylor1, RoundDown)` (TaylorSeries < 0.23 does not define it).
-- `vibrato_saltando` on Kou with λ = 50 is about 1.5% off Lewis.
+
+FinancialMonteCarlo 0.3's antithetic Heston simulator (`heston.jl`, `e2 = -(e1 * ρ + ...)`) uses correlation -ρ, the same bug fixed here in `simulate_with_last_vol`. Heston tests therefore use a serial `pricer` reference.
 
 FinancialFFT 0.1.5's TaylorSeries glue calls `get_order`, which was removed in TaylorSeries ≥ 0.23. Tests therefore use hyper-dual Lewis prices as references, never `Taylor1` ones.
 
@@ -72,8 +78,8 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 - **`lrm_interface_vec!(mu, sigma, args, mcBaseData, vb_mc)`** does the inner integration. It dispatches on the **MC config type × integration method**:
   - `SerialMonteCarloConfig` × `VibratoMonteCarloStandard`: plain MC average.
   - `SerialAntitheticMonteCarloConfig` × `Standard`: antithetic average.
-  - `SerialSobolMonteCarloConfig` × `Standard`: Sobol points through `norminvcdf`.
-  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints`.
+  - `SerialSobolMonteCarloConfig` × `Standard`: inner points from a 1-D Sobol sequence through `norminvcdf`, each paired with its reflection (zero mean), built once in `init_lrm_vec`.
+  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints`, always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
   - `VibratoMonteCarloGaussHermite`: Gauss–Hermite. The type always exists, but it only works once FastGaussQuadrature is loaded (that is what provides `init_lrm_vec`). It is not exported.
 
 ### Integration-method types ([src/utils.jl](src/utils.jl))
@@ -89,8 +95,8 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
   - any other process: FFT-derived spline density of the last step (`spline_density` + `lrm_interface_aug!` in `lrm_aug.jl`). This path covers Lévy processes.
   - `conditional(...)` is an analytic-pricer baseline (BS only).
 - [vibrato_saltando.jl](src/metrics/vibrato_saltando.jl), `vibrato_saltando(...)`:
-  - `FiniteActivityProcess` (Kou, Merton): conditions on the **last jump time** (`simulate_log_with_jump_times`) and integrates the Gaussian diffusion from there to `T`. Differentiating w.r.t. `λ` or `T` is unsupported and only emits a warning.
-  - `InfiniteActivityProcess` (VG, NIG): conditions on the subordinated time increment (`simulate_with_sub`). The code comments say this is "not confirmed theoretically".
+  - `FiniteActivityProcess` (Kou, Merton): conditions on the **last jump time** (`simulate_log_with_jump_times`) and integrates the Gaussian diffusion from there to `T`. Jumps are applied at the next grid point, so the simulator returns the grid point *before* the step containing the last jump (plus that step's jumps). This keeps the conditional step exact and at least one `dt` long; rounding up instead gives `T - T_jump = 0` and NaN derivatives. Differentiating w.r.t. `λ` or `T` is unsupported and only emits a warning.
+  - `InfiniteActivityProcess` (VG, NIG): conditions on the whole subordinator path, i.e. on `G_T ~ subordinator_law(process, T)`. Given `G_T`, `log S_T` is exactly Gaussian with mean `log S0 + (r - d - ψ) T + θ G_T` and variance `σ² G_T`, so `Nstep` does not matter. Conditioning on the last step only is exact too, but for VG that increment (Gamma, shape `dt / κ`) is often so small that `σ √ΔG` is lost to rounding against `log S`. `simulate_with_sub` is no longer used by the package.
 - [pure_lrm.jl](src/metrics/pure_lrm.jl), `pure_lrm(...)`: no path simulation. Pure LRM over the full-maturity density: Gaussian for `ItoProcess`, FFT spline otherwise.
 
 ### Options
