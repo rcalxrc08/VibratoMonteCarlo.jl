@@ -11,7 +11,7 @@
     lewis = LewisMethod(600.0, 20000)
     mc_lrm = MonteCarloConfiguration(10_000, 300, FinancialMonteCarlo.AntitheticMC())
     mc_vibrato = MonteCarloConfiguration(80_000, 100, FinancialMonteCarlo.AntitheticMC())
-    lrm(model, rfCurve, mc, opt) = pure_lrm(model, rfCurve, mc, opt, VibratoMonteCarloAnalytic(20000, -9.0, 19.0))
+    lrm(model, rfCurve, mc, opt) = pure_lrm(model, rfCurve, mc, opt, VibratoMonteCarloAnalytic(20000, -20.0, 20.0))
     saltando(model, rfCurve, mc, opt) = vibrato_saltando(model, rfCurve, mc, opt, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200))
     # Market inputs as functions of the differentiated variable.
     bump_S0(x) = (kou(σ, x, d; λ = 50.0), ZeroRate(r))

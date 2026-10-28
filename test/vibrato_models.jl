@@ -33,53 +33,36 @@
     for (name, mc, vb_mc) in configs
         @testset "$name" begin
             is_analytic = vb_mc isa VibratoMonteCarloAnalytic
-            # With Sobol the inner integration points are all zero, so every derivative vanishes.
-            is_sobol = mc.monteCarloMethod isa FinancialMonteCarlo.SobolMode
-            delta_err(res, ref) = rel_err(value_and_derivatives(res)[2], value_and_derivatives(ref)[2])
-            value_err(res, ref) = rel_err(value_and_derivatives(res)[1], value_and_derivatives(ref)[1])
+            # With MC inner integration (fresh inner samples per path, payoff baseline) values and deltas are within 2e-3,
+            # gammas within 4.1e-2 (BS, serial).
+            rtol_second = is_analytic ? 1e-2 : 1e-1
+            rel_err_at(i, res, ref) = rel_err(value_and_derivatives(res)[i], value_and_derivatives(ref)[i])
 
             @testset "Kou, vibrato saltando" begin
                 res = vibrato_saltando(kou_model, rfCurve, mc, eu_opt, vb_mc)
-                if is_sobol
-                    @test_broken value_err(res, kou_ref) < 1e-2
-                else
-                    @test value_err(res, kou_ref) < 1e-2
-                end
+                test_value_and_derivatives(res, kou_ref; rtol = 1e-2, rtol_second = rtol_second)
                 # Plain Float64 input must give the value of the AD run.
                 res_v = vibrato_saltando(kou(σ, S0_v, d), rfCurve, mc, eu_opt, vb_mc)
                 @test res_v ≈ value_and_derivatives(res)[1] rtol = 1e-12
-                if is_analytic
-                    test_value_and_derivatives(res, kou_ref; rtol = 1e-2)
-                end
-                is_sobol && @test_broken delta_err(res, kou_ref) < 5e-2
             end
 
             @testset "Black Scholes, vibrato" begin
                 res = vibrato(bs_model, rfCurve, mc, eu_opt, vb_mc)
-                @test value_err(res, bs_ref) < 1e-2
-                if is_analytic
-                    test_value_and_derivatives(res, bs_ref; rtol = 1e-2, rtol_second = 1e-1)
-                end
-                is_sobol && @test_broken delta_err(res, bs_ref) < 5e-2
+                test_value_and_derivatives(res, bs_ref; rtol = 1e-2, rtol_second = 1e-1)
             end
 
             @testset "Heston, vibrato" begin
                 res = vibrato(heston_model, rfCurve, mc, eu_opt, vb_mc)
                 # The pathwise MC reference has no reliable second derivative.
-                heston_ref = pricer(heston_model, rfCurve, mc, eu_opt)
-                @test value_err(res, heston_ref) < 1e-2
-                is_analytic && @test delta_err(res, heston_ref) < 1e-2
-                is_sobol && @test_broken delta_err(res, heston_ref) < 5e-2
+                # Always serial: the antithetic Heston of FinancialMonteCarlo uses correlation -ρ.
+                heston_ref = pricer(heston_model, rfCurve, MonteCarloConfiguration(Nsim, Nstep), eu_opt)
+                @test rel_err_at(1, res, heston_ref) < 1e-2
+                @test rel_err_at(2, res, heston_ref) < 1e-2
             end
 
             @testset "Variance Gamma, vibrato saltando" begin
                 res = vibrato_saltando(vg_model, rfCurve, mc, eu_opt, vb_mc)
-                @test value_err(res, vg_ref) < 1e-2
-                if is_analytic
-                    @test delta_err(res, vg_ref) < 1e-2
-                    @test_broken rel_err(value_and_derivatives(res)[3], value_and_derivatives(vg_ref)[3]) < 1e-1
-                end
-                is_sobol && @test_broken delta_err(res, vg_ref) < 5e-2
+                test_value_and_derivatives(res, vg_ref; rtol = 1e-2, rtol_second = rtol_second)
             end
         end
     end

@@ -11,6 +11,9 @@ using ReverseDiff
     @test DualNumbers.value(res_dual) ≈ val rtol = 1e-12
     @test DualNumbers.epsilon(res_dual) ≈ delta rtol = 1e-12
     @test ForwardDiff.derivative(price, 100.0) ≈ delta rtol = 1e-12
+    # Nested duals: v_value must strip every level (it stripped only the outer one, gamma was negative).
+    @test ForwardDiff.derivative(x -> ForwardDiff.derivative(price, x), 100.0) ≈ gamma rtol = 1e-10
+    @test only(ForwardDiff.hessian(x -> price(x[1]), [100.0])) ≈ gamma rtol = 1e-10
     @test only(ReverseDiff.gradient(x -> price(x[1]), [100.0])) ≈ delta rtol = 1e-12
     @test collect(value_and_derivatives(price(taylor_expand(identity, 100.0, order = 2)))) ≈ [val, delta, gamma] rtol = 1e-12
 end

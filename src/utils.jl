@@ -19,7 +19,8 @@ struct VibratoMonteCarloAnalytic <: AbstractVibrato
     Npoints::Int
     x_min::Float64
     x_max::Float64
-    function VibratoMonteCarloAnalytic(Npoints::Int = 200, x_min::Float64 = -5.0, x_max::Float64 = 5.0)
+    # ±5 standard deviations miss part of the score terms in the upper tail, where a call payoff is large: volga was 3-45% off on VG.
+    function VibratoMonteCarloAnalytic(Npoints::Int = 200, x_min::Float64 = -7.0, x_max::Float64 = 7.0)
         @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloAnalytic must be positive."
         return new(Npoints, x_min, x_max)
     end

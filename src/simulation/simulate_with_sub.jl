@@ -16,12 +16,11 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     dt_s = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
     θ = mcProcess.θ
 
-    @inbounds for i = 1:(Nstep-1)
+    @inbounds for i = 1:Nstep
         rand!(mcBaseData.parallelMode.rng, mcProcess.subordinator_, dt_s)
         randn!(mcBaseData.parallelMode.rng, Z)
         @views @. X[:, i+1] = X[:, i] + drift + θ * dt_s + sigma * sqrt(dt_s) * Z
     end
-    # rand!(mcBaseData.parallelMode.rng, mcProcess.subordinator_, dt_s)
     return (dt_s, X)
 end
 
@@ -44,14 +43,13 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     Z = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim_2)
     dt_s = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim_2)
     θ = mcProcess.θ
-    @inbounds for j = 1:(Nstep-1)
+    @inbounds for j = 1:Nstep
         rand!(mcBaseData.parallelMode.rng, mcProcess.subordinator_, dt_s)
         randn!(mcBaseData.parallelMode.rng, Z)
         sqrt_dt_s = sqrt.(dt_s)
         @views @. Xp[:, j+1] = Xp[:, j] + dt_s * θ + drift + sqrt_dt_s * Z * sigma
         @views @. Xm[:, j+1] = Xm[:, j] + dt_s * θ + drift - sqrt_dt_s * Z * sigma
     end
-    # rand!(mcBaseData.parallelMode.rng, mcProcess.subordinator_, dt_s)
     return (cat(dt_s, dt_s, dims = 1), X)
 end
 
@@ -66,16 +64,16 @@ function simulate_with_sub(mcProcess::SubordinatedBrownianMotion, mcBaseData::Fi
     isDualZero = drift * zero(type_sub)
     X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
     @views X[:, 1] .= isDualZero
-    seq = SobolSeq(Nstep - 1)
+    seq = SobolSeq(Nstep)
     skip(seq, Nstep * Nsim)
-    vec = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nstep - 1)
+    vec = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nstep)
     dt_s_final = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
     θ = mcProcess.θ
     @inbounds for i = 1:Nsim
         next!(seq, vec)
         @. vec = norminvcdf(vec)
         dt_s = 0
-        @inbounds for j = 1:(Nstep-1)
+        @inbounds for j = 1:Nstep
             dt_s = rand(mcBaseData.parallelMode.rng, mcProcess.subordinator_)
             @views X[i, j+1] = X[i, j] + drift + θ * dt_s + sigma * sqrt(dt_s) * vec[j]
         end
@@ -92,12 +90,11 @@ function compute_drift(mcProcess::VarianceGammaProcess)
     return ψ
 end
 
-function subordinator(mcProcess::VarianceGammaProcess, mcBaseData, T)
-    Nstep = mcBaseData.Nstep
-    κ = mcProcess.κ
-    dt = T / Nstep
-    return Gamma(dt / κ, κ)
-end
+# Law of the subordinator increment over a time interval t (mean t, variance κ t).
+subordinator_law(mcProcess::VarianceGammaProcess, t) = Gamma(t / mcProcess.κ, mcProcess.κ)
+subordinator_law(mcProcess::NormalInverseGaussianProcess, t) = InverseGaussian(t, t^2 / mcProcess.κ)
+
+subordinator(mcProcess, mcBaseData, T) = subordinator_law(mcProcess, T / mcBaseData.Nstep)
 
 function compute_drift(mcProcess::NormalInverseGaussianProcess)
     σ = mcProcess.σ
@@ -105,13 +102,6 @@ function compute_drift(mcProcess::NormalInverseGaussianProcess)
     κ = mcProcess.κ
     ψ = (1 - sqrt(1 - (σ^2 + 2 * θ) * κ)) / κ
     return ψ
-end
-
-function subordinator(mcProcess::NormalInverseGaussianProcess, mcBaseData, T)
-    Nstep = mcBaseData.Nstep
-    κ = mcProcess.κ
-    dt = T / Nstep
-    return InverseGaussian(dt, (dt^2) / κ)
 end
 
 function simulate_with_sub(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::Number)
