@@ -1,7 +1,9 @@
-using .TaylorSeries
+module VibratoMonteCarloTaylorSeriesExt
+using VibratoMonteCarlo, TaylorSeries
+import VibratoMonteCarlo: v_value
 
-v_value(x::Taylor1) =@views x[0]
-v_value(x::AbstractSeries) =@views x[0][1]
+v_value(x::Taylor1) = @views x[0]
+v_value(x::AbstractSeries) = @views x[0][1]
 
 # function BSplineKit.interpolate(
         # x::AbstractVector, y::AbstractVector{T1}, k::BSplineOrder,
@@ -17,3 +19,5 @@ v_value(x::AbstractSeries) =@views x[0][1]
     # itp = SplineInterpolation(undef, B, x, T)
     # interpolate!(itp, y)
 # end
+
+end # module

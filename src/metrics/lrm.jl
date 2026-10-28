@@ -86,6 +86,15 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     return midpoint_definite_integral_vec(Z, f)
 end
 
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloGaussHermite)
+    Z = received_args.Z
+    eu_opt = received_args.option
+    x, w = Z
+    args = IntegrandArguments(mu, sigma, eu_opt)
+    output = sum(@. integrand_lrm_vec(x * sqrt2, args) * w) / sqrtπ
+    return output
+end
+
 function lrm_interface_vec!(mu, sigma, received_args, _::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, _::VibratoMonteCarloStandard)
     # randn!(mcBaseData.parallelMode.rng, Z)
     Z = received_args.Z

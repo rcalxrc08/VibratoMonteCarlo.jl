@@ -32,6 +32,7 @@ before_script:
       - src/*.cov
       - src/*/*.cov
       - src/*/*/*.cov
+      - ext/*.cov
     expire_in: '1 hour'
 
 
@@ -39,9 +40,9 @@ before_script:
   script:
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
     - /usr/local/julia/bin/julia --project=@. -e 'using Pkg; Pkg.add("Coverage"); import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.build(); using VibratoMonteCarlo;
-      using Coverage; cl, tl = get_summary(process_folder());
+      using Coverage; cl, tl = get_summary(vcat(process_folder("src"), process_folder("ext")));
       println("(", cl/tl*100, "%) covered");
-      using Pkg; cd(Pkg.dir("VibratoMonteCarlo")); Codecov.submit_local(Codecov.process_folder())'
+      using Pkg; cd(Pkg.dir("VibratoMonteCarlo")); Codecov.submit_local(vcat(Codecov.process_folder("src"), Codecov.process_folder("ext")))'
   artifacts:
     when: on_success
     paths:
@@ -56,29 +57,29 @@ before_script:
     - julia --project=bench -e 'using Pkg; Pkg.instantiate(); include("bench/bench.jl");'
 
 # Name a test and select an appropriate image.
-build:1.7:
+build:1.10:
   stage: build
-  image: julia:1.7
+  image: julia:1.10
   <<: *build_definition
   
-test:1.7:
+test:1.10:
   stage: test
-  image: julia:1.7
+  image: julia:1.10
   <<: *test_definition
 
-benchmark:1.7:
+benchmark:1.10:
   stage: benchmark
-  image: julia:1.7
+  image: julia:1.10
   <<: *bench_definition
   
-coverage:1.7:
+coverage:1.10:
   stage: coverage
-  image: julia:1.7
+  image: julia:1.10
   <<: *cov_definition
 
 pages:
   stage: deploy
-  image: julia:1.7
+  image: julia:1.10
   script:
     - julia --project=docs -e 'using Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General"); Pkg.instantiate(); Pkg.develop(PackageSpec(path=pwd()))'
     - julia --project=docs --color=yes docs/make.jl

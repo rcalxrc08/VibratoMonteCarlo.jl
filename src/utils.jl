@@ -30,6 +30,15 @@ function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any)
     return range(x.x_min, length = x.Npoints, stop = x.x_max)
 end
 
+# init_lrm_vec for this type is defined in the FastGaussQuadrature extension.
+struct VibratoMonteCarloGaussHermite <: AbstractVibrato
+    Npoints::Int
+    function VibratoMonteCarloGaussHermite(Npoints::Int = 200)
+        @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloGaussHermite must be positive."
+        return new(Npoints)
+    end
+end
+
 get_unique_maturity(euopt) = euopt.T
 get_unique_maturity(euopts::Array) = only(unique([get_unique_maturity(euopt) for euopt in euopts]))
 

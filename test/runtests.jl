@@ -1,18 +1,12 @@
-using VibratoMonteCarlo
-using Test
-path1 = joinpath(dirname(pathof(VibratoMonteCarlo)), "..", "test")
-test_listTmp = readdir(path1);
+include("utils.jl")
 
-BlackList = ["REQUIRE", "runtests.jl", "Project.toml", "Manifest.toml", "cuda", "runner_z.jl", "af", "wip", "check", "bench.jl"];
-func_scope(x::String) = include(x);
-test_list = [test_element for test_element in test_listTmp if !any(x -> x == test_element, BlackList)]
-println("Running tests:\n")
-for (current_test, i) in zip(test_list, 1:length(test_list))
-    println("------------------------------------------------------------")
-    println("  * $(current_test) *")
-    func_scope(joinpath(path1, current_test))
-    println("------------------------------------------------------------")
-    if (i < length(test_list))
-        println("")
+@testset "VibratoMonteCarlo" begin
+    include("backends.jl")
+    include("vibrato_models.jl")
+    include("forwarddiff.jl")
+    include("taylor.jl")
+    # Tight accuracy checks, slow and currently failing, run with VIBRATO_TEST_ACCURACY=true.
+    if get(ENV, "VIBRATO_TEST_ACCURACY", "false") == "true"
+        include("check/accuracy.jl")
     end
 end
