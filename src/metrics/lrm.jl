@@ -105,12 +105,19 @@ function lrm_interface_vec!(mu, sigma, received_args, _::FinancialMonteCarlo.Ser
     return output
 end
 using Sobol, StatsFuns
-function lrm_interface_vec!(mu, sigma, received_args, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig, mc::VibratoMonteCarloStandard)
+# Inner normal samples from a one dimensional Sobol sequence, shared by all the outer paths.
+# Each point is paired with its reflection so the samples have exactly zero mean: otherwise the term payoff * mean(z)
+# is amplified by 1 / (σ * sqrt(dt)) in the derivatives.
+function init_lrm_vec(x::VibratoMonteCarloStandard, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig)
+    seq = SobolSeq(1)
+    z = [norminvcdf(only(next!(seq))) for _ = 1:div(x.Nsim_lrm, 2)]
+    return isodd(x.Nsim_lrm) ? vcat(z, -z, 0.0) : vcat(z, -z)
+end
+
+function lrm_interface_vec!(mu, sigma, received_args, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig, ::VibratoMonteCarloStandard)
     Z = received_args.Z
-    seq = SobolSeq(length(Z))
-    next!(seq, Z)
     eu_opt = received_args.option
     args = IntegrandArguments(mu, sigma, eu_opt)
-    output = mean(@. integrand_lrm_vec(norminvcdf(Z), args))
+    output = mean(integrand_lrm_vec.(Z, args))
     return output
 end

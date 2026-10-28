@@ -33,10 +33,22 @@ function density_unadapted(mcProcess, T, r, N = 18, xmax = 15.0)
     return characteristic_function_to_density(real_cf, N, xmax)
 end
 
+# Cubic spline of the density of the log increment, with its mean and standard deviation (values only, no derivatives)
+# used to place the integration grid. Calling it evaluates the spline.
+struct DensitySpline{S, F}
+    spline::S
+    mean::F
+    std::F
+end
+(d::DensitySpline)(y) = d.spline(y)
+
 function spline_density(mcProcess, T, r, N = 18, xmax = 15.0)
     (x, density_val) = density_unadapted(mcProcess, T, r, N, xmax)
     spline_cub = CubicSplineInterpolation(x, density_val, extrapolation_bc = Throw())
-    return spline_cub
+    w = v_value.(density_val) .* step(x)
+    m = sum(x .* w)
+    s = sqrt(sum(@. (x - m)^2 * w))
+    return DensitySpline(spline_cub, m, s)
 end
 
 function adapt_spline(spline_cub, St, x_eval)
@@ -47,10 +59,13 @@ function adapt_spline(spline_cub, St, x_eval)
     return y_mod
 end
 #TODO: use AlternateVectors
-function lrm_interface_aug!(mcProcess, spline_dens, eu_opt, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
-    x = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
+function lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, eu_opt, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
+    # As for Gaussian processes, x_min and x_max are in standard deviations of the log increment around its mean.
+    # The grid is built from values only, so it carries no derivative.
+    z = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
+    x = @. v_value(log(St)) + spline_dens.mean + spline_dens.std * z
     density_val = adapt_spline(spline_dens, St, x)
-    dx = x.step.hi
+    dx = spline_dens.std * step(z)
     f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt) for (log_s, dens) in zip(x, density_val)]
     @views result = dx * (f_vals[1] + f_vals[end] + 2 * sum(f_vals[2:(end-1)])) / 2
     return result

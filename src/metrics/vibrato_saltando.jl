@@ -17,23 +17,23 @@ function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMo
 end
 
 function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato) where {infiniteActivityProcess <: FinancialMonteCarlo.InfiniteActivityProcess}
-    # Not confirmed theoretically
+    # X is a Brownian motion subordinated to G: X_T = log(S0) + drift_rn * T + θ * G_T + σ * W(G_T).
+    # Given G_T the log price is exactly Gaussian, so the LRM step is taken over the whole subordinator path.
+    # Conditioning on the last step only is exact as well, but for VG its increment of G is Gamma with shape dt / κ:
+    # it is often so small that σ * sqrt(ΔG) is lost to rounding against log(S) and the LRM weights blow up.
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
     σ = mcProcess.σ
+    θ = mcProcess.θ
+    S0 = mcProcess.underlying.S0
     T = get_unique_maturity(eu_opt)
-    σ = mcProcess.σ
     ψ = compute_drift(mcProcess)
-    (dt_jump, S_jump) = simulate_with_sub(mcProcess, rfCurve, mcBaseData, T)
+    G_T = rand(mcBaseData.parallelMode.rng, subordinator_law(mcProcess, T), mcBaseData.Nsim)
     drift_rn = r - d - ψ
-    #As approximation here I don't consider the law of the last time step in the integration.
-    #The last time step is considered the same as the previous, this introduces an error that is proportional to dt.
-    mu_jump = @. log(S_jump[:, end-1]) + drift_rn * dt_jump
-    sigma_jump = @. σ * sqrt(dt_jump)
-    # Z = init_lrm_vec(vb_mc, mu_jump[1])
+    mu_jump = @. log(S0) + drift_rn * T + θ * G_T
+    sigma_jump = @. σ * sqrt(G_T)
     Z = init_lrm_vec(vb_mc, mcBaseData)
-    # result = mean(lrm_interface!(Z, mu, sigma, eu_opt, mcBaseData, vb_mc) for (mu, sigma) in zip(mu_jump, sigma_jump)) * exp(-r * T)
     args = LRMInterfaceArguments(Z, eu_opt)
     result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result

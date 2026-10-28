@@ -1,5 +1,5 @@
 using Test, VibratoMonteCarlo, FinancialMonteCarlo, FinancialFFT, FinancialToolbox
-# Loading the AD backends triggers the corresponding Requires.jl glue in VibratoMonteCarlo.
+# Loading the AD backends activates the corresponding VibratoMonteCarlo package extensions.
 using DualNumbers, HyperDualNumbers, ForwardDiff, TaylorSeries, FastGaussQuadrature
 
 const TEST_UTILS_LOADED = true

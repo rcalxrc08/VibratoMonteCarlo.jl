@@ -2,15 +2,24 @@ using FinancialMonteCarlo, Random;
 
 function generate_last_jump_time_and_value(row_X_i, λ, zero_time, zero_drift, T, mcProcess, dt, mcBaseData)
     t_i = randexp(mcBaseData.parallelMode.rng) / λ
+    t_i_1 = t_i / T
     T_jump = zero_time
     x_jump = zero_drift
-    while t_i < T
-        T_jump = t_i
+    last_idx = 0
+    jumps_in_step = zero_drift
+    while t_i_1 < 1
         jump_size = FinancialMonteCarlo.compute_jump_size(mcProcess, mcBaseData)
         jump_idx = ceil(UInt32, t_i / dt) + true
         @views @. row_X_i[jump_idx:end] += jump_size #add jump component
-        x_jump = row_X_i[jump_idx]
+        jumps_in_step = jump_idx == last_idx ? jumps_in_step + jump_size : jump_size
+        last_idx = jump_idx
+        # Condition on the grid point before the step containing the last jump, plus the jumps of that step:
+        # the diffusion left to T is then exactly Gaussian and lasts at least one step.
+        # (The value at jump_idx already contains diffusion beyond t_i, using it with t_i counts that diffusion twice.)
+        T_jump = (jump_idx - 2) * dt
+        x_jump = row_X_i[jump_idx-1] + jumps_in_step
         t_i += randexp(mcBaseData.parallelMode.rng) / λ
+        t_i_1 = t_i / T
     end
     return T_jump, x_jump
 end
