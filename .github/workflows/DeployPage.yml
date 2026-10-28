@@ -13,7 +13,7 @@ jobs:
     - name: Install Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: 1.9
+        version: "1.10"
     - run: julia -e '
             import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git"));
             Pkg.Registry.add("General");
