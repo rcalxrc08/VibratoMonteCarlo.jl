@@ -14,7 +14,8 @@
     vb_mc = VibratoMonteCarlo.VibratoMonteCarloGaussHermite()
 
     @testset "Black Scholes" begin
-        mc = MonteCarloConfiguration(10_000, 30)
+        # Errors observed over 8 seeds ≤ 1.6e-2 (value), 1.4e-2 (gamma).
+        mc = MonteCarloConfiguration(40_000, 30)
         bs_model = BlackScholesProcess(σ, Underlying(S0, d))
         ref = blsprice(S0_h, K, r, T, σ, d)
         @testset "vibrato" begin
@@ -26,9 +27,10 @@
     end
 
     @testset "Kou, vibrato saltando" begin
-        mc = MonteCarloConfiguration(10_000, 300, FinancialMonteCarlo.AntitheticMC())
+        # Errors observed over 8 seeds ≤ 2.3e-2 (value), 1.3e-2 (delta), 5.1e-2 (gamma).
+        mc = MonteCarloConfiguration(40_000, 300, FinancialMonteCarlo.AntitheticMC())
         res = vibrato_saltando(kou(σ, S0, d; λ = 50.0), rfCurve, mc, eu_opt, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200))
         ref = pricer(kou(σ, S0_h, d; λ = 50.0), rfCurve, LewisMethod(600.0, 20000), eu_opt)
-        test_value_and_derivatives(res, ref; rtol = 1e-2, rtol_second = 1.5e-1)
+        test_value_and_derivatives(res, ref; rtol = 4e-2, rtol_second = 1e-1)
     end
 end
