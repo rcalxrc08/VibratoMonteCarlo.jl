@@ -13,9 +13,10 @@ jobs:
     - name: Install Julia
       uses: julia-actions/setup-julia@v1
       with:
-        version: 1.7
+        version: 1.9
     - run: julia -e '
-            import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git")); Pkg.Registry.add("General");
+            import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git"));
+            Pkg.Registry.add("General");
             Pkg.add("VibratoMonteCarlo"); using VibratoMonteCarlo;
             Pkg.activate("page/Project.toml"); Pkg.instantiate();
             using NodeJS;
