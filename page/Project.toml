@@ -8,5 +8,6 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
 DataFrames = "1"
+Latexify = "0.16"
 NodeJS = "2"
 Symbolics = "6"
