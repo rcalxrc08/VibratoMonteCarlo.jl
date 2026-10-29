@@ -1,11 +1,4 @@
-MethodError: no method matching simplify_fractions(::SymbolicUtils.BasicSymbolicImpl.var"typeof(BasicSymbolicImpl)"{SymbolicUtils.SymReal}; polyform::Bool)
-
-Closest candidates are:
-  simplify_fractions(::SymbolicUtils.BasicSymbolicImpl.var"typeof(BasicSymbolicImpl)"{T}) where T got unsupported keyword argument "polyform"
-   @ SymbolicUtils ~/.julia/packages/SymbolicUtils/hUQSq/src/polyform.jl:641
-  simplify_fractions(::Any) got unsupported keyword argument "polyform"
-   @ SymbolicUtils ~/.julia/packages/SymbolicUtils/hUQSq/src/polyform.jl:649
-  simplify_fractions(!Matched::Symbolics.Num; kw...)
-   @ Symbolics ~/.julia/packages/Symbolics/twrWY/src/Symbolics.jl:282
-  ...
+\begin{equation}
+\frac{\partial^{3} V}{\partial\theta_1^{2} \partial\theta_2} = \mathbb{E}\left( \frac{\left( 3 T^{2} - 6 W_{T}^{2} T + 3 T^{2} W_{T} \sigma + W_{T}^{4} - W_{T}^{3} T \sigma \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{3} T} \right)
+\end{equation}
 
