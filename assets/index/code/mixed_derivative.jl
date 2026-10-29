@@ -1,6 +1,6 @@
 # This file was generated, do not modify it. # hide
 #hideall
-@variables S_0 r d σ T
+@variables S_0 [latexwrapper = identity] r d σ T
 tgt_var=r
 tgt_var2=σ
 max_order=2

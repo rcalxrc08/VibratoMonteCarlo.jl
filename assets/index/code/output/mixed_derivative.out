@@ -1,4 +1,4 @@
 \begin{equation}
-\frac{\partial^{3} V}{\partial\theta_1^{2} \partial\theta_2} = \mathbb{E}\left( \frac{\left( 3 T^{2} - 6 W_{T}^{2} T + 3 T^{2} W_{T} \sigma + W_{T}^{4} - W_{T}^{3} T \sigma \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{3} T} \right)
+\frac{\partial^{3} V}{\partial\theta_1^{2} \partial\theta_2} = \mathbb{E}\left( \frac{\left( 3 T^{2} - 6 W_T^{2} T + 3 T^{2} W_T \sigma + W_T^{4} - W_T^{3} T \sigma \right) \Phi\left( \log\left( S_0 \right) + W_T \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{3} T} \right)
 \end{equation}
 
