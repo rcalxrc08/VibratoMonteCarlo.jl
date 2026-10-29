@@ -46,6 +46,8 @@ function conditional_saltando(mcProcess::finiteActivityProcess, rfCurve::Financi
     σ = mcProcess.σ
     λ = mcProcess.λ
     T = eu_opt.T
+    !(typeof(λ) <: AbstractFloat) ? @warn("trying to differentiate over λ, this will lead to incorrect results") : nothing
+    !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
     (T_jump, S_jump) = VibratoMonteCarlo.simulate_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
     drift_rn = λ * FinancialMonteCarlo.compute_drift(mcProcess)
     result = mean(@. analytic_pricer(S_jump, eu_opt, r, T, T_jump, σ, d, drift_rn) * exp(-r * T_jump))

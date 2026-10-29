@@ -43,6 +43,7 @@ The files:
 - `regressions.jl`: one case per fixed bug (Heston antithetic correlation sign, `pure_lrm` default Analytic grid, Kou last-jump-time alignment, shared inner samples, ±5σ default Analytic bounds).
 - `levy.jl`: VG and NIG value, delta and gamma against Lewis, for `vibrato_saltando` and the FFT `vibrato`.
 - `american.jl`: `vibrato_am`. BS put value, delta and gamma against a Crank–Nicolson PDE of the Bermudan with the same dates (`bermudan_pde`, defined in the file); calls without dividends against the European price (BS and Kou with gamma, Heston value and delta against the MC pricer); all AD backends agree.
+- `conditional.jl`: `conditional_saltando` (Kou, Merton; European and binary) against `vibrato_saltando` with Gauss–Hermite on the same paths, and the warning when differentiating over `λ`.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
 `runner_z.jl` is not included: it needs `vibrato_z` from the untracked Zygote experiments.
@@ -101,6 +102,7 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
   - `conditional(...)` is an analytic-pricer baseline (BS only).
 - [vibrato_saltando.jl](src/metrics/vibrato_saltando.jl), `vibrato_saltando(...)`:
   - `FiniteActivityProcess` (Kou, Merton): conditions on the **last jump time** (`simulate_log_with_jump_times`) and integrates the Gaussian diffusion from there to `T`. Jumps are applied at the next grid point, so the simulator returns the grid point *before* the step containing the last jump (plus that step's jumps). This keeps the conditional step exact and at least one `dt` long; rounding up instead gives `T - T_jump = 0` and NaN derivatives. Differentiating w.r.t. `λ` or `T` is unsupported and only emits a warning.
+  - `conditional_saltando(...)` (not exported): same paths as the `FiniteActivityProcess` method, but prices the diffusion after the last jump in closed form (`analytic_pricer`, European and binary only) and differentiates pathwise. It is the exact inner-integration limit of `vibrato_saltando`.
   - `InfiniteActivityProcess` (VG, NIG): conditions on the whole subordinator path, i.e. on `G_T ~ subordinator_law(process, T)`. Given `G_T`, `log S_T` is exactly Gaussian with mean `log S0 + (r - d - ψ) T + θ G_T` and variance `σ² G_T`, so `Nstep` does not matter. Conditioning on the last step only is exact too, but for VG that increment (Gamma, shape `dt / κ`) is often so small that `σ √ΔG` is lost to rounding against `log S`. `simulate_with_sub` is no longer used by the package.
 - [pure_lrm.jl](src/metrics/pure_lrm.jl), `pure_lrm(...)`: no path simulation. Pure LRM over the full-maturity density: Gaussian for `ItoProcess`, FFT spline otherwise.
 - [vibrato_am.jl](src/metrics/vibrato_am.jl), `vibrato_am(process, rfCurve, mc, am_opt::AmericanPayoff, vb_mc)`: exercise at the `Nstep` grid dates, policy from Longstaff–Schwartz (regression on `1, S, S²` of the in-the-money paths, `S` scaled by `S0`, `v_value`s only). Two methods:
