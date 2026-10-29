@@ -1,4 +1,11 @@
-\begin{equation}
-\frac{\partial^{6} V}{\partial\theta^{6}} = \mathbb{E}\left( \frac{\left(  - 15 T^{3} + 45 W_{T}^{2} T^{2} - 15 W_{T}^{4} T + W_{T}^{6} \right) \Phi\left( \log\left( S_{0} \right) + W_{T} \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{\sigma^{6}} \right)
-\end{equation}
+MethodError: no method matching simplify_fractions(::SymbolicUtils.BasicSymbolicImpl.var"typeof(BasicSymbolicImpl)"{SymbolicUtils.SymReal}; polyform::Bool)
+
+Closest candidates are:
+  simplify_fractions(::SymbolicUtils.BasicSymbolicImpl.var"typeof(BasicSymbolicImpl)"{T}) where T got unsupported keyword argument "polyform"
+   @ SymbolicUtils ~/.julia/packages/SymbolicUtils/hUQSq/src/polyform.jl:641
+  simplify_fractions(::Any) got unsupported keyword argument "polyform"
+   @ SymbolicUtils ~/.julia/packages/SymbolicUtils/hUQSq/src/polyform.jl:649
+  simplify_fractions(!Matched::Symbolics.Num; kw...)
+   @ Symbolics ~/.julia/packages/Symbolics/twrWY/src/Symbolics.jl:282
+  ...
 
