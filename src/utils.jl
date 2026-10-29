@@ -31,7 +31,6 @@ function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any)
     return range(x.x_min, length = x.Npoints, stop = x.x_max)
 end
 
-# init_lrm_vec for this type is defined in the FastGaussQuadrature extension.
 struct VibratoMonteCarloGaussHermite <: AbstractVibrato
     Npoints::Int
     function VibratoMonteCarloGaussHermite(Npoints::Int = 200)
@@ -39,6 +38,24 @@ struct VibratoMonteCarloGaussHermite <: AbstractVibrato
         return new(Npoints)
     end
 end
+
+init_lrm_vec(x::VibratoMonteCarloGaussHermite, ::Any) = gausshermite(x.Npoints)
+
+# Gauss-Legendre in the standardized variable, on [-GAUSS_LEGENDRE_Z, GAUSS_LEGENDRE_Z + sigma] split at the payoff singular points
+# (singular_points), with Npoints nodes per piece. Every piece has a smooth integrand, so the rule converges exponentially:
+# Gauss-Hermite instead converges slowly across the kink or the jump of the payoff.
+struct VibratoMonteCarloGaussLegendre <: AbstractVibrato
+    Npoints::Int
+    function VibratoMonteCarloGaussLegendre(Npoints::Int = 48)
+        @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloGaussLegendre must be positive."
+        return new(Npoints)
+    end
+end
+# The Gaussian mass beyond ±GAUSS_LEGENDRE_Z standard deviations is below 1e-16.
+const GAUSS_LEGENDRE_Z = 8.5
+
+# Nodes and weights on [-1, 1].
+init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints)
 
 get_unique_maturity(euopt) = euopt.T
 get_unique_maturity(euopts::Array) = only(unique([get_unique_maturity(euopt) for euopt in euopts]))

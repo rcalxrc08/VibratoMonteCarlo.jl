@@ -163,31 +163,8 @@ function positive_intervals(f, lo, hi; npts = 4001)
     return intervals
 end
 
-# Gauss-Legendre nodes and weights on [-1, 1].
-function gauss_legendre(n)
-    x = zeros(n)
-    w = zeros(n)
-    for i = 1:n
-        z = cos(π * (i - 0.25) / (n + 0.5))
-        dp = 1.0
-        for _ = 1:100
-            p1, p2 = 1.0, 0.0
-            for j = 1:n
-                p1, p2 = ((2j - 1) * z * p1 - (j - 1) * p2) / j, p1
-            end
-            dp = n * (z * p1 - p2) / (z^2 - 1)
-            Δ = p1 / dp
-            z -= Δ
-            abs(Δ) < 1e-15 && break
-        end
-        x[i] = z
-        w[i] = 2 / ((1 - z^2) * dp^2)
-    end
-    return x, w
-end
-const BRIDGE_NODES, BRIDGE_WEIGHTS = gauss_legendre(48)
-# The bridge mass beyond ±BRIDGE_Z standard deviations is below 1e-16.
-const BRIDGE_Z = 8.5
+const BRIDGE_NODES, BRIDGE_WEIGHTS = gausslegendre(48)
+const BRIDGE_Z = GAUSS_LEGENDRE_Z
 
 # ∫_{za}^{zb} h(x) q(x; m, s) dx for the Gaussian density q, with x = v_value(m) + v_value(s) z: the points carry no
 # derivative, all the derivatives are in the density weight, as in lrm_interface_vec!.

@@ -103,6 +103,43 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     return output
 end
 
+"""
+    singular_points(option)
+
+Log-prices where the payoff of `option` is not smooth (the kink of a call or a put, the jump of a binary), sorted.
+VibratoMonteCarloGaussLegendre splits the integral there. Payoffs without a method are integrated as smooth.
+"""
+singular_points(opt::Union{EuropeanOption, BinaryEuropeanOption, FinancialMonteCarlo.AmericanOption, FinancialMonteCarlo.BinaryAmericanOption}) = (v_value(log(opt.K)),)
+singular_points(opts::Array) = sort!(unique([p for opt in opts for p in singular_points(opt)]))
+singular_points(::Any) = ()
+
+# ∫_{za}^{zb} of the integrand against the standard normal density, with the Gauss-Legendre nodes x and weights w of [-1, 1].
+function gauss_legendre_segment(za, zb, x, w, args)
+    c = (za + zb) / 2
+    h = (zb - za) / 2
+    return sum(begin
+        z = @muladd c + h * x[j]
+        w[j] * h * exp(log_density_default(z)) * integrand_lrm_vec(z, args)
+    end for j in eachindex(x))
+end
+
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloGaussLegendre)
+    x, w = received_args.Z
+    eu_opt = received_args.option
+    args = IntegrandArguments(mu, sigma, eu_opt)
+    v_value_mu = v_value(mu)
+    v_value_sigma = v_value(sigma)
+    # A payoff linear in S grows like exp(sigma * z), and exp(sigma * z) * φ(z) = exp(sigma^2 / 2) * φ(z - sigma):
+    # its mass is centred at sigma, so the upper bound is moved by sigma (with ±GAUSS_LEGENDRE_Z volga was 4e-9 off at sigma = 0.45).
+    z_min = -GAUSS_LEGENDRE_Z
+    z_max = GAUSS_LEGENDRE_Z + v_value_sigma
+    # The singular points in standard deviations (from values only, so they carry no derivative), still sorted.
+    # Outside the bounds the payoff is smooth on the whole range and the piece is skipped.
+    cuts = map(p -> clamp((p - v_value_mu) / v_value_sigma, z_min, z_max), singular_points(eu_opt))
+    bounds = (z_min, cuts..., z_max)
+    return sum(gauss_legendre_segment(bounds[i], bounds[i+1], x, w, args) for i = 1:(length(bounds)-1) if bounds[i] < bounds[i+1])
+end
+
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, ::VibratoMonteCarloStandard)
     Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
     eu_opt = received_args.option

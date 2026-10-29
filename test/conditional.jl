@@ -1,7 +1,7 @@
 @isdefined(TEST_UTILS_LOADED) || include("utils.jl")
 
-# conditional_saltando prices the diffusion after the last jump in closed form: it is the exact inner integration limit of
-# vibrato_saltando, on the same paths.
+# conditional_saltando (and conditional for Black-Scholes) prices the last diffusion in closed form: it is the exact inner
+# integration limit of vibrato_saltando (vibrato), on the same paths.
 @testset "conditional saltando" begin
     rfCurve = ZeroRate(0.02)
     S0 = hyper(100.0, 1.0, 1.0, 0.0)
@@ -25,6 +25,19 @@
             @test rel_err(res[2], ref[2]) < 3e-3
             @test abs(res[3] - ref[3]) < 2e-5
         end
+    end
+
+    # Split at the strike, Gauss-Legendre is exact: differences observed ≤ 4.4e-15.
+    @testset "exact with Gauss-Legendre" begin
+        gl = VibratoMonteCarloGaussLegendre()
+        for model in (kou(0.2, S0, 0.01), merton(0.2, S0, 0.01)), opt in (EuropeanOption(1.0, 105.0), BinaryEuropeanOption(1.0, 105.0))
+            res = value_and_derivatives(vibrato_saltando(model, rfCurve, mc, opt, gl))
+            @test all(isapprox.(res, value_and_derivatives(VibratoMonteCarlo.conditional_saltando(model, rfCurve, mc, opt)); atol = 1e-12))
+        end
+        bs_model = BlackScholesProcess(0.2, Underlying(S0, 0.01))
+        opt = EuropeanOption(1.0, 105.0)
+        res = value_and_derivatives(vibrato(bs_model, rfCurve, mc, opt, gl))
+        @test all(isapprox.(res, value_and_derivatives(VibratoMonteCarlo.conditional(bs_model, rfCurve, mc, opt)); atol = 1e-12))
     end
 
     @testset "warns when differentiating over λ" begin

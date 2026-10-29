@@ -36,14 +36,15 @@ julia -e 'using JuliaFormatter; format(".")'                      # uses .JuliaF
 
 The files:
 - `utils.jl`: loads every AD backend, defines model constructors (`kou`, `merton`, `heston`, `variance_gamma`) and `test_value_and_derivatives` (value, 1st and 2nd derivative vs a reference, for `Hyper` and `Taylor1`).
-- `backends.jl`: all six extensions give the same BS price, delta and gamma, including nested ForwardDiff (`ForwardDiff.hessian`).
+- `backends.jl`: all five AD extensions give the same BS price, delta and gamma, including nested ForwardDiff (`ForwardDiff.hessian`).
 - `vibrato_models.jl`: Kou/BS/Heston/VG × {standard+analytic, standard+MC, antithetic+MC, Sobol+MC}. Compares against Lewis, `blsprice`, or the MC pricer (Heston).
 - `forwarddiff.jl`: multi-partial ForwardDiff duals (Merton, BS).
 - `taylor.jl`: `Taylor1` inputs with Gauss–Hermite integration.
 - `regressions.jl`: one case per fixed bug (Heston antithetic correlation sign, `pure_lrm` default Analytic grid, Kou last-jump-time alignment, shared inner samples, ±5σ default Analytic bounds).
 - `levy.jl`: VG and NIG value, delta and gamma against Lewis, for `vibrato_saltando` and the FFT `vibrato`.
 - `american.jl`: `vibrato_am`. BS put value, delta and gamma against a Crank–Nicolson PDE of the Bermudan with the same dates (`bermudan_pde`, defined in the file); calls without dividends against the European price (BS and Kou with gamma, Heston value and delta against the MC pricer); all AD backends agree.
-- `conditional.jl`: `conditional_saltando` (Kou, Merton; European and binary) against `vibrato_saltando` with Gauss–Hermite on the same paths, and the warning when differentiating over `λ`.
+- `conditional.jl`: `conditional_saltando` (Kou, Merton; European and binary) against `vibrato_saltando` on the same paths (Gauss–Hermite within its quadrature error, Gauss–Legendre to 1e-12), `conditional` against `vibrato` on BS, and the warning when differentiating over `λ`.
+- `gauss_legendre.jl`: `VibratoMonteCarloGaussLegendre` through `pure_lrm` on BS against `blsprice`/`blsbin` to 1e-9 (calls, puts, binaries, short and long maturities, strikes outside the bounds), with ForwardDiff Hessians, ReverseDiff, DualNumbers, `Taylor1` and arrays of options.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
 `runner_z.jl` is not included: it needs `vibrato_z` from the untracked Zygote experiments.
@@ -68,7 +69,7 @@ FinancialFFT 0.1.5's TaylorSeries glue calls `get_order`, which was removed in T
 
 ## Architecture
 
-Entry point: [src/VibratoMonteCarlo.jl](src/VibratoMonteCarlo.jl). Exports `vibrato`, `vibrato_saltando`, `vibrato_am`, `pure_lrm`, `VibratoMonteCarloAnalytic`, `VibratoMonteCarloStandard`.
+Entry point: [src/VibratoMonteCarlo.jl](src/VibratoMonteCarlo.jl). Exports `vibrato`, `vibrato_saltando`, `vibrato_am`, `pure_lrm`, `VibratoMonteCarloAnalytic`, `VibratoMonteCarloStandard`, `VibratoMonteCarloGaussLegendre`.
 
 ### Core idea
 
@@ -86,7 +87,9 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
   - `SerialAntitheticMonteCarloConfig` × `Standard`: antithetic average.
   - `SerialSobolMonteCarloConfig` × `Standard`: `cld(Nsim_lrm, 2)` points of a 1-D Sobol sequence, randomly shifted modulo 1 per path (Cranley-Patterson), through `norminvcdf`, each paired with its reflection.
   - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints` (default 200 on ±7), always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
-  - `VibratoMonteCarloGaussHermite`: Gauss–Hermite. The type always exists, but it only works once FastGaussQuadrature is loaded (that is what provides `init_lrm_vec`). It is not exported.
+  - `VibratoMonteCarloGaussLegendre` (exported, `Npoints = 48` per piece): Gauss–Legendre on `[-8.5, 8.5 + σ]` standard deviations (`GAUSS_LEGENDRE_Z`; the `+ σ` covers the `e^{σz}` growth of a payoff linear in `S`), split at the payoff's singular points (`singular_points(option)`: `log K` for European, binary and American options, every strike for arrays, none for other payoffs). Each piece is smooth, so it is exact to about 1e-14 (1e-10 for call volgas at `σ√τ` ≈ 0.45), where Gauss–Hermite converges slowly across the kink or jump at the strike (13% of a binary's value per path with 200 nodes). It covers every `lrm_interface_vec!` caller, not the FFT density path (`lrm_interface_aug!`).
+  - `VibratoMonteCarloGaussHermite`: Gauss–Hermite. It is not exported.
+  - Both Gauss rules take their nodes from FastGaussQuadrature (`gausshermite`, `gausslegendre`), a regular dependency.
 
 ### Integration-method types ([src/utils.jl](src/utils.jl))
 - `AbstractVibrato` is the supertype.
@@ -124,7 +127,7 @@ These are custom simulators that return extra state the metrics need: the last j
   1. Add `ext/VibratoMonteCarlo<Pkg>Ext.jl` that does `import VibratoMonteCarlo: v_value, v_mod` and adds methods.
   2. Register the package in `[weakdeps]`, `[extensions]` and `[compat]`.
   3. Add it to `test/Project.toml`.
-- Extensions cannot define new types in the parent module. `VibratoMonteCarloGaussHermite` therefore lives in `src/utils.jl` and its `lrm_interface_vec!` in `lrm.jl`. Only `init_lrm_vec` (which calls `gausshermite`) is in the FastGaussQuadrature extension.
+- Extensions cannot define new types in the parent module, nor replace a method the parent already defines (so an optional dependency cannot swap in a better implementation when loaded).
 - ForwardDiff is pulled in transitively (FinancialFFT → DataInterpolations), so its extension is usually active even if the user never loads it.
 - `src/deps/zygote_dependencies.jl` is untracked and not wired in (marked `#wrong`).
 

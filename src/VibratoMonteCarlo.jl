@@ -1,6 +1,7 @@
 module VibratoMonteCarlo
-# AD backends and FastGaussQuadrature are supported through package extensions, see ext/.
+# AD backends are supported through package extensions, see ext/.
 using FinancialMonteCarlo, Statistics, MuladdMacro, IrrationalConstants
+using FastGaussQuadrature: gausshermite, gausslegendre
 include("utils.jl")
 include("metrics/lrm.jl")
 include("metrics/lrm_aug.jl")
@@ -12,6 +13,6 @@ include("simulation/simulate_with_jump_times.jl")
 include("simulation/simulate_with_last_vol.jl")
 include("simulation/simulate_with_sub.jl")
 
-export vibrato, vibrato_saltando, vibrato_am, pure_lrm, VibratoMonteCarloAnalytic, VibratoMonteCarloStandard
+export vibrato, vibrato_saltando, vibrato_am, pure_lrm, VibratoMonteCarloAnalytic, VibratoMonteCarloStandard, VibratoMonteCarloGaussLegendre
 
 end # module
