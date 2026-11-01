@@ -2,7 +2,7 @@
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/)
 [![CI](https://github.com/rcalxrc08/VibratoMonteCarlo.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/rcalxrc08/VibratoMonteCarlo.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/rcalxrc08/VibratoMonteCarlo.jl/graph/badge.svg)](https://codecov.io/gh/rcalxrc08/VibratoMonteCarlo.jl)
+[![codecov](https://codecov.io/gh/rcalxrc08/VibratoMonteCarlo.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/rcalxrc08/VibratoMonteCarlo.jl)
 ##### This is a Julia package containing some useful Financial function for Pricing and Risk Management for Equity products.
 
 This package is built on top of [FinancialMonteCarlo.jl](https://github.com/rcalxrc08/FinancialMonteCarlo.jl) and [FinancialFFT.jl](https://github.com/rcalxrc08/FinancialFFT.jl).
