@@ -58,7 +58,6 @@ const GAUSS_LEGENDRE_Z = 8.5
 init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints)
 
 get_unique_maturity(euopt) = euopt.T
-get_unique_maturity(euopts::Array) = only(unique([get_unique_maturity(euopt) for euopt in euopts]))
 
 function analytic_pricer(S_jump, eu_opt::EuropeanOption, r, T, T_jump, σ, d, drift_rn)
     blsprice(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)

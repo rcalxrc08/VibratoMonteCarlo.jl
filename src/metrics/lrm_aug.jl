@@ -1,4 +1,4 @@
-using FinancialFFT, FFTW, Interpolations
+using FinancialFFT, FFTW, Interpolations, PatternVectors
 #TODO: switch to FinancialFFT
 function characteristic_function_to_density(phi, N, A)
     n = 2^N
@@ -59,8 +59,6 @@ function adapt_spline(spline_cub, St, x_eval)
     y_mod = @. max(result, eps_mod)
     return y_mod
 end
-#TODO: use AlternateVectors
-lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, smile::FinancialMonteCarlo.AbstractSmile, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0) = lrm_interface_aug!(mcProcess, spline_dens, smile_options(smile), mcBaseData, mc, St)
 function lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, eu_opt, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
     # As for Gaussian processes, x_min and x_max are in standard deviations of the log increment around its mean.
     # The grid is built from values only, so it carries no derivative.
@@ -71,6 +69,6 @@ function lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, eu_opt, mcBas
     dx = spline_dens.std * step(z)
     baseline = payout_f(centre, eu_opt)
     f_vals = [v_value(dens) * integrand_lrm_base(log_s, log(dens), eu_opt, baseline) for (log_s, dens) in zip(x, density_val)]
-    @views result = dx * (f_vals[1] + f_vals[end] + 2 * sum(f_vals[2:(end-1)])) / 2
-    return result
+    weights = PatternVector(mc.Npoints, PaddedFillPattern(Int8(1), Int8(2), Int8(1)))
+    return dx * sum(weights .* f_vals) / 2
 end

@@ -25,16 +25,17 @@ v_mod(::AbstractFloat) = 1
 payout_f_base_v_value(s, eu_opt) = v_value(FinancialMonteCarlo.payout(s, eu_opt))
 
 payout_f(z, eu_opt) = payout_f_base_v_value(exp(z), eu_opt)
-function payout_f(z, eu_opts::Array)
-    S = exp(z)
-    return payout_f_base_v_value.(S, eu_opts)
-end
+payout_f(z, smile::FinancialMonteCarlo.AbstractSmile) = payout_f_base_v_value.(exp(z), FinancialMonteCarlo.smile_to_options(smile))
 # The density integrates to one for any parameter, so the score terms in v_mod have zero mean and a constant baseline
 # (the payoff at the centre of the density, with no derivative) can be subtracted from the payoff and added back:
 # the value is unchanged, the derivatives only see payoff - baseline, which removes the baseline times the integration
 # error of the score terms (the noise or the bias of the inner integration).
 integrand_lrm_base(log_s, log_density_val, eu_opt, baseline) = @muladd (payout_f(log_s, eu_opt) - baseline) * v_mod(log_density_val) + baseline
-integrand_lrm_base(log_s, log_density_val, eu_opts::Array, baseline) = @. (payout_f(log_s, eu_opts) - baseline) * v_mod(log_density_val) + baseline
+function integrand_lrm_base(log_s, log_density_val, smile::FinancialMonteCarlo.AbstractSmile, baseline)
+    payoffs = payout_f(log_s, smile)
+    weight = v_mod(log_density_val)
+    return @. (payoffs - baseline) * weight + baseline
+end
 
 struct IntegrandArguments{num_1, num_2, num_3}
     mu::num_1
@@ -110,7 +111,7 @@ Log-prices where the payoff of `option` is not smooth (the kink of a call or a p
 VibratoMonteCarloGaussLegendre splits the integral there. Payoffs without a method are integrated as smooth.
 """
 singular_points(opt::Union{EuropeanOption, BinaryEuropeanOption, FinancialMonteCarlo.AmericanOption, FinancialMonteCarlo.BinaryAmericanOption}) = (v_value(log(opt.K)),)
-singular_points(opts::Array) = sort!(unique([p for opt in opts for p in singular_points(opt)]))
+singular_points(smile::FinancialMonteCarlo.AbstractSmile) = sort!(unique([p for opt in FinancialMonteCarlo.smile_to_options(smile) for p in singular_points(opt)]))
 singular_points(::Any) = ()
 
 # ∫_{za}^{zb} of the integrand against the standard normal density, with the Gauss-Legendre nodes x and weights w of [-1, 1].

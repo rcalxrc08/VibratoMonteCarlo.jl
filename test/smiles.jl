@@ -1,7 +1,7 @@
 @isdefined(TEST_UTILS_LOADED) || include("utils.jl")
 
-# All the options of an array or a smile share the paths, so on the same seed every entry equals the option priced alone.
-@testset "Arrays of options and smiles" begin
+# All the strikes of a smile share the paths, so on the same seed every entry equals the option priced alone.
+@testset "Smiles" begin
     T, S0, d, r, σ = 1.0, 100.0, 0.01, 0.02, 0.2
     K, isCall = [90.0, 100.0, 115.0], [true, false, true]
     rfCurve = ZeroRate(r)
@@ -24,9 +24,7 @@
     )
     @testset "$name" for (name, price) in cases
         for (smile, opts) in ((eu_smile, eu_opts), (bin_smile, bin_opts))
-            res = price(opts)
-            @test res ≈ price.(opts) rtol = 1e-8
-            @test price(smile) ≈ res rtol = 1e-14
+            @test price(smile) ≈ price.(opts) rtol = 1e-8
         end
     end
 

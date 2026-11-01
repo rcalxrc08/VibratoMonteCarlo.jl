@@ -34,11 +34,11 @@ using ReverseDiff
         @test price([S0_t, σ]).coeffs ≈ price_ref([S0_t, σ]).coeffs atol = 1e-12
     end
 
-    @testset "array of options" begin
+    @testset "smile" begin
         S0 = hyper(100.0, 1.0, 1.0, 0.0)
-        opts = [EuropeanOption(1.0, 95.0), BinaryEuropeanOption(1.0, 105.0), EuropeanOption(1.0, 120.0, false)]
-        res = pure_lrm(bs(σ, S0), rfCurve, mc, opts, gl)
-        for (i, opt) in enumerate(opts)
+        K, isCall = [95.0, 105.0, 120.0], [true, true, false]
+        res = pure_lrm(bs(σ, S0), rfCurve, mc, FinancialMonteCarlo.EuropeanOptionSmile(1.0, K, isCall), gl)
+        for (i, opt) in enumerate(EuropeanOption.(1.0, K, isCall))
             @test all(isapprox.(value_and_derivatives(res[i]), value_and_derivatives(pure_lrm(bs(σ, S0), rfCurve, mc, opt, gl)); atol = 1e-12))
         end
     end
