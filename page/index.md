@@ -7,7 +7,7 @@ VibratoMonteCarlo.jl is built on top of [FinancialMonteCarlo.jl](https://github.
 Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless.
 The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.
 
-The implementation for Vibrato Montecarlo is heavily based on the Master Thesis of Nicola Scaramuzzino (that is me) and the subsequent development.
+The implementation for Vibrato Montecarlo is heavily based on the Master Thesis of Nicola Scaramuzzino \cite{scaramuzzino2017} (that is me) and the subsequent development.
 
 \end{section}
 \begin{section}{title="The basic settings"}
@@ -31,6 +31,8 @@ Where:
 $$\Phi(x)=\phi(e^x) $$
 \end{section}
 \begin{section}{title="Pathwise Method"}
+The pathwise method and the likelihood ratio method are the two classic direct estimators of sensitivities \cite{broadie1996}, see also \cite{glasserman2004}.
+
 Since:
 $$V_0=\mathbb{E}(\Phi(X_T))$$
 
@@ -148,7 +150,7 @@ $$\partial^{n}_{\theta} V_0 = \mathbb{E}(\Phi(X_T) B_n(\{\partial^{i}_{\theta} \
 
 \begin{expand}{Likelihood Ratio Method for Black and Scholes}
 In case of trivial models the density is known in analytic form, otherwise one need to compute it numerically from the characteristic function.
-In case of the Black and Scholes Model, and a European Option we have the following:
+In case of the Black and Scholes Model \cite{blackscholes1973}, and a European Option we have the following:
 
 $$X_t=\log(S_0)+(r-d-\dfrac{\sigma^2}{2}) t + \sigma W_t$$
 
@@ -358,7 +360,7 @@ This is the best one can do when it applies, but it needs a closed form for the 
 
 \end{section}
 \begin{section}{title="Conditional Saltando Expectation"}
-Let's assume now that $X_t$ is a finite activity Levy process, like Kou or Merton, with jump intensity $\lambda$ and $\kappa = \mathbb{E}(e^{Y_1} - 1)$, where $Y_i$ are the jump sizes. Instead of a fixed $\tau$, let's take the time of the last jump before $T$, with $\tau = 0$ if there are no jumps.
+Let's assume now that $X_t$ is a finite activity Levy process, like Kou \cite{kou2002} or Merton \cite{merton1976}, with jump intensity $\lambda$ and $\kappa = \mathbb{E}(e^{Y_1} - 1)$, where $Y_i$ are the jump sizes. Instead of a fixed $\tau$, let's take the time of the last jump before $T$, with $\tau = 0$ if there are no jumps.
 
 This $\tau$ is not a stopping time, since knowing it needs a look at the future of the path, so we condition on all the jumps and on the path up to $\tau$. After $\tau$ there are no more jumps and the process is a Brownian motion with a modified drift, which means a Black and Scholes model with dividend yield $d + \lambda \kappa$. Hence the inner expectation is known in closed form, even if the process has jumps:
 $$V_0 = \mathbb{E}(e^{-r \tau} C_{\lambda \kappa}(S_{\tau},T - \tau))$$
@@ -375,7 +377,7 @@ With $h = T - \tau$, the same derivatives become:
 On the same paths, this is the exact limit of Vibrato Saltando for a perfect inner integration. It has the same limits of the fixed $\tau$ case, it works only for European and binary options, and the same ones of Vibrato Saltando: $\lambda$ and $T$ can't be differentiated, since the last jump time depends on them.
 \end{section}
 \begin{section}{title="Vibrato Montecarlo Method"}
-The pathwise method needs a smooth payoff, while the LRM has weights whose variance grows with the order of the sensitivity. Vibrato uses the best of each: it differentiates the path pathwise up to a time $\tau < T$, and applies the LRM only to what is left.
+The pathwise method needs a smooth payoff, while the LRM has weights whose variance grows with the order of the sensitivity. Vibrato uses the best of each: it differentiates the path pathwise up to a time $\tau < T$, and applies the LRM only to what is left. The method was introduced in \cite{giles2009}, and its combination with automatic differentiation for high order sensitivities is studied in \cite{pages2018}.
 
 Let's fix $\tau < T$, let's call $h = T - \tau$ and let's assume that the underlying process is a Levy process. Since:
 $$V_0=\mathbb{E}(\Phi(X_T))=\mathbb{E}(\mathbb{E}(\Phi(X_T)|X_{\tau}))$$
@@ -434,7 +436,7 @@ For $\tau = 0$ these are the LRM weights of the previous section. The smaller $\
 
 \begin{section}{title="Vibrato Saltando Montecarlo"}
 Vibrato needs the law of the last step, and for a Levy process that is only available numerically. For Variance Gamma it can even be singular on a short step.
-Vibrato Saltando ("jumping" vibrato) chooses what to condition on so that the inner law is exactly Gaussian, for any number of time steps.
+Vibrato Saltando ("jumping" vibrato) \cite{scaramuzzino2017} chooses what to condition on so that the inner law is exactly Gaussian, for any number of time steps.
 
 \begin{expand}{Finite activity processes}
 Let's assume that $X_t$ is a finite activity Levy process, like Kou or Merton:
@@ -462,7 +464,7 @@ The last jump time depends on $\lambda$ and the length of the last step on $T$, 
 \end{expand}
 
 \begin{expand}{Infinite activity processes}
-Infinite activity processes like Variance Gamma and Normal Inverse Gaussian have no last jump, but they can be written as a Brownian motion with drift evaluated at a random time $G_t$ (the subordinator):
+Infinite activity processes like Variance Gamma \cite{madan1998} and Normal Inverse Gaussian \cite{barndorff1997} have no last jump, but they can be written as a Brownian motion with drift evaluated at a random time $G_t$ (the subordinator):
 $$X_t = \log(S_0) + (r - d - \psi) t + \beta G_t + \sigma W_{G_t}$$
 where $\beta$ and $\sigma$ are model parameters (called `θ` and `σ` in FinancialMonteCarlo), and $\psi$ is the drift correction such that $\mathbb{E}(S_T) = S_0 e^{(r-d)T}$.
 Conditioning on the subordinator, the inner law is exactly Gaussian:
@@ -488,7 +490,7 @@ All of the methods condition on something, and integrate the last part against i
 |:--------|:---------|:----------------|:------------------------------------|:------------------|
 | Black and Scholes | `conditional` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | closed form |
 | Black and Scholes | `vibrato` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | integration |
-| Heston | `vibrato` | path and variance $v$ up to $T - h$ | $\mathcal{N}(\mu, v_{T-h} h)$ | integration |
+| Heston \cite{heston1993} | `vibrato` | path and variance $v$ up to $T - h$ | $\mathcal{N}(\mu, v_{T-h} h)$ | integration |
 | Levy | `vibrato` | path up to $T - h$ | FFT density | integration |
 | Kou, Merton | `conditional_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | closed form |
 | Kou, Merton | `vibrato_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | integration |
@@ -519,7 +521,7 @@ In practice this reduces the noise of the gamma estimated with inner Monte Carlo
 The inner expectation is estimated with $M$ samples $Z_1, \dots, Z_M$ for each of the $N$ outer paths.
 If the same samples were used for every outer path, the inner error would be the same for all paths and would not average out: the estimator would converge, as $N \to \infty$, to a biased value with error of order $M^{-1/2}$ (deltas 8-15% off with $M = 200$).
 Drawing new inner samples for every outer path makes the inner errors independent, and the total error decreases with both $N$ and $M$.
-With quasi Monte Carlo inner samples, the same Sobol points are randomly shifted modulo 1 for every outer path (Cranley-Patterson rotation), which keeps each inner estimate unbiased.
+With quasi Monte Carlo inner samples, the same Sobol points are randomly shifted modulo 1 for every outer path (Cranley-Patterson rotation \cite{cranley1976}), which keeps each inner estimate unbiased.
 \end{expand}
 
 \begin{expand}{Quadrature}
@@ -532,10 +534,10 @@ The grid must reach far enough in the tails: for a call the payoff grows exponen
 \begin{section}{title="American Options"}
 An American option, exercisable at the dates $t_k = k\,h$, $k = 1, \dots, N$, $h = T/N$, has the price
 $$V_0 = \sup_{\tau} \mathbb{E}(e^{-r \tau} \Phi(X_{\tau}))$$
-The exercise policy is estimated with the Longstaff-Schwartz algorithm: at each date the continuation value is regressed on $1, S, S^2$ over the in the money paths, and the option is exercised where the payoff exceeds it. The regression uses values only, so the policy carries no derivative.
+The exercise policy is estimated with the Longstaff-Schwartz algorithm \cite{longstaff2001}: at each date the continuation value is regressed on $1, S, S^2$ over the in the money paths, and the option is exercised where the payoff exceeds it. The regression uses values only, so the policy carries no derivative.
 
 \begin{expand}{Why freezing the exercise is not enough}
-The usual approach freezes the stopping time of each path and differentiates the cash flows as for a European contract. Since the policy is optimal, the first order effect of the moving exercise boundary vanishes and the first order sensitivities are correct. The second order ones are not: the boundary contributes a term proportional to the jump of the slope of the value at the boundary, and a frozen stopping time removes it. For a put, the frozen gamma only counts the paths that reach maturity near the strike, so it is even below the European gamma (-23% to -61% on the Longstaff-Schwartz put with $K = 40$).
+The usual approach \cite{pages2018} freezes the stopping time of each path and differentiates the cash flows as for a European contract. Since the policy is optimal, the first order effect of the moving exercise boundary vanishes and the first order sensitivities are correct. The second order ones are not: the boundary contributes a term proportional to the jump of the slope of the value at the boundary, and a frozen stopping time removes it. For a put, the frozen gamma only counts the paths that reach maturity near the strike, so it is even below the European gamma (-23% to -61% on the Longstaff-Schwartz put with $K = 40$).
 \end{expand}
 
 \begin{expand}{Vibrato over every exercise date}
@@ -550,4 +552,20 @@ and $V_0 = \mathbb{E}(W_1)$. Every conditional expectation is computed with the 
 The bridge is Gaussian only for Black-Scholes dynamics. For Lévy and Heston models the exercise decision for $t_k$ is taken at $t_{k-1}$, the payoff is replaced by its vibrato expectation over the step, and the decisions are frozen: their first order sensitivities are accurate, the second order ones are biased.
 \end{expand}
 
+\end{section}
+
+\begin{section}{title="References"}
+* \biblabel{barndorff1997}{Barndorff-Nielsen (1997)} O. E. Barndorff-Nielsen, *Processes of normal inverse Gaussian type*, Finance and Stochastics 2(1), 41-68, 1997.
+* \biblabel{blackscholes1973}{Black, Scholes (1973)} F. Black, M. Scholes, *The pricing of options and corporate liabilities*, Journal of Political Economy 81(3), 637-654, 1973.
+* \biblabel{broadie1996}{Broadie, Glasserman (1996)} M. Broadie, P. Glasserman, *Estimating security price derivatives using simulation*, Management Science 42(2), 269-285, 1996. [doi](https://doi.org/10.1287/mnsc.42.2.269)
+* \biblabel{cranley1976}{Cranley, Patterson (1976)} R. Cranley, T. N. L. Patterson, *Randomization of number theoretic methods for multiple integration*, SIAM Journal on Numerical Analysis 13(6), 904-914, 1976. [doi](https://doi.org/10.1137/0713071)
+* \biblabel{giles2009}{Giles (2009)} M. B. Giles, *Vibrato Monte Carlo sensitivities*, in P. L'Ecuyer, A. B. Owen (eds.), Monte Carlo and Quasi-Monte Carlo Methods 2008, 369-382, Springer, 2009. [doi](https://doi.org/10.1007/978-3-642-04107-5_23)
+* \biblabel{glasserman2004}{Glasserman (2004)} P. Glasserman, *Monte Carlo Methods in Financial Engineering*, Springer, 2004.
+* \biblabel{heston1993}{Heston (1993)} S. L. Heston, *A closed-form solution for options with stochastic volatility with applications to bond and currency options*, The Review of Financial Studies 6(2), 327-343, 1993.
+* \biblabel{kou2002}{Kou (2002)} S. G. Kou, *A jump-diffusion model for option pricing*, Management Science 48(8), 1086-1101, 2002.
+* \biblabel{longstaff2001}{Longstaff, Schwartz (2001)} F. A. Longstaff, E. S. Schwartz, *Valuing American options by simulation: a simple least-squares approach*, The Review of Financial Studies 14(1), 113-147, 2001.
+* \biblabel{madan1998}{Madan, Carr, Chang (1998)} D. B. Madan, P. P. Carr, E. C. Chang, *The variance gamma process and option pricing*, European Finance Review 2(1), 79-105, 1998.
+* \biblabel{merton1976}{Merton (1976)} R. C. Merton, *Option pricing when underlying stock returns are discontinuous*, Journal of Financial Economics 3(1-2), 125-144, 1976.
+* \biblabel{pages2018}{Pagès, Pironneau, Sall (2018)} G. Pagès, O. Pironneau, G. Sall, *Vibrato and automatic differentiation for high order derivatives and sensitivities of financial options*, Journal of Computational Finance 22(2), 2018. [arXiv](https://arxiv.org/abs/1606.06143)
+* \biblabel{scaramuzzino2017}{Scaramuzzino (2017)} N. Scaramuzzino, *Differenziazione automatica: teoria ed applicazioni in finanza*, Master Thesis, Politecnico di Milano, supervisor C. Sgarra, academic year 2016/2017. [handle](https://hdl.handle.net/10589/135858)
 \end{section}
