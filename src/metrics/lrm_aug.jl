@@ -2,17 +2,16 @@ using FinancialFFT, FFTW, Interpolations, PatternVectors
 #TODO: switch to FinancialFFT
 function characteristic_function_to_density(phi, N, A)
     n = 2^N
-    vec = collect(0.0:(n-1))            # Indices
-    @views vec[1] = 1e-312
+    vec = 0.0:(n-1)          # Indices
     dx = 2 * A / n           # Step size, for the density
-    x = -A .+ (0.0:(n-1)) * dx         # Grid, for the density
+    x = -A .+ vec * dx       # Grid, for the density
     dt = 2 * pi / (n * dx) # Step size, frequency space
     c = -n / 2 * dt          # Evaluate the characteristic function on [c,d]
-    # t = @. c + vec * dt         # Grid, frequency space
-    Y = @. phi(c + vec * dt) * exp(im * vec * dt * A)
-    # @. Y *= exp(im * vec * dt * A)
-    Y = fft(Y)
-    density_vals = @. dt / (2 * pi) * FinancialFFT.real_mod(exp(-c * x * im) * Y)
+    # Both phases, exp(im * vec * dt * A) and exp(-c * x * im), are (-1)^k: dt * A = pi, and n is a multiple of 4.
+    # Taking the real part makes the sum a trapezoid: the term at c is the mean of the ones at c and -c, which are conjugate.
+    one_minus_one = PatternVector(n, EvenOddPattern(Int8(1), Int8(-1)))
+    Y = fft(@. phi(c + vec * dt) * one_minus_one)
+    density_vals = @. dt / (2 * pi) * FinancialFFT.real_mod(one_minus_one * Y)
     #TODO: eps should be typed
     eps_mod = eps(eltype(density_vals))
     @. density_vals = max(density_vals, eps_mod)

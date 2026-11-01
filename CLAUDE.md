@@ -84,7 +84,7 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
   - `SerialMonteCarloConfig` × `VibratoMonteCarloStandard`: plain MC average.
   - `SerialAntitheticMonteCarloConfig` × `Standard`: antithetic average.
   - `SerialSobolMonteCarloConfig` × `Standard`: `cld(Nsim_lrm, 2)` points of a 1-D Sobol sequence, randomly shifted modulo 1 per path (Cranley-Patterson), through `norminvcdf`, each paired with its reflection.
-  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints` (default 200 on ±7), always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
+  - any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints` (default 200 on ±7), always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard normal variable. In `lrm_interface_aug!` (FFT density, non-Ito processes) the integral is a trapezoid with `PatternVector` weights, and the mean and std come from the FFT density (`DensitySpline`, built by `spline_density`); the grid must stay inside the spline domain (±15 in log-return for `pure_lrm`, ±18 for `vibrato`).
   - `VibratoMonteCarloGaussLegendre` (exported, `Npoints = 48` per piece): Gauss–Legendre on `[-8.5, 8.5 + σ]` standard deviations (`GAUSS_LEGENDRE_Z`; the `+ σ` covers the `e^{σz}` growth of a payoff linear in `S`), split at the payoff's singular points (`singular_points(option)`: `log K` for European, binary and American options, every strike for smiles, none for other payoffs). Each piece is smooth, so it is exact to about 1e-14 (1e-10 for call volgas at `σ√τ` ≈ 0.45), where Gauss–Hermite converges slowly across the kink or jump at the strike (13% of a binary's value per path with 200 nodes). It covers every `lrm_interface_vec!` caller, not the FFT density path (`lrm_interface_aug!`).
   - `VibratoMonteCarloGaussHermite`: Gauss–Hermite. It is not exported.
   - Both Gauss rules take their nodes from FastGaussQuadrature (`gausshermite`, `gausslegendre`), a regular dependency.
@@ -112,6 +112,7 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 
 ### Options
 - `EuropeanOption`, `BinaryEuropeanOption`, or a smile of them, `EuropeanOptionSmile` or `BinaryEuropeanOptionSmile` (FinancialMonteCarlo, not exported), which has **one** maturity and returns a vector of prices. Arrays of options are not supported.
+- Never reimplement payoffs: `payout_f` on a smile calls `FinancialMonteCarlo.payout` through `smile_to_options`, as FinancialMonteCarlo's own `pricer` does. That allocates a vector of options at every node; the proper `payout(S, smile)` is a TODO of FinancialMonteCarlo, tracked in its CLAUDE.md.
 - `vibrato_am` takes one FinancialMonteCarlo `AmericanPayoff` (`AmericanOption`, `BinaryAmericanOption`); the integrands call `FinancialMonteCarlo.payout`, so any payoff that defines it works.
 - `analytic_pricer` exists only for European and Binary European options.
 
@@ -149,5 +150,13 @@ Don't wire them into the module, and don't delete them, unless asked.
 - **GitHub Actions** is the CI:
   - `CI.yml` runs the test suite on every push (Julia 1.10 and latest), with the private registry added through `julia-buildpkg`'s `localregistry` input, and uploads the coverage to Codecov (needs the `CODECOV_TOKEN` secret).
   - `CompatHelper.yml` runs nightly and opens the compat-bump PRs that make up most recent commits.
-  - `DeployPage.yml` builds the Franklin/PkgPage site in `page/` (math write-up in `page/index.md`) to `gh-pages`.
+  - `DeployPage.yml` builds the Franklin/PkgPage site in `page/` (math write-up in `page/index.md`) to `gh-pages`. It copies `etc/logo.png` to `page/_assets/logo.png` first, for the navbar and the favicon: that copy is gitignored, the logo lives in `etc/` only.
 - GitLab is no longer used: the `origin2` remote is legacy. Push only to `origin` (GitHub).
+- The logo is drawn by `etc/logo.jl` (Luxor and the Georgia font, not in any Project.toml).
+
+The landing page (`page/index.md`):
+- Derived formulas are never typed by hand: `#hideall` Julia blocks generate them with Symbolics at build time from `VibratoMonteCarlo.log_density`, using the helpers of the first blocks (`latex_weight`, `generate_faa_di_bruno_exp`), and `\textoutput{}` shows them. Simplify with `δ = √h` as a plain symbol, since Symbolics does not cancel `sqrt(T)`. Definitions, model inputs and general identities stay in the text. Check new formulas numerically before publishing them.
+- Blocks run in page order, so a helper must come before its first use, and a Julia string needs `\\` for every LaTeX backslash.
+- Subsections fold with `\begin{expand}{title}` (`config.md`, `<details>`, style in `_css/custom.css`). Keep the summary table and the section intros open.
+- Citations are `\cite{key}` with `\biblabel{key}{Name (Year)}` in the References section.
+- To preview, copy `page/` to a scratch folder, `Pkg.develop` this package there, copy the logo, and run `Franklin.optimize(prerender = false, minify = false)` (about 3 minutes on Julia 1.10). `Franklin.serve` hung here. The output in `__site` uses the `VibratoMonteCarlo.jl` prepath, so serve its parent with a static server.
