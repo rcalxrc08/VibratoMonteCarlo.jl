@@ -6,6 +6,10 @@ struct LRMInterfaceArguments{num_1, num_2}
     end
 end
 
+# A smile is priced as the array of its options.
+smile_options(smile::FinancialMonteCarlo.AbstractSmile) = collect(FinancialMonteCarlo.smile_to_options(smile))
+LRMInterfaceArguments(a, smile::FinancialMonteCarlo.AbstractSmile) = LRMInterfaceArguments(a, smile_options(smile))
+
 Base.broadcastable(x::LRMInterfaceArguments) = Ref(x)
 function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
     FinancialMonteCarlo.set_seed!(mcBaseData)

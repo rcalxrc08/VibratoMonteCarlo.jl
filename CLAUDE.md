@@ -45,6 +45,7 @@ The files:
 - `american.jl`: `vibrato_am`. BS put value, delta and gamma against a Crank–Nicolson PDE of the Bermudan with the same dates (`bermudan_pde`, defined in the file); calls without dividends against the European price (BS and Kou with gamma, Heston value and delta against the MC pricer); all AD backends agree.
 - `conditional.jl`: `conditional_saltando` (Kou, Merton; European and binary) against `vibrato_saltando` on the same paths (Gauss–Hermite within its quadrature error, Gauss–Legendre to 1e-12), `conditional` against `vibrato` on BS, and the warning when differentiating over `λ`.
 - `gauss_legendre.jl`: `VibratoMonteCarloGaussLegendre` through `pure_lrm` on BS against `blsprice`/`blsbin` to 1e-9 (calls, puts, binaries, short and long maturities, strikes outside the bounds), with ForwardDiff Hessians, ReverseDiff, DualNumbers, `Taylor1` and arrays of options.
+- `smiles.jl`: arrays of options and smiles through `vibrato` and `vibrato_saltando`: every entry against the option priced alone, smiles against the same array, a binary smile against `blsbin`.
 - `mooncake.jl`: reverse gradient of a BS binary against ForwardDiff, forward gradient of the FFT `vibrato` on VG against hyper duals (ForwardDiff against them too). Compiling the rules takes minutes, so it has few paths and one case per mode.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
@@ -113,6 +114,7 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 - `EuropeanOption`, `BinaryEuropeanOption`, or an `Array` of them that share **one** maturity. `get_unique_maturity` enforces this with `only(unique(...))`.
 - `vibrato_am` takes one FinancialMonteCarlo `AmericanPayoff` (`AmericanOption`, `BinaryAmericanOption`); the integrands call `FinancialMonteCarlo.payout`, so any payoff that defines it works.
 - Array payoffs return a vector of prices.
+- `EuropeanOptionSmile` and `BinaryEuropeanOptionSmile` (FinancialMonteCarlo, not exported) work wherever arrays do: `LRMInterfaceArguments` and `lrm_interface_aug!` turn an `AbstractSmile` into its array of options.
 - `analytic_pricer` exists only for European and Binary European options.
 
 ### Simulation helpers ([src/simulation/](src/simulation/))

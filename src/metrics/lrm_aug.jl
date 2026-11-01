@@ -60,6 +60,7 @@ function adapt_spline(spline_cub, St, x_eval)
     return y_mod
 end
 #TODO: use AlternateVectors
+lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, smile::FinancialMonteCarlo.AbstractSmile, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0) = lrm_interface_aug!(mcProcess, spline_dens, smile_options(smile), mcBaseData, mc, St)
 function lrm_interface_aug!(mcProcess, spline_dens::DensitySpline, eu_opt, mcBaseData, mc::VibratoMonteCarloAnalytic, St = mcProcess.underlying.S0)
     # As for Gaussian processes, x_min and x_max are in standard deviations of the log increment around its mean.
     # The grid is built from values only, so it carries no derivative.
