@@ -147,6 +147,7 @@ commands that are defined and used in VibratoMonteCarlo.jl
 @def showall         = false
 
 \newcommand{\html}[1]{~~~#1~~~}
+\newenvironment{expand}[1]{~~~<details class="expand"><summary>#1</summary>~~~}{~~~</details>~~~}
 
 \newenvironment{center}{\html{<div style="text-align:center;">}}{\html{</div>}}
 
