@@ -11,7 +11,7 @@ function characteristic_function_to_density(phi, N, A)
     # t = @. c + vec * dt         # Grid, frequency space
     Y = @. phi(c + vec * dt) * exp(im * vec * dt * A)
     # @. Y *= exp(im * vec * dt * A)
-    fft!(Y)
+    Y = fft(Y)
     density_vals = @. dt / (2 * pi) * FinancialFFT.real_mod(exp(-c * x * im) * Y)
     #TODO: eps should be typed
     eps_mod = eps(eltype(density_vals))
@@ -45,7 +45,7 @@ end
 spline_density(mcProcess, T, r, N = 18, xmax = 15.0) = density_spline(density_unadapted(mcProcess, T, r, N, xmax)...)
 
 function density_spline(x, density_val)
-    spline_cub = CubicSplineInterpolation(x, density_val, extrapolation_bc = Throw())
+    spline_cub = cubic_spline_interpolation(x, density_val, extrapolation_bc = Throw())
     w = v_value.(density_val) .* step(x)
     m = sum(x .* w)
     s = sqrt(sum(@. (x - m)^2 * w))

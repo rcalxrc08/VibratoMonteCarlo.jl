@@ -4,7 +4,7 @@ Guidance for working in this repository.
 
 ## What this is
 
-`VibratoMonteCarlo.jl` is a Julia package that computes option prices **and sensitivities of any order** with Monte Carlo methods that stay smooth (C^∞) under automatic differentiation. You pass AD numbers (DualNumbers, HyperDualNumbers, ForwardDiff, ReverseDiff, TaylorSeries) as model/market inputs, and the derivatives come out of the price.
+`VibratoMonteCarlo.jl` is a Julia package that computes option prices **and sensitivities of any order** with Monte Carlo methods that stay smooth (C^∞) under automatic differentiation. You pass AD numbers (DualNumbers, HyperDualNumbers, ForwardDiff, ReverseDiff, TaylorSeries) as model/market inputs, and the derivatives come out of the price. Mooncake is also supported: it differentiates the plain `Float64` call.
 
 It builds on the author's own packages:
 - **FinancialMonteCarlo.jl**: processes (`BlackScholesProcess`, `KouProcess`, `MertonProcess`, `HestonProcess`, `VarianceGammaProcess`, `NormalInverseGaussianProcess`), payoffs, `MonteCarloConfiguration`, `ZeroRate`, `simulate`, `pricer`, and `set_seed!`.
@@ -45,6 +45,7 @@ The files:
 - `american.jl`: `vibrato_am`. BS put value, delta and gamma against a Crank–Nicolson PDE of the Bermudan with the same dates (`bermudan_pde`, defined in the file); calls without dividends against the European price (BS and Kou with gamma, Heston value and delta against the MC pricer); all AD backends agree.
 - `conditional.jl`: `conditional_saltando` (Kou, Merton; European and binary) against `vibrato_saltando` on the same paths (Gauss–Hermite within its quadrature error, Gauss–Legendre to 1e-12), `conditional` against `vibrato` on BS, and the warning when differentiating over `λ`.
 - `gauss_legendre.jl`: `VibratoMonteCarloGaussLegendre` through `pure_lrm` on BS against `blsprice`/`blsbin` to 1e-9 (calls, puts, binaries, short and long maturities, strikes outside the bounds), with ForwardDiff Hessians, ReverseDiff, DualNumbers, `Taylor1` and arrays of options.
+- `mooncake.jl`: reverse gradient of a BS binary against ForwardDiff, forward gradient of the FFT `vibrato` on VG against hyper duals (ForwardDiff against them too). Compiling the rules takes minutes, so it has few paths and one case per mode.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails and errors (see Known issues).
 
 `runner_z.jl` is not included: it needs `vibrato_z` from the untracked Zygote experiments.
@@ -62,10 +63,6 @@ Method limits measured against Lewis (they are not bugs, keep them in mind when 
 
 Known issues in `check/accuracy.jl`:
 - `pure_lrm` on non-Ito processes with `Taylor1` inputs throws: `eps(::Type{Taylor1})` in `lrm_aug.jl`, and Interpolations calls `round(::Taylor1, RoundDown)` (TaylorSeries < 0.23 does not define it).
-
-FinancialMonteCarlo 0.3's antithetic Heston simulator (`heston.jl`, `e2 = -(e1 * ρ + ...)`) uses correlation -ρ, the same bug fixed here in `simulate_with_last_vol`. Heston tests therefore use a serial `pricer` reference.
-
-FinancialFFT 0.1.5's TaylorSeries glue calls `get_order`, which was removed in TaylorSeries ≥ 0.23. Tests therefore use hyper-dual Lewis prices as references, never `Taylor1` ones.
 
 ## Architecture
 
@@ -122,12 +119,13 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 These are custom simulators that return extra state the metrics need: the last jump time, the variance path (`simulate_with_vol`; `simulate_with_last_vol` keeps its last column), or the subordinator increments. They allocate matrices with an element type derived from a "zero" built out of all parameters (e.g. `isDualZero`), so AD numbers propagate. Follow this pattern in new simulators.
 
 ### AD backend glue: package extensions ([ext/](ext/))
-- Each AD backend is a Julia package extension (`VibratoMonteCarlo<Pkg>Ext`). The backends are declared under `[weakdeps]`/`[extensions]` in `Project.toml`, which requires Julia ≥ 1.9.
+- Each AD backend is a Julia package extension (`VibratoMonteCarlo<Pkg>Ext`). The backends are declared under `[weakdeps]`/`[extensions]` in `Project.toml`, which requires Julia ≥ 1.9 (the package needs 1.10).
 - To support a new number type:
   1. Add `ext/VibratoMonteCarlo<Pkg>Ext.jl` that does `import VibratoMonteCarlo: v_value, v_mod` and adds methods.
   2. Register the package in `[weakdeps]`, `[extensions]` and `[compat]`.
   3. Add it to `test/Project.toml`.
 - Extensions cannot define new types in the parent module, nor replace a method the parent already defines (so an optional dependency cannot swap in a better implementation when loaded).
+- Mooncake differs from the other backends: it sees `Float64` inputs, not a number type, so `VibratoMonteCarloMooncakeExt` adds rules instead of `v_value`/`v_mod` methods. `v_value` is a zero-derivative primitive and `v_mod` is overlaid with its `exp` form, because `v_mod(::AbstractFloat) = 1` would drop every score term (split Gauss-Legendre would still be exact through its moving cut, the other rules would lose the jump of a binary). `exercise_regions` is zero-derivative (foreigncall) (`set_seed!` has its rule in FinancialMonteCarlo's own Mooncake extension). The rule for `fft` (FFTW plans use `try/finally`) comes from FinancialFFT's Mooncake extension, which has no `bfft` rule: forward over reverse through the FFT density would need one. Use `Mooncake.Config(enable_nfwd = false)` in forward mode: the default path pushes `NDual` numbers through the code and fails. Known gaps: forward mode on arrays of options did not finish in 2 h (reverse works), reverse and Hessians of `vibrato_am` on Lévy and Hessians of the FFT `vibrato` fail on `copy(::TwicePrecision)` in Interpolations (forward works), the Hessian with `VibratoMonteCarloStandard` fails. The first call compiles for 2-30 min on each case, so ForwardDiff stays the better choice for few parameters.
 - ForwardDiff is pulled in transitively (FinancialFFT → DataInterpolations), so its extension is usually active even if the user never loads it.
 - `src/deps/zygote_dependencies.jl` is untracked and not wired in (marked `#wrong`).
 
