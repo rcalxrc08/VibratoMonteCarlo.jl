@@ -147,7 +147,7 @@ Don't wire them into the module, and don't delete them, unless asked.
 ## CI and landing page
 
 - **GitHub Actions** is the CI:
-  - `CI.yml` runs the test suite on every push (Julia 1.10 and latest), with the private registry added through `julia-buildpkg`'s `localregistry` input.
+  - `CI.yml` runs the test suite on every push (Julia 1.10 and latest), with the private registry added through `julia-buildpkg`'s `localregistry` input, and uploads the coverage to Codecov (needs the `CODECOV_TOKEN` secret).
   - `CompatHelper.yml` runs nightly and opens the compat-bump PRs that make up most recent commits.
   - `DeployPage.yml` builds the Franklin/PkgPage site in `page/` (math write-up in `page/index.md`) to `gh-pages`.
-- GitLab is no longer used: `.gitlab-ci.yml` (build, test, codecov, benchmark) and the `origin2` remote are legacy. Push only to `origin` (GitHub).
+- GitLab is no longer used: the `origin2` remote is legacy. Push only to `origin` (GitHub).
