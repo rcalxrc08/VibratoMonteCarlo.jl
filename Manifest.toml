@@ -971,9 +971,9 @@ version = "2.8.11"
 
 [[deps.PatternVectors]]
 deps = ["ChainRulesCore"]
-git-tree-sha1 = "63b0f31bb9ecb7934e9d2a705e58eeca274e0919"
+git-tree-sha1 = "144758030d24b99bb2803692292b677529650499"
 uuid = "92638b5e-77be-42fd-8598-99573a47aaa0"
-version = "0.1.4"
+version = "0.1.5"
 
     [deps.PatternVectors.extensions]
     MooncakeExt = "Mooncake"
