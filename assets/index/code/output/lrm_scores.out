@@ -1,0 +1,5 @@
+$$\partial_{S_0} \log f = \frac{Z}{S_0 \delta \sigma}$$
+$$\partial_{r} \log f = \frac{Z \delta}{\sigma}$$
+$$\partial_{d} \log f = \frac{ - Z \delta}{\sigma}$$
+$$\partial_{\sigma} \log f = \frac{-1 + Z^{2} - Z \delta \sigma}{\sigma}$$
+$$\partial_{T} \log f = \frac{ - \sigma + Z^{2} \sigma - 2 Z d \delta + 2 Z r \delta - \sigma^{2} Z \delta}{2 \delta^{2} \sigma}$$

@@ -1,0 +1,4 @@
+\begin{equation}
+\frac{\partial V}{\partial\theta} = \mathbb{E}\left( \frac{W_T \Phi\left( \log\left( S_0 \right) + W_T \sigma + T \left(  - d + r - \frac{1}{2} \sigma^{2} \right) \right)}{S_0 T \sigma} \right)
+\end{equation}
+

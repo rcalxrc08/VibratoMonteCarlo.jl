@@ -1,0 +1,3 @@
+$$w_{\Delta} = \frac{Z}{S_0 \delta \sigma}$$
+$$w_{\Gamma} = \frac{-1 + Z^{2} - Z \delta \sigma}{\sigma^{2} \delta^{2} S_0^{2}}$$
+$$w_{\mathcal{V}} = \frac{ - \delta + W_\tau Z - T Z \sigma + Z^{2} \delta}{\delta \sigma}$$
