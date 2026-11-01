@@ -1,6 +1,5 @@
 # VibratoMonteCarlo.jl <img src="etc/logo.png" width="40">  
 
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://rcalxrc08.gitlab.io/VibratoMonteCarlo.jl/)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/)
 [![pipeline status](https://gitlab.com/rcalxrc08/VibratoMonteCarlo/badges/master/pipeline.svg)](https://gitlab.com/rcalxrc08/VibratoMonteCarlo/commits/master) 
 [![codecov](https://codecov.io/gl/rcalxrc08/VibratoMonteCarlo.jl/graph/badge.svg?token=P29H62AHKP)](https://codecov.io/gl/rcalxrc08/VibratoMonteCarlo.jl)
