@@ -1,4 +1,4 @@
-# Draws etc/logo.png and page/_assets/logo.svg, in the style of the FinancialToolbox.jl logo: three discs in the Julia colours.
+# Draws etc/logo.png, in the style of the FinancialToolbox.jl logo: three discs in the Julia colours.
 # Needs Luxor.jl in the active environment and the Georgia font: julia etc/logo.jl
 using Luxor
 
@@ -83,4 +83,3 @@ function draw_logo(path)
 end
 
 draw_logo(joinpath(@__DIR__, "logo.png"))
-draw_logo(joinpath(@__DIR__, "..", "page", "_assets", "logo.svg")) # the navigation bar of the landing page

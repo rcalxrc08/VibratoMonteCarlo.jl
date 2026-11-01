@@ -14,6 +14,7 @@ jobs:
       uses: julia-actions/setup-julia@v1
       with:
         version: "1.10"
+    - run: cp etc/logo.png page/_assets/logo.png # the logo lives in etc/ only
     - run: julia -e '
             import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git"));
             Pkg.Registry.add("General");
