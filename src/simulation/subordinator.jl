@@ -26,8 +26,9 @@ end
 function simulate_subordinator(mcProcess, mcBaseData, T)
     κ = mcProcess.κ
     G_T = draw_subordinator(FinancialMonteCarlo.compute_subordinator_law(mcProcess, v_value(κ), v_value(T)), mcBaseData)
-    weight = (carries_derivatives(κ) || carries_derivatives(T)) ? map(g -> v_mod(subordinator_log_density(mcProcess, g, T, κ)), G_T) : true
-    return (G_T, weight)
+    weight = (carries_derivatives(κ) || carries_derivatives(T)) ? on_device(mcBaseData, mcProcess, map(g -> v_mod(subordinator_log_density(mcProcess, g, T, κ)), G_T)) : true
+    # Drawn on the host (Distributions has no GPU sampler, and Sobol is sequential), used on the device.
+    return (on_device(mcBaseData, mcProcess, G_T), weight)
 end
 
 draw_subordinator(law, mcBaseData) = rand(mcBaseData.parallelMode.rng, law, mcBaseData.Nsim)
@@ -45,6 +46,12 @@ subordinator_mean(x, ::Bool) = mean(x)
 function subordinator_mean(x::AbstractVector{<:Number}, weight::AbstractVector)
     baseline = v_value(mean(x))
     return mean(map((x_i, w) -> muladd(x_i - baseline, w, baseline), x, weight))
+end
+# On the GPU a smile is a matrix of paths × options.
+subordinator_mean(x::AbstractMatrix, ::Bool) = path_mean(x)
+function subordinator_mean(x::AbstractMatrix, weight::AbstractVector)
+    baseline = v_value.(mean(x; dims = 1))
+    return path_mean(@. muladd(x - baseline, weight, baseline))
 end
 function subordinator_mean(x::AbstractVector{<:AbstractVector}, weight::AbstractVector)
     baseline = v_value.(mean(x))

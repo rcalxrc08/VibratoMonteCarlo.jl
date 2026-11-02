@@ -82,7 +82,8 @@ end
 
 # With VibratoMonteCarloStandard the inner samples are drawn again for every outer path (Z is only a buffer):
 # sharing them would turn their error into a bias that does not average out over the outer paths.
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, ::VibratoMonteCarloStandard)
+# A CudaMode configuration lands here for the paths priced on the host (pure_lrm, vibrato_am, FFT density): it has a CPU rng.
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::Union{FinancialMonteCarlo.SerialMonteCarloConfig, FinancialMonteCarlo.CudaMonteCarloConfig}, ::VibratoMonteCarloStandard)
     Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
     eu_opt = received_args.option
     args = IntegrandArguments(mu, sigma, eu_opt)
@@ -149,7 +150,7 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     return sum(gauss_legendre_segment(bounds[i], bounds[i+1], x, w, args) for i = 1:(length(bounds)-1) if bounds[i] < bounds[i+1])
 end
 
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, ::VibratoMonteCarloStandard)
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::Union{FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, FinancialMonteCarlo.CudaAntitheticMonteCarloConfig}, ::VibratoMonteCarloStandard)
     Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
     eu_opt = received_args.option
     args = IntegrandArguments(mu, sigma, eu_opt)
@@ -174,4 +175,50 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonte
     args = IntegrandArguments(mu, sigma, eu_opt)
     output = mean(integrand_lrm_vec_anti.(Z, args))
     return output
+end
+
+# Inner expectation of every outer path, one lrm_interface_vec! per path.
+lrm_paths(mu, sigma, args, mcBaseData, vb_mc) = @. lrm_interface_vec!(mu, sigma, args, mcBaseData, vb_mc)
+
+# On the GPU a path cannot run the loops of lrm_interface_vec!, and the configuration (with its CPU rng) cannot enter a
+# kernel: the integrand is evaluated on a matrix of paths × nodes in one broadcast, then reduced along the nodes. The
+# nodes go to the device with one copy. A smile gives one column per option, on the same inner samples.
+lrm_paths(mu::AbstractVector, sigma, args, mcBaseData::CudaConfig, vb_mc) = device_paths(mu, sigma, device_samples(mu, args.Z, mcBaseData, vb_mc), args.option, vb_mc)
+device_paths(mu, sigma, samples, option, vb_mc) = device_option_paths(mu, sigma, samples, option, vb_mc)
+device_paths(mu, sigma, samples, smile::FinancialMonteCarlo.AbstractSmile, vb_mc) = reduce(hcat, [device_option_paths(mu, sigma, samples, opt, vb_mc) for opt in FinancialMonteCarlo.smile_to_options(smile)])
+
+node_row(mu, x) = permutedims(copyto!(similar(mu, Float64, length(x)), collect(Float64, x)))
+device_samples(mu, Z, _, ::VibratoMonteCarloGaussLegendre) = (node_row(mu, Z[1]), node_row(mu, Z[2]))
+device_samples(mu, Z, _, ::VibratoMonteCarloAnalytic) = (node_row(mu, Z), (maximum(Z) - minimum(Z)) / (length(Z) - 1))
+device_samples(mu, Z, _, ::VibratoMonteCarloGaussHermite) = (node_row(mu, Z[1] .* sqrt2), node_row(mu, Z[2]))
+# Fresh inner samples for every path, as on the CPU, from the CURAND generator seeded by set_seed!, and antithetic pairs
+# with AntitheticMC.
+device_samples(mu, Z, mcBaseData, vb_mc::VibratoMonteCarloStandard) = (randn!(similar(mu, Float64, length(mu), vb_mc.Nsim_lrm)), mcBaseData isa FinancialMonteCarlo.CudaAntitheticMonteCarloConfig)
+
+integrand_at(z, mu, sigma, option) = integrand_lrm_vec(z, IntegrandArguments(mu, sigma, option))
+integrand_at_anti(z, mu, sigma, option) = integrand_lrm_vec_anti(z, IntegrandArguments(mu, sigma, option))
+weighted_integrand_at(z, mu, sigma, option) = exp(log_density_default(z)) * integrand_at(z, mu, sigma, option)
+sum_nodes(f) = vec(sum(f; dims = 2))
+
+function device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGaussLegendre)
+    # The same pieces as lrm_interface_vec!: an empty piece has zero width, so it adds zero instead of being skipped.
+    option_ref = Ref(option)
+    v_mu = v_value.(mu)
+    v_sigma = v_value.(sigma)
+    z_min = -GAUSS_LEGENDRE_Z
+    z_max = @. GAUSS_LEGENDRE_Z + v_sigma
+    cuts = map(p -> (@. clamp((p - v_mu) / v_sigma, z_min, z_max)), singular_points(option))
+    bounds = (z_min, cuts..., z_max)
+    return sum(1:(length(bounds)-1)) do i
+        za = bounds[i]
+        zb = bounds[i+1]
+        sum_nodes(@muladd @. w * (zb - za) / 2 * weighted_integrand_at((za + zb) / 2 + (zb - za) / 2 * x, mu, sigma, option_ref))
+    end
+end
+device_option_paths(mu, sigma, (z, dz), option, ::VibratoMonteCarloAnalytic) = (option_ref = Ref(option); sum_nodes(@. weighted_integrand_at(z, mu, sigma, option_ref)) * dz)
+device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGaussHermite) = (option_ref = Ref(option); sum_nodes(@. integrand_at(x, mu, sigma, option_ref) * w) / sqrtπ)
+function device_option_paths(mu, sigma, (Z, antithetic), option, ::VibratoMonteCarloStandard)
+    option_ref = Ref(option)
+    f = antithetic ? (@. integrand_at_anti(Z, mu, sigma, option_ref)) : (@. integrand_at(Z, mu, sigma, option_ref))
+    return vec(mean(f; dims = 2))
 end

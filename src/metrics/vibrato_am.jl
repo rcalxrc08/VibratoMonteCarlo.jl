@@ -68,13 +68,13 @@ function frozen_laws(mcProcess, rfCurve, mcBaseData, T)
     (x, density_val) = density_unadapted(mcProcess, T / mcBaseData.Nstep, rfCurve.r, 18, 18.0)
     law = density_spline(x, density_val)
     law_value = density_spline(x, v_value.(density_val))
-    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T)
+    S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T))
     return S, (_, _) -> law, (_, _) -> law_value
 end
 function frozen_laws(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve, mcBaseData, T)
     dt = T / mcBaseData.Nstep
     rd = rfCurve.r - FinancialMonteCarlo.dividend(mcProcess)
-    (V, S) = simulate_with_vol(mcProcess, rfCurve, mcBaseData, T)
+    (V, S) = to_host.(simulate_with_vol(mcProcess, rfCurve, mcBaseData, T))
     V_value = v_value.(V)
     law_at(i, k) = GaussianStep((rd - V[i, k] / 2) * dt, sqrt(V[i, k] * dt))
     value_law_at(i, k) = GaussianStep((v_value(rd) - V_value[i, k] / 2) * dt, sqrt(V_value[i, k] * dt))
@@ -93,12 +93,13 @@ function vibrato_am(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo
     S0 = mcProcess.underlying.S0
     # Pass 1: the exercise regions, from Longstaff-Schwartz on independent paths with values only.
     value_process = BlackScholesProcess(v_value(σ), Underlying(v_value(S0), v_value(d)))
-    S_policy = FinancialMonteCarlo.simulate(value_process, ZeroRate(v_value(r)), mcBaseData, T)
+    # The regressions and the backward induction index single paths: with CudaMode the paths come to the host.
+    S_policy = to_host(FinancialMonteCarlo.simulate(value_process, ZeroRate(v_value(r)), mcBaseData, T))
     regions = exercise_regions(S_policy, am_opt, exp(-v_value(r) * dt), v_value(S0), v_value(σ) * sqrt(T))
     # Pass 2: paths on the half steps. Column 2k is s_k = (k - 1/2) dt, the exercise date t_k = k dt is the midpoint
     # of [s_k, s_{k+1}] and given its ends log S_{t_k} is Gaussian (Brownian bridge).
     mc_half = MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.monteCarloMethod, mcBaseData.parallelMode, mcBaseData.init_rng)
-    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T)
+    S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T))
     args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData), am_opt)
     drift = r - d - drift_correction(mcProcess)
     bridge_std = σ * sqrt(dt) / 2

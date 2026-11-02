@@ -59,6 +59,22 @@ init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints
 
 get_unique_maturity(euopt) = euopt.T
 
+# GPU (FinancialMonteCarlo.CudaMode, with `using CUDA`): FinancialMonteCarlo simulates on the device, the inner integration
+# runs there too (lrm_paths), and code that indexes single paths takes them to the host. Every transfer is one copy of a
+# whole array, so no GPU array is indexed by scalars. AbstractCudaMode exists without CUDA, so no extension is needed.
+const CudaConfig = FinancialMonteCarlo.MonteCarloConfiguration{<:Integer, <:Integer, <:FinancialMonteCarlo.AbstractMonteCarloMethod, <:FinancialMonteCarlo.AbstractCudaMode}
+to_host(x::Array) = x
+to_host(x::AbstractArray) = Array(x)
+# x on the device of a CudaConfig, unchanged otherwise.
+on_device(mcBaseData, mcProcess, x) = x
+on_device(mcBaseData::CudaConfig, mcProcess, x::AbstractVector) = copyto!(FinancialMonteCarlo.get_array_type(mcBaseData, mcProcess, first(x)), x)
+# Standard normals in place: from the CPU rng, or on the GPU from CURAND (seeded by set_seed!).
+normals!(mcBaseData, e) = randn!(mcBaseData.parallelMode.rng, e)
+normals!(::CudaConfig, e) = randn!(e)
+# Mean over the paths of lrm_paths: a vector (of vectors for a smile on the CPU), or a matrix with one column per option.
+path_mean(x::AbstractVector) = mean(x)
+path_mean(x::AbstractMatrix) = vec(to_host(mean(x; dims = 1)))
+
 # log E[exp(X_1)] of the driftless log price, from the characteristic exponent of FinancialFFT: the risk neutral drift of
 # log S is r - d - drift_correction (σ² / 2 for Black-Scholes, ψ for VG and NIG, σ² / 2 + λ E[e^J - 1] with jumps).
 drift_correction(mcProcess) = FinancialFFT.characteristic_exponent_i(1, mcProcess)

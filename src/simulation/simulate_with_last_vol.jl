@@ -1,6 +1,7 @@
 using FinancialMonteCarlo, Random;
-# Heston paths with the whole variance path: returns (V, S), V[:, j] is the variance at the time of S[:, j].
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialMonteCarloConfig, T::numb) where {numb <: Number}
+# Heston paths with the whole variance path: returns (V, S), V[:, j] is the variance at the time of S[:, j]. The same code
+# runs on the GPU: the arrays come from FinancialMonteCarlo (CuArrays with CudaMode) and the normals from normals!.
+function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::Union{FinancialMonteCarlo.SerialMonteCarloConfig, FinancialMonteCarlo.CudaMonteCarloConfig}, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -21,19 +22,19 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     dt = T / Nstep
     isDualZeroVol = zero(T * σ₀ * κ * θ * λ1 * σ * ρ)
     isDualZero = isDualZeroVol * S0 * zero(T * r * σ₀ * κ * θ * λ1 * σ * ρ)
-    X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, isDualZero)
     view(X, :, 1) .= isDualZero
-    V = Matrix{typeof(σ₀^2 + isDualZeroVol)}(undef, Nsim, Nstep + 1)
+    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, σ₀^2 + isDualZeroVol)
     view(V, :, 1) .= σ₀^2 + isDualZeroVol
     isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
-    e1 = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
-    e2_rho = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
-    e2 = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero) + zero(ρ))}(undef, Nsim)
+    e1 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero)), Nsim)
+    e2_rho = similar(e1)
+    e2 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero) + zero(ρ)), Nsim)
     tmp_cost = sqrt(1 - ρ^2)
     for j = 1:Nstep
         v_m = @view V[:, j]
-        randn!(mcBaseData.parallelMode.rng, e1)
-        randn!(mcBaseData.parallelMode.rng, e2_rho)
+        normals!(mcBaseData, e1)
+        normals!(mcBaseData, e2_rho)
         @. e2 = e1 * ρ + e2_rho * tmp_cost
         @views @. X[:, j+1] = X[:, j] + ((r - d) - v_m / 2) * dt + sqrt(v_m) * sqrt(dt) * e1
         #when v_m = 0.0, the derivative becomes NaN
@@ -44,7 +45,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     return (V, X)
 end
 
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::Union{FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, FinancialMonteCarlo.CudaAntitheticMonteCarloConfig}, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -66,24 +67,24 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     dt = T / Nstep
     isDualZeroVol = zero(T * σ₀ * κ * θ * λ1 * σ * ρ)
     isDualZero = isDualZeroVol * S0 * zero(T * r * σ₀ * κ * θ * λ1 * σ * ρ)
-    X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, isDualZero)
     view(X, :, 1) .= isDualZero
     isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     Nsim_2 = div(Nsim, 2)
     Xp = @views X[1:Nsim_2, :]
     Xm = @views X[(Nsim_2+1):end, :]
-    V = Matrix{typeof(σ₀^2 + isDualZeroVol)}(undef, Nsim, Nstep + 1)
+    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, σ₀^2 + isDualZeroVol)
     view(V, :, 1) .= σ₀^2 + isDualZeroVol
     Vp = @views V[1:Nsim_2, :]
     Vm = @views V[(Nsim_2+1):end, :]
-    e1 = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim_2)
-    e2_rho = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim_2)
-    e2 = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim_2)
+    e1 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero)), Nsim_2)
+    e2_rho = similar(e1)
+    e2 = similar(e1)
     for j = 1:Nstep
         v_m_1 = @view Vp[:, j]
         v_m_2 = @view Vm[:, j]
-        randn!(mcBaseData.parallelMode.rng, e1)
-        randn!(mcBaseData.parallelMode.rng, e2_rho)
+        normals!(mcBaseData, e1)
+        normals!(mcBaseData, e2_rho)
         @. e2 = e1 * ρ + e2_rho * sqrt(1 - ρ * ρ)
         @views @. Xp[:, j+1] = Xp[:, j] + ((r - d) - 0.5 * v_m_1) * dt + sqrt(v_m_1) * sqrt(dt) * e1
         @views @. Xm[:, j+1] = Xm[:, j] + ((r - d) - 0.5 * v_m_2) * dt - sqrt(v_m_2) * sqrt(dt) * e1

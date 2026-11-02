@@ -23,8 +23,7 @@ function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Ab
     Z = init_lrm_vec(vb_mc, mcBaseData)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
-    # @code_warntype mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
-    result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result
 end
 
@@ -55,10 +54,9 @@ function vibrato(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMo
     mu_jump = @views @muladd @. log(S[:, end]) + drift_rn * step_vibrato
     sigma_jump = σ * sqrt(step_vibrato)
     Z = init_lrm_vec(vb_mc, mcBaseData)
-    # result = mean(lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, vb_mc) for mu in mu_jump) * exp(-r * T)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result
 end
 
@@ -76,7 +74,7 @@ function vibrato(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financia
     Z = init_lrm_vec(vb_mc, mcBaseData)
     # Z = init_lrm_vec(vb_mc, mu_jump[1] + sigma_jump[1])
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result
 end
 
@@ -86,7 +84,8 @@ function vibrato(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, 
     T = get_unique_maturity(eu_opt)
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
-    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
+    # The FFT density is a spline evaluated path by path: on the host.
+    S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato))
     S_end = @views S[:, end]
     adjusted_bound = 18.0
     Z = spline_density(mcProcess, step_vibrato, r, 18, adjusted_bound)

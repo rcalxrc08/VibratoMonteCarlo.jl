@@ -37,8 +37,10 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     zero_drift = drift_rn * 0 * T
     Nsim = mcBaseData.Nsim
     Nsteps = mcBaseData.Nstep
-    X = Matrix{typeof(zero_drift)}(undef, Nsim, Nsteps + 1)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, zero_drift)
     FinancialMonteCarlo.simulate!(X, BrownianMotion(σ, drift_rn), mcBaseData, T)
+    # The jumps are added path by path with the CPU rng: on the host, then the results go back to the device.
+    X = to_host(X)
     S0 = mcProcess.underlying.S0
     dt = T / Nsteps
     T_jumps = Array{typeof(λ)}(undef, Nsim)
@@ -52,7 +54,7 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     end
     log_S0 = log(S0)
     X_f = @. log_S0 + S_jumps
-    return T_jumps, X_f
+    return on_device(mcBaseData, mcProcess, T_jumps), on_device(mcBaseData, mcProcess, X_f)
 end
 function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
     T_jumps, X_f = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)

@@ -1,0 +1,16 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+FinancialFFT = "ccc4acef-1676-4a84-946d-4093fe376f06"
+FinancialMonteCarlo = "078f23cc-2637-5a1d-aba6-8a9ba9a6ff83"
+FinancialToolbox = "2edd74a5-e968-5e45-af77-76d29aa6a478"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+HyperDualNumbers = "50ceba7f-c3ee-5a84-a6e8-3ad40456ec97"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+VibratoMonteCarlo = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
+
+[sources]
+VibratoMonteCarlo = {path = "../.."}
+
+[compat]
+CUDA = "5, 6"
+julia = "1.11"

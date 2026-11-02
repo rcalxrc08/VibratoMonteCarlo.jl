@@ -12,7 +12,8 @@ function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMo
     Z = init_lrm_vec(vb_mc, mcBaseData)
     args = LRMInterfaceArguments(Z, eu_opt)
     mu_jump = @muladd @. X_jump + drift_rn * (T - T_jump)
-    result = mean(@. lrm_interface_vec!(mu_jump, σ * sqrt(T - T_jump), args, mcBaseData, vb_mc)) * exp(-r * T)
+    sigma_jump = @. σ * sqrt(T - T_jump)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
 
     return result
 end
@@ -36,7 +37,7 @@ function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::Financial
     Z = init_lrm_vec(vb_mc, mcBaseData)
     args = LRMInterfaceArguments(Z, eu_opt)
     discount = exp(-r * T)
-    result = subordinator_mean((@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc) * discount), weight)
+    result = subordinator_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc) .* discount, weight)
     return result
 end
 

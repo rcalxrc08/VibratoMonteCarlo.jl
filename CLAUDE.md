@@ -26,6 +26,7 @@ julia --project -e 'import Pkg; Pkg.test()'                     # runs test/runt
 VIBRATO_TEST_ACCURACY=true julia --project -e 'import Pkg; Pkg.test()'   # also runs test/check/accuracy.jl
 julia --project=bench -e 'import Pkg; Pkg.develop(path=pwd()); Pkg.instantiate(); include("bench/bench.jl")'
 julia -e 'using JuliaFormatter; format(".")'                      # uses .JuliaFormatter.toml
+julia --project=test/cuda -e 'import Pkg; Pkg.instantiate(); include("test/cuda/runtests.jl")'   # GPU tests, needs an NVIDIA GPU (~2 min on an MX150)
 ```
 
 `Manifest.toml` files are gitignored, so the first run resolves dependencies fresh.
@@ -48,6 +49,7 @@ The files:
 - `smiles.jl`: European and binary smiles through `vibrato`, `vibrato_saltando` and `pure_lrm`: every entry against the option priced alone on the same seed, a binary smile against `blsbin`.
 - `mooncake.jl`: reverse gradients of a BS binary and of `vibrato_saltando` on VG (with `κ` and `T`) against ForwardDiff, forward gradient of the FFT `vibrato` on VG against hyper duals (ForwardDiff against them too). Compiling the rules takes minutes, so it has few paths and few cases.
 - `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails (see Known issues).
+- `cuda/runtests.jl`: GPU tests, **opt-in** and in their own project (`test/cuda/Project.toml`, with `[sources]` for the package, Julia ≥ 1.11), so CI neither downloads nor compiles CUDA. With `CUDA.allowscalar(false)`: the device inner integration against the host one on the same `mu` (≤ 4e-11), the GPU Heston paths against FinancialMonteCarlo's GPU Heston (1.4e-8, the variance floors differ), VG/NIG on the same `G_T` as the host (1e-15), the CURAND estimators against references (tolerances twice the worst of 6 seeds), nested ForwardDiff on the device against hyper duals, and the host parts.
 
 `runner_z.jl` is not included: it needs `vibrato_z` from the untracked Zygote experiments.
 
@@ -86,6 +88,10 @@ All of this sits in [src/metrics/lrm.jl](src/metrics/lrm.jl):
 - **`v_value(x)`** strips the derivative part off an AD number. Each AD backend extension **must** implement it, recursively (`v_value(value(x))`), so that nested numbers (`ForwardDiff.hessian`) lose every level: stripping only the outer one leaks the inner derivatives into the payoff argument and gives wrong second derivatives. The base cases are `AbstractFloat` and `Integer` (an `EuropeanOption(1, 100)` keeps an `Int` maturity).
 - **`v_mod(x)`** has a generic `exp`-based fallback. Backends may specialize it for speed or exactness (Dual, Hyper, only over `AbstractFloat` values; nested numbers use the fallback).
 - **`lrm_interface_vec!(mu, sigma, args, mcBaseData, vb_mc)`** does the inner integration. It dispatches on the **MC config type × integration method**:
+- **GPU** (`FinancialMonteCarlo.CudaMode`, with `using CUDA`): no extension is needed, `AbstractCudaMode`, `CudaMonteCarloConfig` and `get_matrix_type`/`get_array_type` exist without CUDA, and every transfer is a copy of a whole array (`to_host`, `on_device`), so no GPU array is indexed by scalars.
+  - The metrics call `path_mean(lrm_paths(mu, sigma, args, mcBaseData, vb_mc))`. `lrm_paths` broadcasts `lrm_interface_vec!` per path; for a `CudaConfig` it evaluates the integrand on a matrix of paths × nodes in one broadcast and reduces along the nodes (`device_samples`, `device_option_paths`), since a kernel can run neither the loops of `lrm_interface_vec!` nor take the configuration (CPU rng). A smile is a matrix with one column per option (`path_mean`, `subordinator_mean`). `VibratoMonteCarloStandard` draws its inner samples with CURAND.
+  - On the device: the paths of FinancialMonteCarlo, `simulate_with_vol` (Heston, same code as the CPU with `normals!`), the integration. On the host, then uploaded: `G_T` (Distributions has no GPU sampler) and the Kou jumps (path by path with the CPU rng). On the host entirely: the FFT density (a spline per path), `vibrato_am` (regressions, backward induction), `pure_lrm` (one point).
+  - AD numbers must be isbits on the device: hyper duals and ForwardDiff (nested too) are tested, DualNumbers is isbits but untested, TaylorSeries and ReverseDiff cannot run there.
   - With `VibratoMonteCarloStandard` the inner samples are drawn again for every outer path from `mcBaseData.parallelMode.rng` (the `Z` from `init_lrm_vec` is only a buffer). Sharing them across paths turns their error into a bias that does not average out (deltas were 8-15% off).
   - `SerialMonteCarloConfig` × `VibratoMonteCarloStandard`: plain MC average.
   - `SerialAntitheticMonteCarloConfig` × `Standard`: antithetic average.
