@@ -1412,7 +1412,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 deps = ["ChainRulesCore", "Distributions", "FFTW", "FastGaussQuadrature", "FinancialFFT", "FinancialMonteCarlo", "FinancialToolbox", "Interpolations", "IrrationalConstants", "LinearAlgebra", "MuladdMacro", "PatternVectors", "Random", "Sobol", "Statistics", "StatsFuns"]
 path = ".."
 uuid = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
-version = "0.1.0"
+version = "0.2.0"
 
     [deps.VibratoMonteCarlo.extensions]
     VibratoMonteCarloDualNumbersExt = "DualNumbers"
