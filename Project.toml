@@ -1,7 +1,7 @@
 name = "VibratoMonteCarlo"
 uuid = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
 authors = ["Nicola <nicola.scaramuzzino@yandex.com> and contributors"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
