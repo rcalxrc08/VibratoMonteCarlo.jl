@@ -4,7 +4,7 @@ function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialM
     d = FinancialMonteCarlo.dividend(mcProcess)
     σ = mcProcess.σ
     T = get_unique_maturity(eu_opt)
-    drift_rn = r - d - σ^2 / 2
+    drift_rn = r - d - drift_correction(mcProcess)
     mu = @muladd log(mcProcess.underlying.S0) + drift_rn * T
     Z = init_lrm_vec(vb_mc, mcBaseData)
     sigma_jump = σ * sqrt(T)

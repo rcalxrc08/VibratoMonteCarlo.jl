@@ -33,7 +33,7 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     ####Simulation
     ## Simulate
     # r-d-psi(-i)
-    drift_rn = (r - d) - σ^2 / 2 - λ * FinancialMonteCarlo.compute_drift(mcProcess)
+    drift_rn = (r - d) - drift_correction(mcProcess)
     zero_drift = drift_rn * 0 * T
     Nsim = mcBaseData.Nsim
     Nsteps = mcBaseData.Nstep

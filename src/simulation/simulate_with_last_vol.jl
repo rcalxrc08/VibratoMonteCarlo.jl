@@ -25,7 +25,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     view(X, :, 1) .= isDualZero
     V = Matrix{typeof(σ₀^2 + isDualZeroVol)}(undef, Nsim, Nstep + 1)
     view(V, :, 1) .= σ₀^2 + isDualZeroVol
-    isDualZero_eps = isDualZeroVol + eps(typeof(isDualZeroVol))
+    isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     e1 = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
     #Wrong, is dual zero shouldn't have rho
     e2_rho = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, Nsim)
@@ -69,7 +69,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     isDualZero = isDualZeroVol * S0 * zero(T * r * σ₀ * κ * θ * λ1 * σ * ρ)
     X = Matrix{typeof(isDualZero)}(undef, Nsim, Nstep + 1)
     view(X, :, 1) .= isDualZero
-    isDualZero_eps = isDualZeroVol + eps(typeof(isDualZeroVol))
+    isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     Nsim_2 = div(Nsim, 2)
     Xp = @views X[1:Nsim_2, :]
     Xm = @views X[(Nsim_2+1):end, :]

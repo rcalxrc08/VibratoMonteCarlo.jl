@@ -8,10 +8,11 @@ function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMo
     !(typeof(λ) <: AbstractFloat) ? @warn("trying to differentiate over λ, this will lead to incorrect results") : nothing
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
     (T_jump, X_jump) = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
-    drift_rn = (r - d) - σ^2 / 2 - λ * FinancialMonteCarlo.compute_drift(mcProcess)
+    drift_rn = (r - d) - drift_correction(mcProcess)
     Z = init_lrm_vec(vb_mc, mcBaseData)
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = mean(@. lrm_interface_vec!(X_jump + drift_rn * (T - T_jump), σ * sqrt(T - T_jump), args, mcBaseData, vb_mc)) * exp(-r * T)
+    mu_jump = @muladd @. X_jump + drift_rn * (T - T_jump)
+    result = mean(@. lrm_interface_vec!(mu_jump, σ * sqrt(T - T_jump), args, mcBaseData, vb_mc)) * exp(-r * T)
 
     return result
 end
@@ -28,14 +29,14 @@ function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::Financial
     θ = mcProcess.θ
     S0 = mcProcess.underlying.S0
     T = get_unique_maturity(eu_opt)
-    ψ = compute_drift(mcProcess)
-    G_T = rand(mcBaseData.parallelMode.rng, subordinator_law(mcProcess, T), mcBaseData.Nsim)
-    drift_rn = r - d - ψ
-    mu_jump = @. log(S0) + drift_rn * T + θ * G_T
+    (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
+    drift_rn = r - d - drift_correction(mcProcess)
+    mu_jump = @muladd @. log(S0) + drift_rn * T + θ * G_T
     sigma_jump = @. σ * sqrt(G_T)
     Z = init_lrm_vec(vb_mc, mcBaseData)
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = mean(@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    discount = exp(-r * T)
+    result = subordinator_mean((@. lrm_interface_vec!(mu_jump, sigma_jump, args, mcBaseData, vb_mc) * discount), weight)
     return result
 end
 
@@ -49,7 +50,26 @@ function conditional_saltando(mcProcess::finiteActivityProcess, rfCurve::Financi
     !(typeof(λ) <: AbstractFloat) ? @warn("trying to differentiate over λ, this will lead to incorrect results") : nothing
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
     (T_jump, S_jump) = VibratoMonteCarlo.simulate_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
-    drift_rn = λ * FinancialMonteCarlo.compute_drift(mcProcess)
+    # The jump part of the drift correction, paid as a dividend yield by the diffusion after the last jump.
+    drift_rn = drift_correction(mcProcess) - σ^2 / 2
     result = mean(@. analytic_pricer(S_jump, eu_opt, r, T, T_jump, σ, d, drift_rn) * exp(-r * T_jump))
+    return result
+end
+
+function conditional_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt) where {infiniteActivityProcess <: FinancialMonteCarlo.InfiniteActivityProcess}
+    # Given G_T the price is Black-Scholes with total variance σ² * G_T and mean of log(S_T) as in vibrato_saltando,
+    # on the same subordinator draws: σ * sqrt(G_T / T) is the volatility over T, the rest of the drift is a dividend yield.
+    FinancialMonteCarlo.set_seed!(mcBaseData)
+    r = rfCurve.r
+    d = FinancialMonteCarlo.dividend(mcProcess)
+    σ = mcProcess.σ
+    θ = mcProcess.θ
+    S0 = mcProcess.underlying.S0
+    T = eu_opt.T
+    ψ = drift_correction(mcProcess)
+    (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
+    sigma_T = @. σ * sqrt(G_T / T)
+    drift_rn = @muladd @. ψ - (θ + σ^2 / 2) * G_T / T
+    result = subordinator_mean((@. analytic_pricer(S0, eu_opt, r, T, 0, sigma_T, d, drift_rn)), weight)
     return result
 end

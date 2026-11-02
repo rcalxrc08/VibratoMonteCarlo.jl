@@ -59,6 +59,10 @@ init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints
 
 get_unique_maturity(euopt) = euopt.T
 
+# log E[exp(X_1)] of the driftless log price, from the characteristic exponent of FinancialFFT: the risk neutral drift of
+# log S is r - d - drift_correction (σ² / 2 for Black-Scholes, ψ for VG and NIG, σ² / 2 + λ E[e^J - 1] with jumps).
+drift_correction(mcProcess) = FinancialFFT.characteristic_exponent_i(1, mcProcess)
+
 function analytic_pricer(S_jump, eu_opt::EuropeanOption, r, T, T_jump, σ, d, drift_rn)
     blsprice(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
 end

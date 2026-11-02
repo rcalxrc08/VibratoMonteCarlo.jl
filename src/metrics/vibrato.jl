@@ -14,11 +14,11 @@ function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Ab
     S0 = mcProcess.underlying.S0
     σ = mcProcess.σ
     T = get_unique_maturity(eu_opt)
-    drift_rn = (r - d) - σ^2 / 2
+    drift_rn = (r - d) - drift_correction(mcProcess)
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
     X = FinancialMonteCarlo.simulate(BrownianMotion(σ, drift_rn), mcBaseData, T - step_vibrato)
-    mu_jump = @views @. X[:, end] + drift_rn * step_vibrato + log(S0)
+    mu_jump = @views @muladd @. X[:, end] + drift_rn * step_vibrato + log(S0)
     sigma_jump = σ * sqrt(step_vibrato)
     Z = init_lrm_vec(vb_mc, mcBaseData)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
@@ -51,8 +51,8 @@ function vibrato(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMo
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
     S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
-    drift_rn = r - d - σ^2 / 2
-    mu_jump = @views @. log(S[:, end]) + drift_rn * step_vibrato
+    drift_rn = r - d - drift_correction(mcProcess)
+    mu_jump = @views @muladd @. log(S[:, end]) + drift_rn * step_vibrato
     sigma_jump = σ * sqrt(step_vibrato)
     Z = init_lrm_vec(vb_mc, mcBaseData)
     # result = mean(lrm_interface!(Z, mu, sigma_jump, eu_opt, mcBaseData, vb_mc) for mu in mu_jump) * exp(-r * T)

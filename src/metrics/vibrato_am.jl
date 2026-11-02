@@ -100,11 +100,11 @@ function vibrato_am(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo
     mc_half = MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.monteCarloMethod, mcBaseData.parallelMode, mcBaseData.init_rng)
     S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T)
     args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData), am_opt)
-    drift = r - d - σ^2 / 2
+    drift = r - d - drift_correction(mcProcess)
     bridge_std = σ * sqrt(dt) / 2
     function path_value(i)
         # Vibrato over the last half step for the payoff at maturity, then backwards over each exercise date.
-        W = exp(-r * T) * lrm_interface_vec!(log(S[i, 2*Nstep]) + drift * dt / 2, σ * sqrt(dt / 2), args, mcBaseData, vb_mc)
+        W = exp(-r * T) * lrm_interface_vec!(@muladd(log(S[i, 2*Nstep]) + drift * dt / 2), σ * sqrt(dt / 2), args, mcBaseData, vb_mc)
         for k = (Nstep-1):-1:1
             W = bridge_vibrato(W, (log(S[i, 2k]) + log(S[i, 2k+2])) / 2, bridge_std, regions[k], am_opt, exp(-r * dt * k))
         end

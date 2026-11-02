@@ -12,8 +12,7 @@ function characteristic_function_to_density(phi, N, A)
     one_minus_one = PatternVector(n, EvenOddPattern(Int8(1), Int8(-1)))
     Y = fft(@. phi(c + vec * dt) * one_minus_one)
     density_vals = @. dt / (2 * pi) * FinancialFFT.real_mod(one_minus_one * Y)
-    #TODO: eps should be typed
-    eps_mod = eps(eltype(density_vals))
+    eps_mod = eps_value(first(density_vals))
     @. density_vals = max(density_vals, eps_mod)
     return (x, density_vals)
 end
@@ -53,8 +52,7 @@ end
 
 function adapt_spline(spline_cub, St, x_eval)
     result = @. spline_cub(x_eval - log(St))
-    #TODO: eps should be typed
-    eps_mod = eps(eltype(result))
+    eps_mod = eps_value(first(result))
     y_mod = @. max(result, eps_mod)
     return y_mod
 end

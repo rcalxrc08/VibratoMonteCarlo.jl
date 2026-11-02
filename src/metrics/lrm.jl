@@ -11,6 +11,14 @@ end
 Returns the value of a generic Number, must be implemented for different backends.
 """
 v_value(x::AbstractFloat) = x
+v_value(x::Integer) = x
+
+# eps of the float behind x: TaylorSeries does not define eps on its types.
+eps_value(x) = eps(typeof(v_value(x)))
+
+# Whether derivatives can flow through x. Mooncake differentiates floats, its extension overlays the method below.
+carries_derivatives(::Any) = true
+carries_derivatives(::Union{AbstractFloat, Integer}) = false
 
 """
     v_mod(x)

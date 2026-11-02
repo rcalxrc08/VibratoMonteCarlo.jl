@@ -375,6 +375,8 @@ println("\$\$\\partial_{S} C_{\\lambda \\kappa,\\text{binary}} = ", latex_delta(
 With $h = T - \tau$, the same derivatives become:
 \textoutput{conditional_saltando_derivatives}
 On the same paths, this is the exact limit of Vibrato Saltando for a perfect inner integration. It has the same limits of the fixed $\tau$ case, it works only for European and binary options, and the same ones of Vibrato Saltando: $\lambda$ and $T$ can't be differentiated, since the last jump time depends on them.
+
+For Variance Gamma and Normal Inverse Gaussian, `conditional_saltando` conditions on the subordinator $G_T$ instead (see Vibrato Saltando below): the inner price is Black and Scholes with volatility $\sigma \sqrt{G_T / T}$ and the rest of the drift as a dividend yield. There the price is a one dimensional integral over $G_T$, the formula of \cite{madan1998} for Variance Gamma, so the estimator is mostly a reference for `vibrato_saltando`.
 \end{section}
 \begin{section}{title="Vibrato Montecarlo Method"}
 The pathwise method needs a smooth payoff, while the LRM has weights whose variance grows with the order of the sensitivity. Vibrato uses the best of each: it differentiates the path pathwise up to a time $\tau < T$, and applies the LRM only to what is left. The method was introduced in \cite{giles2009}, and its combination with automatic differentiation for high order sensitivities is studied in \cite{pages2018}.
@@ -436,7 +438,9 @@ For $\tau = 0$ these are the LRM weights of the previous section. The smaller $\
 
 \begin{section}{title="Vibrato Saltando Montecarlo"}
 Vibrato needs the law of the last step, and for a Levy process that is only available numerically. For Variance Gamma it can even be singular on a short step.
-Vibrato Saltando ("jumping" vibrato) \cite{scaramuzzino2017} chooses what to condition on so that the inner law is exactly Gaussian, for any number of time steps.
+Vibrato Saltando \cite{scaramuzzino2017} chooses what to condition on so that the inner law is exactly Gaussian, for any number of time steps.
+
+The method was introduced in the Master Thesis \cite{scaramuzzino2017}, Section 7.6, for finite activity Levy processes. "Vibrato" comes from the method of Giles \cite{giles2009}; "Saltando" (Italian for "jumping") refers both to the jumps (*salti*) of the processes it was made for and to a bowing technique of string players: to change note across the instrument, instead of keeping the bow on the strings they lift it and let it bounce on the next string.
 
 \begin{expand}{Finite activity processes}
 Let's assume that $X_t$ is a finite activity Levy process, like Kou or Merton:
@@ -445,7 +449,7 @@ and let's call $\tau$ the time of the last jump before $T$, with $\tau = 0$ if t
 This $\tau$ is random and it is not a stopping time, since knowing it needs a look at the future of the path. So we condition on all the jumps and on $W_{\tau}$: the jumps are independent of $W$, and after $\tau$ there is nothing left but the diffusion. Calling $J = \sum_{i=1}^{N_T} Y_i$:
 $$X_T|\tau, J, W_{\tau} \sim \mathcal{N}(\mu, s^2)$$
 $$\mu = X_{\tau} + (r-d-\frac{\sigma^2}{2}-\lambda \kappa)(T - \tau), \qquad s = \sigma \sqrt{T - \tau}$$
-The method is the one of the previous section, with a step that changes from path to path: the jumps go in the pathwise part, and the LRM is applied to the Gaussian diffusion after the last jump. Hence the payoff is integrated exactly, and $Z$ has no discretization error.
+The method is the one of the previous section, with a step that changes from path to path: the jumps go in the pathwise part, and the LRM is applied to the Gaussian diffusion after the last jump. Hence the payoff is integrated exactly, and $Z$ has no discretization error. On a path with no jumps $\tau = 0$, and Vibrato Saltando is the plain LRM over the whole maturity \cite{scaramuzzino2017}.
 ```julia:saltando_weights
 #hideall
 @variables J λ κ
@@ -481,6 +485,10 @@ println("\$\$w_{\\Gamma} = ", latex_weight(mu_sub, s_bs, S_0, 2, x, Z), "\$\$")
 The delta and gamma weights are once more the same, now with $\delta = \sqrt{G_T}$:
 \textoutput{subordinated_weights}
 For the vega, $\psi$ depends on $\sigma$ too: there the automatic differentiation of the factor $m$ takes care of it.
+
+This is the extension to more general models that the thesis left as future work \cite{scaramuzzino2017}. Unlike $\lambda$ for finite activity processes, the parameters of the law of $G_T$ (its variance rate $\kappa$, and $T$) can be differentiated: $G_T$ is drawn from their values, and they enter through its density, in the same factor $m$ applied to the outer expectation:
+$$V_0 = \mathbb{E}(\mathbb{E}(e^{-rT} \Phi(X_T)|G_T)\, m(\log{f_{G_T}(G_T;\kappa,T)}))$$
+The draws of a Gamma or Inverse Gaussian sampler are not smooth in $\kappa$, while the density is. The noise of these derivatives is reduced by subtracting the sample mean of the inner expectations, as in Payoff Centering below.
 \end{expand}
 
 ### Summary
@@ -494,6 +502,7 @@ All of the methods condition on something, and integrate the last part against i
 | Levy | `vibrato` | path up to $T - h$ | FFT density | integration |
 | Kou, Merton | `conditional_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | closed form |
 | Kou, Merton | `vibrato_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | integration |
+| Variance Gamma, Normal Inverse Gaussian | `conditional_saltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | closed form |
 | Variance Gamma, Normal Inverse Gaussian | `vibrato_saltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | integration |
 
 
@@ -567,5 +576,5 @@ The bridge is Gaussian only for Black-Scholes dynamics. For Lévy and Heston mod
 * \biblabel{madan1998}{Madan, Carr, Chang (1998)} D. B. Madan, P. P. Carr, E. C. Chang, *The variance gamma process and option pricing*, European Finance Review 2(1), 79-105, 1998.
 * \biblabel{merton1976}{Merton (1976)} R. C. Merton, *Option pricing when underlying stock returns are discontinuous*, Journal of Financial Economics 3(1-2), 125-144, 1976.
 * \biblabel{pages2018}{Pagès, Pironneau, Sall (2018)} G. Pagès, O. Pironneau, G. Sall, *Vibrato and automatic differentiation for high order derivatives and sensitivities of financial options*, Journal of Computational Finance 22(2), 2018. [arXiv](https://arxiv.org/abs/1606.06143)
-* \biblabel{scaramuzzino2017}{Scaramuzzino (2017)} N. Scaramuzzino, *Differenziazione automatica: teoria ed applicazioni in finanza*, Master Thesis, Politecnico di Milano, supervisor C. Sgarra, academic year 2016/2017. [handle](https://hdl.handle.net/10589/135858)
+* \biblabel{scaramuzzino2017}{Scaramuzzino (2017)} N. Scaramuzzino, *Differenziazione automatica: teoria ed applicazioni in finanza*, Master Thesis, Politecnico di Milano, supervisor C. Sgarra, academic year 2016/2017. Vibrato Saltando is in Section 7.6. [handle](https://hdl.handle.net/10589/135858)
 \end{section}

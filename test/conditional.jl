@@ -40,6 +40,20 @@
         @test all(isapprox.(res, value_and_derivatives(VibratoMonteCarlo.conditional(bs_model, rfCurve, mc, opt)); atol = 1e-12))
     end
 
+    # The same G_T for both, also when κ or T carry derivatives. Differences observed ≤ 3.7e-14.
+    @testset "Gauss-Legendre on Lévy models" begin
+        gl = VibratoMonteCarloGaussLegendre()
+        hyper_of(x) = hyper(x, 1.0, 1.0, 0.0)
+        var_gamma(S0, κ) = VarianceGammaProcess(0.2, -0.15, κ, Underlying(S0, 0.0))
+        nig(S0, κ) = NormalInverseGaussianProcess(0.2, -0.1, κ, Underlying(S0, 0.0))
+        for model in (var_gamma, nig), Option in (EuropeanOption, BinaryEuropeanOption)
+            for (process, opt) in ((model(hyper_of(100.0), 0.2), Option(1.0, 105.0)), (model(100.0, hyper_of(0.2)), Option(1.0, 105.0)), (model(100.0, 0.2), Option(hyper_of(1.0), 105.0)))
+                res = value_and_derivatives(vibrato_saltando(process, rfCurve, mc, opt, gl))
+                @test all(isapprox.(res, value_and_derivatives(VibratoMonteCarlo.conditional_saltando(process, rfCurve, mc, opt)); atol = 1e-12))
+            end
+        end
+    end
+
     @testset "warns when differentiating over λ" begin
         model = KouProcess(0.2, hyper(5.0, 1.0, 1.0, 0.0), 0.3, 30.0, 20.0, Underlying(100.0, 0.01))
         @test_logs (:warn, r"λ") VibratoMonteCarlo.conditional_saltando(model, rfCurve, MonteCarloConfiguration(100, 10), EuropeanOption(1.0, 105.0))
