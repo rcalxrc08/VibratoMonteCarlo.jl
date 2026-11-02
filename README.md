@@ -48,35 +48,8 @@ After the installation, to test the package type on the Julia REPL the following
 ] test VibratoMonteCarlo
 ```
 ## Hello World: Pricing European Call Option in Black Scholes Model
-The following example shows how to price a european call option with underlying varying according to the Black Scholes Model, given the volatility:
+[examples/hello_world.jl](examples/hello_world.jl) prices a european call option with underlying varying according to the Black Scholes Model, given the volatility, and its delta. With FinancialMonteCarlo and DualNumbers installed, run it with:
 ```julia
-#Import the Package
-using VibratoMonteCarlo,FinancialMonteCarlo, DualNumbers;
-
-#Define Spot Datas
-S0=dual(100.0,1.0);
-K=100.0;
-r=0.02;
-T=1.0;
-d=0.01;
-D=90.0;
-#Define VibratoMonteCarlo Parameters
-Nsim=10000;
-Nstep=30;
-#Define Model Parameters
-σ=0.2;
-#Build the Structs
-A = 600.0;
-N = 18;
-mc = MonteCarloConfiguration(Nsim, Nstep);
-zeroRate=ZeroRate(r);
-underlying=Underlying(S0,d); #Underlying relative data
-
-#Define The Option
-EU_payoff=EuropeanOption(T,K)
-#Define the Model
-Model=BlackScholesProcess(σ,underlying);
-
-#Price and sensitivity
-@show EuPrice=pure_lrm(Model,zeroRate,mc,EU_payoff, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000,-9.0,19.0));
+using VibratoMonteCarlo
+include(joinpath(pkgdir(VibratoMonteCarlo), "examples", "hello_world.jl"))
 ```
