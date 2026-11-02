@@ -12,6 +12,7 @@ include("utils.jl")
     include("gauss_legendre.jl")
     include("smiles.jl")
     include("mooncake.jl")
+    include("examples.jl")
     # Tight accuracy checks, slow and currently failing, run with VIBRATO_TEST_ACCURACY=true.
     if get(ENV, "VIBRATO_TEST_ACCURACY", "false") == "true"
         include("check/accuracy.jl")
