@@ -8,7 +8,6 @@ function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialM
     mu = @muladd log(mcProcess.underlying.S0) + drift_rn * T
     Z = init_lrm_vec(vb_mc, mcBaseData)
     sigma_jump = σ * sqrt(T)
-    #TODO: switch to vec
     args = LRMInterfaceArguments(Z, eu_opt)
     result = lrm_interface_vec!(mu, sigma_jump, args, mcBaseData, vb_mc) * exp(-r * T)
     return result

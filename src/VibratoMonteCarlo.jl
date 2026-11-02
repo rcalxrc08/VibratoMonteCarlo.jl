@@ -11,7 +11,7 @@ include("metrics/vibrato_saltando.jl")
 include("metrics/vibrato_am.jl")
 include("simulation/simulate_with_jump_times.jl")
 include("simulation/simulate_with_last_vol.jl")
-include("simulation/simulate_with_sub.jl")
+include("simulation/subordinator.jl")
 
 export vibrato, vibrato_saltando, vibrato_am, pure_lrm, VibratoMonteCarloAnalytic, VibratoMonteCarloStandard, VibratoMonteCarloGaussLegendre
 

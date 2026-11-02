@@ -29,8 +29,8 @@ end
 # κ and T change the law of G_T: the draws come from the values, the derivatives from the density of the subordinator.
 @testset "Lévy models, derivatives over κ and T" begin
     rfCurve = ZeroRate(0.02)
-    var_gamma(κ) = VarianceGammaProcess(0.2, -0.15, κ, Underlying(100.0, 0.0))
-    nig(κ) = NormalInverseGaussianProcess(0.2, -0.1, κ, Underlying(100.0, 0.0))
+    var_gamma(κ, S0 = 100.0) = VarianceGammaProcess(0.2, -0.15, κ, Underlying(S0, 0.0))
+    nig(κ, S0 = 100.0) = NormalInverseGaussianProcess(0.2, -0.1, κ, Underlying(S0, 0.0))
     hyper_of(x) = hyper(x, 1.0, 1.0, 0.0)
     models = (("Variance Gamma", var_gamma), ("Normal Inverse Gaussian", nig))
 
@@ -68,6 +68,20 @@ end
         for (model_h, opt, tol) in ((model(hyper_of(0.2)), EuropeanOption(1.0, 100.0), tol_κ), (model(0.2), EuropeanOption(hyper_of(1.0), 100.0), tol_T))
             res = value_and_derivatives(VibratoMonteCarlo.conditional_saltando(model_h, rfCurve, mc, opt))
             ref = value_and_derivatives(pricer(model_h, rfCurve, lewis, opt))
+            @test all(abs.(res .- ref) .< tol)
+        end
+    end
+
+    # G_T is one dimensional: with SobolMode it is the quantile of its law at Sobol points, and the error decreases like 1 / N
+    # (16k points: 10-100 times below the spread of plain MC). The points are deterministic, the tolerances are 3 times
+    # the errors observed.
+    sobol_cases = (("Variance Gamma", var_gamma, ((1e-3, 1e-4, 1e-6), (1e-3, 4e-2, 1.2), (1e-3, 4e-3, 8e-2))), ("Normal Inverse Gaussian", nig, ((3e-4, 6e-5, 2e-6), (3e-4, 8e-3, 0.15), (3e-4, 3e-4, 1e-2))))
+    @testset "$name, Sobol" for (name, model, tols) in sobol_cases
+        mc_sobol = MonteCarloConfiguration(16_000, 10, FinancialMonteCarlo.SobolMode())
+        @test VibratoMonteCarlo.simulate_subordinator(model(0.2), mc_sobol, 1.0)[1] != VibratoMonteCarlo.simulate_subordinator(model(0.2), MonteCarloConfiguration(16_000, 10), 1.0)[1]
+        for ((process, opt), tol) in zip(((model(0.2, hyper_of(100.0)), EuropeanOption(1.0, 100.0)), (model(hyper_of(0.2)), EuropeanOption(1.0, 100.0)), (model(0.2), EuropeanOption(hyper_of(1.0), 100.0))), tols)
+            res = value_and_derivatives(vibrato_saltando(process, rfCurve, mc_sobol, opt, VibratoMonteCarloGaussLegendre()))
+            ref = value_and_derivatives(pricer(process, rfCurve, lewis, opt))
             @test all(abs.(res .- ref) .< tol)
         end
     end

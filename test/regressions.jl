@@ -49,4 +49,18 @@ using Statistics
         res = vibrato_saltando(model, ZeroRate(0.01), MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC()), eu_opt, VibratoMonteCarloAnalytic())
         test_value_and_derivatives(res, ref; rtol = 3e-2)
     end
+
+    # SobolMode fell into the SerialMonteCarloConfig methods, which match any method, and silently used the rng: on Heston
+    # (simulate_with_vol) and for G_T of VG and NIG the results were those of plain MC.
+    @testset "Sobol is used on Heston and on the subordinator" begin
+        sobol = MonteCarloConfiguration(1_000, 10, FinancialMonteCarlo.SobolMode())
+        plain = MonteCarloConfiguration(1_000, 10)
+        model = heston(0.2, 100.0, 0.0)
+        (V, X) = VibratoMonteCarlo.simulate_with_vol(model, rfCurve, sobol, 1.0)
+        @test X != VibratoMonteCarlo.simulate_with_vol(model, rfCurve, plain, 1.0)[2]
+        # The points of FinancialMonteCarlo's Sobol Heston, which floors the variance at 0 instead of eps: 1.3e-8 observed.
+        @test X ≈ FinancialMonteCarlo.simulate(model, rfCurve, sobol, 1.0) rtol = 1e-6
+        vg = variance_gamma(0.2, 100.0, 0.0)
+        @test VibratoMonteCarlo.simulate_subordinator(vg, sobol, 1.0)[1] != VibratoMonteCarlo.simulate_subordinator(vg, plain, 1.0)[1]
+    end
 end
