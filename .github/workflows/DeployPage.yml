@@ -1,17 +1,27 @@
 name: Build and Deploy
+# Builds the landing page (Franklin, PkgPage) and publishes it with GitHub Pages, whose source is "GitHub Actions": the
+# site is uploaded as the Pages artifact and deployed by actions/deploy-pages, with no gh-pages branch.
 on:
   push:
     branches:
       - master
       - main
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write    # the deployment
+  id-token: write # the token of the deployment
+concurrency:
+  group: pages
+  cancel-in-progress: false
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
     - name: Install Julia
-      uses: julia-actions/setup-julia@v1
+      uses: julia-actions/setup-julia@v3
       with:
         version: "1.10"
     - run: cp etc/logo.png page/_assets/logo.png # the logo lives in etc/ only
@@ -23,9 +33,17 @@ jobs:
             run(`$(npm_cmd()) install highlight.js purgecss`);
             import PkgPage;
             PkgPage.optimize(input="page", output="")'
-    - run: touch page/__site/.nojekyll
-    - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@releases/v4
+    - uses: actions/configure-pages@v6
+    - uses: actions/upload-pages-artifact@v5
       with:
-        BRANCH: gh-pages
-        FOLDER: page/__site
+        path: page/__site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy 🚀
+      id: deployment
+      uses: actions/deploy-pages@v5

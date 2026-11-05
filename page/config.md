@@ -21,8 +21,14 @@ The latter allows you to plug in values that you would have defined here.
 @def title       = "VibratoMonteCarlo.jl"
 @def prepath     = "VibratoMonteCarlo.jl"
 @def description = """
-                   Differentiable MonteCarlo Methods.
+                   Plain Monte Carlo estimators are not differentiable, which makes automatic differentiation useless on
+                   discontinuous payoffs. This package builds estimators that are <code>C∞</code>: likelihood ratio, Vibrato
+                   and Vibrato saltando, so that sensitivities of any order come out of automatic differentiation.
                    """
+@def tagline     = "<b>Monte Carlo Greeks</b> · <b>Vibrato</b> · <b>Automatic differentiation</b>"
+@def home_url    = "https://rcalxrc08.github.io/"
+@def get_started       = "the_basic_settings"
+@def get_started_label = "Get started"
 @def authors     = "rcalxrc08"
 
 <!--  NAVBAR SPECS
@@ -42,47 +48,21 @@ The latter allows you to plug in values that you would have defined here.
 @def nav_logo_path  = "/assets/logo.png"
 @def nav_logo_alt   = "Logo"
 @def nav_logo_style = """
-                      height:         25px;
-                      padding-right:  10px;
+                      height:         26px;
+                      margin-right:   10px;
                       """
 
 <!-- HEADER SPECS
   NOTE:
   - use_header:         if false, toggle the header off completely
-  - use_header_img:     to use an image as background for the header
-  - header_img_path:    either a path to an asset or a SVG like here. Note that
-                        the path must be CSS-compatible.
-  - header_img_style:   additional styling, for instance whether to repeat
-                        or not. For a SVG pattern, use repeat, otherwise use
-                        no-repeat.
-  - header_margin_top:  vertical margin above the header, if <= 55px there will
-                        be no white space, if >= 60 px, there will be white
-                        space between the navbar and the header. (Ideally
-                        don't pick a value between the two as the exact
-                        look is browser dependent). When use_hero = true,
-                        hero_margin_top is used instead.
-
-  - use_hero:           if false, main bar stretches from left to right
-                        otherwise boxed
-  - hero_width:         width of the hero, for instance 80% will mean the
-                        hero will stretch over 80% of the width of the page.
-  - hero_margin_top     used instead of header_margin_top if use_hero is true
-
-  - add_github_view:    whether to add a "View on GitHub" button in header
-  - add_github_star:    whether to add a "Star this package" button in header
-  - github_repo:        path to the GitHub repo for the GitHub button
+  - tagline:            line shown under the title (HTML allowed)
+  - home_url:           "All projects" button and footer link
+  - get_started:        id of the section of the "Get started" button, and its label
+  - add_github_view:    whether to add a "GitHub" button in header
+  - add_github_star:    whether to add a "Star" button in header
+  - github_repo:        path to the GitHub repo for the GitHub buttons
 -->
-@def use_header         = true
-@def use_header_img     = true
-@def header_img_path    = "url(\"assets/diagonal-lines.svg\")"
-@def header_img_style   = """
-                          background-repeat: repeat;
-                          """
-@def header_margin_top  = "55px" <!-- 55-60px ~ touching nav bar -->
-
-@def use_hero           = false
-@def hero_width         = "80%"
-@def hero_margin_top    = "100px"
+@def use_header       = true
 
 @def add_github_view  = true
 @def add_github_star  = true
@@ -96,31 +76,20 @@ NOTE:
 -->
 @def section_width = 10
 
-<!-- COLOR PALETTE
-You can use Hex, RGB or SVG color names; these tools are useful to choose:
-  - color wheel: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Colors/Color_picker_tool
-  - color names: https://developer.mozilla.org/en-US/docs/Web/CSS/color_value
-
+<!-- COLORS
 NOTE:
-  - header_color:      background color of the header
-  - link_color:        color of links
-  - link_hover_color:  color of links when hovered
-  - section_bg_color:  background color of "secondary" sections to help
-                       visually separate between sections.
-  - footer_link_color: color of links in the footer
+  - header_color:  theme color of the page (browser UI); the palette itself,
+                   light and dark, is defined in `_css/custom.css`
 -->
-@def header_color       = "#3f6388"
-@def link_color         = "#2669DD"
-@def link_hover_color   = "teal"
-@def section_bg_color   = "#f6f8fa"
-@def footer_link_color  = "cornflowerblue"
+@def header_color       = "#3b6fb6"
 
 <!-- CODE LAYOUT
 NOTE:
-  - highlight_theme:    theme for the code, pick one from
-                        https://highlightjs.org/static/demo/ for instance
-                        "github" or "atom-one-dark"; use lower case and replace
-                        spaces with `-`.
+  - highlight_theme:    theme for the code; only the stylesheet of this theme
+                        is kept in `_libs/highlight/styles/`, to switch theme
+                        add the corresponding file from
+                        https://highlightjs.org/static/demo/ (lower case,
+                        spaces replaced with `-`).
   - code_border_radius: how rounded the corners of code blocks should be
   - code_output_indent: how much left-identation to add for "output blocks"
                         (results of the evaluation of code blocks), use 0 if
@@ -140,7 +109,7 @@ definitions and how they can be useful.
 <!-- INTERNAL DEFINITIONS =====================================================
 ===============================================================================
 These definitions are important for the good functioning of some of the
-commands that are defined and used in VibratoMonteCarlo.jl
+commands that are defined and used in PkgPage.jl
 -->
 @def sections        = Pair{String,String}[]
 @def section_counter = 1

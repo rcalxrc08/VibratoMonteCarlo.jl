@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <!-- META -->
-  <meta name="google-site-verification" content="FVEFrtyMEkm_djcN6i1kMz9SeX-92yXSVGYioZeAa2s" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="author" content="{{authors}}">
   <title>{{title}}</title>
 
-  <link rel="icon" type="image/png"  href="/assets/logo.png">
+  <link rel="icon" type="image/png"  href="/assets/favicon.ico">
 
   <!-- CSS -->
   {{if hasmath}} {{insert head_katex.html }}     {{end}}
@@ -16,8 +15,7 @@
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <style>{{insert style_tuning.fcss}}</style>
   <link rel="stylesheet" href="/css/custom.css">
-
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
+  <meta name="theme-color" content="{{header_color}}">
 </head>
 <body id="page-top">
   {{insert nav.html}}
