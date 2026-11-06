@@ -169,6 +169,7 @@ Don't wire them into the module, and don't delete them, unless asked.
 - **GitHub Actions** is the CI:
   - `CI.yml` runs the test suite on every push (Julia 1.10 and latest), with the private registry added through `julia-buildpkg`'s `localregistry` input, and uploads the coverage to Codecov (needs the `CODECOV_TOKEN` secret).
   - `CompatHelper.yml` runs nightly and opens the compat-bump PRs that make up most recent commits.
+  - Every action runs on Node.js 24 (`checkout@v7`, `setup-julia@v3`, `cache@v3`, `codecov-action@v7`, the Pages actions; the `julia-buildpkg`, `julia-runtest` and `julia-processcoverage` v1 are composite). CompatHelper installs Julia with `setup-julia` instead of relying on the runner image. Keep new actions on Node 24 versions.
   - `DeployPage.yml` builds the Franklin/PkgPage site in `page/` (math write-up in `page/index.md`) to `gh-pages`. It copies `etc/logo.png` to `page/_assets/logo.png` first, for the navbar and the favicon: that copy is gitignored, the logo lives in `etc/` only.
 - GitLab is no longer used: the `origin2` remote is legacy. Push only to `origin` (GitHub).
 - The logo is drawn by `etc/logo.jl` (Luxor and the Georgia font, not in any Project.toml).

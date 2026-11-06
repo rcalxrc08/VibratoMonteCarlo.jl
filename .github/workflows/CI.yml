@@ -17,11 +17,11 @@ jobs:
           - '1.10'
           - '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       # FinancialMonteCarlo, FinancialFFT and FinancialToolbox are registered in the private registry.
       - uses: julia-actions/julia-buildpkg@v1
         with:
