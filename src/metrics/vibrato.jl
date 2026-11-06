@@ -89,11 +89,10 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     T = get_unique_maturity(eu_opt)
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
-    # The FFT density is a spline evaluated path by path: on the host.
+    # The FFT density is evaluated path by path: on the host.
     S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato))
     S_end = @views S[:, end]
-    adjusted_bound = 18.0
-    Z = spline_density(mcProcess, step_vibrato, r, 18, adjusted_bound)
-    result = mean(lrm_interface_aug!(mcProcess, Z, eu_opt, mcBaseData, vb_mc, St) for St in S_end) * exp(-r * T)
+    Z = fft_step_law(mcProcess, rfCurve, step_vibrato)
+    result = mean(lrm_interface_aug!(Z, eu_opt, vb_mc, St) for St in S_end) * exp(-r * T)
     return result
 end

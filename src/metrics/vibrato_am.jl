@@ -46,13 +46,13 @@ struct GaussianStep{D, S}
 end
 
 smoothed_payoff(law::GaussianStep, S_prev, args, mcProcess, mcBaseData, vb_mc) = lrm_interface_vec!(log(S_prev) + law.drift, law.sigma, args, mcBaseData, vb_mc)
-smoothed_payoff(law::DensitySpline, S_prev, args, mcProcess, mcBaseData, vb_mc) = lrm_interface_aug!(mcProcess, law, args.option, mcBaseData, vb_mc, S_prev)
+smoothed_payoff(law::FFTStepLaw, S_prev, args, mcProcess, mcBaseData, vb_mc) = lrm_interface_aug!(law, args.option, vb_mc, S_prev)
 
 # Paths and laws of one step for the frozen method: returns S, law_at(i, k) and its values only version, for path i at column k.
 function frozen_laws(mcProcess, rfCurve, mcBaseData, T)
-    (x, density_val) = density_unadapted(mcProcess, T / mcBaseData.Nstep, rfCurve.r, 18, 18.0)
-    law = density_spline(x, density_val)
-    law_value = density_spline(x, v_value.(density_val))
+    f = FinancialFFT.density(mcProcess, rfCurve, FFTDensityInverter(), T / mcBaseData.Nstep)
+    law = fft_step_law(f)
+    law_value = value_law(f)
     S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T))
     return S, (_, _) -> law, (_, _) -> law_value
 end

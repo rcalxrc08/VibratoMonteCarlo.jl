@@ -19,6 +19,6 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = get_unique_maturity(eu_opt)
-    Z = spline_density(mcProcess, T, r, 18, 15.0)
-    return lrm_interface_aug!(mcProcess, Z, eu_opt, mcBaseData, vb_mc) * exp(-r * T)
+    Z = fft_step_law(mcProcess, rfCurve, T)
+    return lrm_interface_aug!(Z, eu_opt, vb_mc, mcProcess.underlying.S0) * exp(-r * T)
 end
