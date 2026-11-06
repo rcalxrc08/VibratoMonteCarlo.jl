@@ -12,6 +12,7 @@ It currently contains the following capabilities:
 
 - Support for the following Single Name Models:
     - Black Scholes
+    - Heston
     - Kou
     - Merton
     - Normal Inverse Gaussian
@@ -19,22 +20,25 @@ It currently contains the following capabilities:
 - Support for the following payoffs:
     - European Options
     - Binary European Options
-	- American Options (WIP)
+    - Smiles of European and Binary European Options (one maturity, many strikes)
+    - American Options (exercise at the time steps, Longstaff-Schwartz policy)
 - Support for the following metrics:
-    - likelihood ratio method
-    - vibrato montecarlo method (for any type of process, not just Ito).
-	- vibrato saltando montecarlo method (for Finite Activity Levy).
-- Support for the following integration methods:
-    - pure numerical
-    - montecarlo (standard, antithetic, sobol where feasible).
-    - gaussian hermite (where feasible)
-	
-- Currently supports:
+    - `pure_lrm`: likelihood ratio method on the density at maturity (Gaussian or from the FFT).
+    - `vibrato`: vibrato montecarlo method, for Black Scholes, Heston and any Levy process (FFT density of the last step).
+    - `vibrato_saltando`: vibrato conditioned on the last jump time (Kou, Merton) or on the subordinator (Variance Gamma, Normal Inverse Gaussian, with derivatives over `κ` and `T` too); exact for any number of steps.
+    - `vibrato_am`: American options, vibrato over every exercise date in Black Scholes, frozen exercise decisions for Levy and Heston.
+- Support for the following integration methods of the last step:
+    - `VibratoMonteCarloGaussLegendre`: Gauss-Legendre split at the strikes, the most accurate.
+    - `VibratoMonteCarloAnalytic`: quadrature on a uniform grid.
+    - `VibratoMonteCarloStandard`: montecarlo (standard, antithetic, sobol).
+- Support for the following automatic differentiation backends:
 	- [DualNumbers.jl](https://github.com/JuliaDiff/DualNumbers.jl)
 	- [HyperDualNumbers.jl](https://github.com/JuliaDiff/HyperDualNumbers.jl)
-	- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)
+	- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) (nested too, e.g. `ForwardDiff.hessian`)
 	- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl)
 	- [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
+	- [Mooncake.jl](https://github.com/chalk-lab/Mooncake.jl) (on the plain `Float64` call)
+- GPU support with `CudaMode` of FinancialMonteCarlo (`using CUDA`), for hyper duals and ForwardDiff.
 
 To be noticed that the methods are $C^{\infty}$, not as standard montecarlo methods.
 ## How to Install
