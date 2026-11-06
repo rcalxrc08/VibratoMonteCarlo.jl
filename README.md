@@ -8,6 +8,7 @@
 This package is built on top of [FinancialMonteCarlo.jl](https://github.com/rcalxrc08/FinancialMonteCarlo.jl) and [FinancialFFT.jl](https://github.com/rcalxrc08/FinancialFFT.jl).
 Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless.
 The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.
+The [documentation](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/) has the theory of the methods, examples and the API.
 It currently contains the following capabilities:
 
 - Support for the following Single Name Models:

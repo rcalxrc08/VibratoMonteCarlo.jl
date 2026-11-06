@@ -1,0 +1,252 @@
+# Pathwise and likelihood ratio methods
+
+## The basic settings
+Let's assume we have an underlying stock price varying as a stochastic process called ``S_t`` and
+let's assume without loss of generality that ``S_t>0`` a.e..\\
+In that case we can define as ``X_t`` the following:
+
+```math
+X_t=\log(S_t)
+```
+
+Let's assume we want to price and compute the sensitivities of a european option with maturity ``T`` and payoff ``\phi``.
+
+We can express the price of such option as:
+
+```math
+V_0=\mathbb{E}(\phi(S_T))
+```
+
+or, in function of ``X_T``:
+
+```math
+V_0=\mathbb{E}(\Phi(X_T))
+```
+
+Where:
+
+```math
+\Phi(x)=\phi(e^x)
+```
+
+## Pathwise Method
+The pathwise method and the likelihood ratio method are the two classic direct estimators of sensitivities [broadie1996](@cite), see also [glasserman2004](@cite).
+
+Since:
+
+```math
+V_0=\mathbb{E}(\Phi(X_T))
+```
+
+```math
+\partial_\theta V_0=\partial_\theta \mathbb{E}(\Phi(X_T)) = \mathbb{E}(\dfrac{\partial \Phi(X_T)}{\partial X_T}\dfrac{\partial X_T}{\partial \theta})
+```
+
+Where the following is called tangent process:
+
+```math
+Y_t=\dfrac{\partial X_t}{\partial \theta}
+```
+
+In case of a European Option with maturity ``T`` and strike price ``K``:
+
+```math
+\Phi(x) = max(e^x-K,0)
+```
+
+and:
+
+```math
+\dfrac{\partial \Phi(x)}{\partial x} = e^x \mathbb{1}_{ e^{x} > K } (x)
+```
+
+Hence:
+
+```math
+\partial_\theta V_0=\mathbb{E}(\dfrac{\partial \Phi(X_T)}{\partial X_T}\dfrac{\partial X_T}{\partial \theta})
+```
+
+Unfortunately this method does not provide usefull results for binary options or for n-th order sensitivities, indeed in case of binary options we have:
+
+```math
+\Phi(x)=\mathbb{1}(x)
+```
+
+Hence:
+
+```math
+\partial_x \Phi(x)=0
+```
+
+## Likelihood Ratio Method
+Starting from the price of the basic settings, if we develop the integral:
+
+```math
+V_0=\mathbb{E}(\Phi(X_T))=\int_{\mathbb{R}}  \Phi(x) f(x) dx
+```
+
+where the following is the density of the log yield:
+
+```math
+f(x)=f_{X_T}(x)
+```
+
+If we differentiate for a generic parameter ``\theta``:
+
+```math
+\partial_\theta V_0=\partial_\theta \int_{\mathbb{R}}  \Phi(x) f(x,\theta) dx = \int_{\mathbb{R}}  \Phi(x) \partial_\theta f(x,\theta) dx
+```
+
+or:
+
+```math
+\partial_\theta V_0 = \int_{\mathbb{R}}  \Phi(x) \partial_\theta(\log(f(x,\theta))) f(x,\theta) dx
+```
+
+or:
+
+```math
+\partial_\theta V_0 = \mathbb{E}(\Phi(X_T) \partial_\theta \log(f(X_T,\theta)))
+```
+
+In case of n-th order sensitivities:
+
+We observe that for a generic positive differentiable function f we can have:
+
+```math
+g(x,\theta) =  \log{f(x,\theta)}
+```
+
+or:
+
+```math
+f(x,\theta) =  e^{g(x,\theta)}
+```
+
+Then, according to [Faa di Bruno's formula](https://en.wikipedia.org/wiki/Fa%C3%A0_di_Bruno%27s_formula):
+
+```math
+\partial^{n}_{\theta} e^{g(x,\theta)} = e^{g(x,\theta)} B_n(\{\partial^{i}_{\theta} g(x,\theta)\}_{i = 1 : n})
+```
+
+Where ``B_n`` is the complete exponential [Bell polynomial](https://en.wikipedia.org/wiki/Bell_polynomials) of n-th order.
+### Bell polynomials up to order 6
+```@eval
+Main.DocumentationFormulas.bell_polynomials()
+```
+
+Hence:
+
+```math
+\partial^{n}_{\theta} f(x,\theta) = f(x,\theta) B_n(\{\partial^{i}_{\theta} \log{f(x,\theta)}\}_{i = 1 : n})
+```
+
+By applying this to the original problem:
+
+```math
+\partial^{n}_{\theta} V_0=\partial^{n}_{\theta} \int_{\mathbb{R}}  \Phi(x) f(x,\theta) dx = \int_{\mathbb{R}}  \Phi(x) \partial^{n}_{\theta} f(x,\theta) dx
+```
+
+By applying the previous result:
+
+```math
+\partial^{n}_{\theta} V_0= \int_{\mathbb{R}}  \Phi(x) f(x,\theta) B_n(\{\partial^{i}_{\theta} \log{f(x,\theta)}\}_{i = 1 : n}) dx
+```
+
+or, in terms of expectation:
+
+```math
+\partial^{n}_{\theta} V_0 = \mathbb{E}(\Phi(X_T) B_n(\{\partial^{i}_{\theta} \log{f(X_T,\theta)}\}_{i = 1 : n}))
+```
+
+### Likelihood Ratio Method for Black and Scholes
+In case of trivial models the density is known in analytic form, otherwise one need to compute it numerically from the characteristic function.
+In case of the Black and Scholes Model [blackscholes1973](@cite), and a European Option we have the following:
+
+```math
+X_t=\log(S_0)+(r-d-\dfrac{\sigma^2}{2}) t + \sigma W_t
+```
+
+```math
+\log(f(x,S_0,r,d,\sigma,T)) = -\dfrac{1}{2}((\dfrac{x-(\log(S_0)+(r-d-\dfrac{\sigma^2}{2}) T)}{\sigma \sqrt{T}})^2 + \log(2 \pi)) - \log(\sigma\sqrt{T})
+```
+
+From this we can compute the various partial derivatives. Calling ``\delta = \sqrt{T}`` and:
+
+```math
+Z = \frac{x - \log(S_0) - (r-d-\frac{\sigma^2}{2}) T}{\sigma \delta}
+```
+
+which is a standard normal when ``x = X_T``, [Symbolics.jl](https://github.com/JuliaSymbolics/Symbolics.jl) generates from the `log_density` of the package:
+```@eval
+Main.DocumentationFormulas.lrm_scores()
+```
+
+Hence, a delta for a generic european option can be computed as the following expectation:
+
+```@eval
+Main.DocumentationFormulas.lrm_delta()
+```
+
+or, in terms of ``W_T``:
+
+```@eval
+Main.DocumentationFormulas.lrm_delta_wt()
+```
+
+Let's assume now that ``\Phi`` is a forward i.e.:
+
+```math
+\Phi(x)=e^x
+```
+
+Since ``\Delta = e^{(r-d)T}``:
+
+```math
+\mathbb{E}(e^{-\frac{\sigma^2}{2} T + \sigma W_T}\,W_T) = \sigma T
+```
+
+### Spectral Theorem for Black and Scholes
+Let's observe something, ``\log(f(x,\theta))`` is a second order polymial in ``x``:
+
+```math
+\log{f(X_T,\theta)}= \sum_{i=0}^2 b_i(\theta) X_T^i = b_0(\theta) + b_1(\theta)\,X_T +  b_2(\theta)\,X_T^2
+```
+
+Then all of the partial derivatives will be second order polynomials as well:
+
+```math
+\partial^{i}_{\theta} \log{f(X_T,\theta)}= \partial^{i}_{\theta}b_0(\theta) + \partial^{i}_{\theta}b_1(\theta)\,X_T +  \partial^{i}_{\theta}b_2(\theta)\,X_T^2
+```
+
+And the Bell exponential polymial will be a polynomial of degree ``2 n`` in terms of ``X_T``:
+
+```math
+B_n(\{\partial^{i}_{\theta} \log{f(X_T,\theta)}\}_{i = 1 : n}) = \sum_{i=0}^{2 n} a_i(\theta,n) X_T^i
+```
+
+And finally:
+
+```math
+\partial^{n}_{\theta} V_0  = a_0(\theta,n) V_0 + \sum_{i=1}^{2 n} a_i(\theta,n) \mathbb{E}(\Phi(X_T) X_T^i)
+```
+
+!!! note "Spectral Theorem"
+    Given a European Option with payoff ``\Phi``, an underlying varying according to Black and Scholes model, then we can express a generic ``n`` order sensitivity as follows:
+
+    ```math
+    \partial^{n}_{\theta} V_0  = a_0(\theta,n) V_0 + \sum_{i=1}^{2 n} a_i(\theta,n) \mathbb{E}(\Phi(X_T) X_T^i)
+    ```
+
+    Hence a generic ``n`` order sensitivity can be expressed as a linear combination of the prices of ``2 n + 1`` contracts.
+
+To be noticed that the various coefficients ``a_i(\theta,n)`` do not depend on the payoff, hence with ``2n + 1`` prices we are able to compute all of the partial derivatives with respect to any parameter up to order ``n``.
+
+In case ``b_2(\theta)`` doesn't depend ``\theta`` then the corresponding ``n`` order sensitivity can be expressed as a linear combination of the prices of ``n + 1`` contracts.
+
+### Application for sixth order derivative
+Let's assume ``\theta = r``, from the Spectral Theorem:
+```@eval
+Main.DocumentationFormulas.sixth_order()
+```
+Hence we need to price 4 contracts to get the sixth order sensitivitity. To be noticed that one of the contract to be priced is the option itself.

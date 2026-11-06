@@ -1,16 +1,16 @@
 name: Build and Deploy
-# Builds the landing page (Franklin, PkgPage) and publishes it with GitHub Pages, whose source is "GitHub Actions": the
-# site is uploaded as the Pages artifact and deployed by actions/deploy-pages, with no gh-pages branch.
+# Builds the documentation (Documenter) and publishes it with GitHub Pages, whose source is "GitHub Actions": the build
+# is uploaded as the Pages artifact and deployed by actions/deploy-pages, with no gh-pages branch and no deploy key.
 on:
   push:
     branches:
       - master
-      - main
   workflow_dispatch:
 permissions:
   contents: read
   pages: write    # the deployment
   id-token: write # the token of the deployment
+# one deployment at a time; a newer push does not cancel a deployment in progress
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -23,20 +23,17 @@ jobs:
     - name: Install Julia
       uses: julia-actions/setup-julia@v3
       with:
-        version: "1.10"
-    - run: mkdir -p page/_assets && cp etc/logo.png page/_assets/logo.png # the logo lives in etc/ only, and git keeps no empty folder
-    - run: julia -e '
+        version: '1'
+    - uses: julia-actions/cache@v3
+    # FinancialMonteCarlo, FinancialFFT and FinancialToolbox are registered in the private registry.
+    - run: julia --project=docs -e '
             import Pkg; Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/rcalxrc08/LocalRegistry.git"));
-            Pkg.Registry.add("General");
-            Pkg.activate("page"); Pkg.develop(path = "."); Pkg.instantiate();
-            using NodeJS;
-            run(`$(npm_cmd()) install highlight.js purgecss`);
-            import PkgPage;
-            PkgPage.optimize(input="page", output="")'
+            Pkg.Registry.add("General"); Pkg.instantiate()'
+    - run: julia --project=docs --color=yes docs/make.jl
     - uses: actions/configure-pages@v6
     - uses: actions/upload-pages-artifact@v5
       with:
-        path: page/__site
+        path: docs/build
   deploy:
     needs: build
     runs-on: ubuntu-latest

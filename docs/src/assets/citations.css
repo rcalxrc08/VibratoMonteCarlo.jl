@@ -1,0 +1,6 @@
+/* DocumenterCitations: the bibliography as a list with a hanging indent. */
+.citation dl { display: grid; grid-template-columns: max-content auto; }
+.citation dt { margin-right: 1em; }
+.citation dd { margin-bottom: 0.5em; }
+.citation ul { list-style: none; padding-left: 0; }
+.citation ul li { text-indent: -2em; padding-left: 2em; margin-bottom: 0.5em; }

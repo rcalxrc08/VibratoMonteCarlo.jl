@@ -1,5 +1,12 @@
 abstract type AbstractVibrato end
 using FinancialToolbox
+"""
+    VibratoMonteCarloStandard(Nsim_lrm = 200)
+
+Inner integration by Monte Carlo: `Nsim_lrm` standard normal samples for every outer path, drawn again for each path from
+the generator of the `MonteCarloConfiguration`. With `AntitheticMC` they come in antithetic pairs, with `SobolMode`
+they are a one dimensional Sobol sequence randomly shifted for every path (Cranley-Patterson). Gaussian inner laws only.
+"""
 struct VibratoMonteCarloStandard <: AbstractVibrato
     Nsim_lrm::Int
     mode::FinancialMonteCarlo.SerialMode
@@ -15,6 +22,12 @@ function init_lrm_vec(x::VibratoMonteCarloStandard, mcBaseData)
     return Z
 end
 
+"""
+    VibratoMonteCarloAnalytic(Npoints = 200, x_min = -7.0, x_max = 7.0)
+
+Inner integration by quadrature on a uniform grid of `Npoints` in `[x_min, x_max]`, in standard deviations of the log
+increment around its mean. The only inner integration of the FFT density (Lévy processes with `Vibrato` and `PureLRM`).
+"""
 struct VibratoMonteCarloAnalytic <: AbstractVibrato
     Npoints::Int
     x_min::Float64
@@ -31,6 +44,12 @@ function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any)
     return range(x.x_min, length = x.Npoints, stop = x.x_max)
 end
 
+"""
+    VibratoMonteCarlo.VibratoMonteCarloGaussHermite(Npoints = 200)
+
+Inner integration by Gauss-Hermite quadrature on `Npoints` nodes, Gaussian inner laws only. It converges slowly across the
+kink or the jump of a payoff: prefer `VibratoMonteCarloGaussLegendre`.
+"""
 struct VibratoMonteCarloGaussHermite <: AbstractVibrato
     Npoints::Int
     function VibratoMonteCarloGaussHermite(Npoints::Int = 200)
@@ -44,6 +63,14 @@ init_lrm_vec(x::VibratoMonteCarloGaussHermite, ::Any) = gausshermite(x.Npoints)
 # Gauss-Legendre in the standardized variable, on [-GAUSS_LEGENDRE_Z, GAUSS_LEGENDRE_Z + sigma] split at the payoff singular points
 # (singular_points), with Npoints nodes per piece. Every piece has a smooth integrand, so the rule converges exponentially:
 # Gauss-Hermite instead converges slowly across the kink or the jump of the payoff.
+"""
+    VibratoMonteCarloGaussLegendre(Npoints = 48)
+
+Inner integration by Gauss-Legendre quadrature on `[-8.5, 8.5 + σ]` standard deviations, split at the singular points of
+the payoff (the strikes) with `Npoints` nodes on each piece. Every piece has a smooth integrand, so the rule converges
+exponentially: about 1e-14 per path. Gaussian inner laws only (Black and Scholes, Heston, `VibratoSaltando`, `PureLRM`
+on Black and Scholes, American options on Black and Scholes).
+"""
 struct VibratoMonteCarloGaussLegendre <: AbstractVibrato
     Npoints::Int
     function VibratoMonteCarloGaussLegendre(Npoints::Int = 48)
