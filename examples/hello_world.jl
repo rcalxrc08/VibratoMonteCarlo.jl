@@ -27,4 +27,4 @@ EU_payoff = EuropeanOption(T, K)
 Model = BlackScholesProcess(σ, underlying);
 
 #Price and sensitivity
-@show EuPrice = pure_lrm(Model, zeroRate, mc, EU_payoff, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0));
+@show EuPrice = pricer(Model, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);

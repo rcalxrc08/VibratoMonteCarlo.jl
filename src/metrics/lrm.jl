@@ -82,7 +82,7 @@ end
 
 # With VibratoMonteCarloStandard the inner samples are drawn again for every outer path (Z is only a buffer):
 # sharing them would turn their error into a bias that does not average out over the outer paths.
-# A CudaMode configuration lands here for the paths priced on the host (pure_lrm, vibrato_am, FFT density): it has a CPU rng.
+# A CudaMode configuration lands here for the paths priced on the host (PureLRM, American options, FFT density): it has a CPU rng.
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::Union{FinancialMonteCarlo.SerialMonteCarloConfig, FinancialMonteCarlo.CudaMonteCarloConfig}, ::VibratoMonteCarloStandard)
     Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
     eu_opt = received_args.option

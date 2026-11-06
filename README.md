@@ -22,11 +22,11 @@ It currently contains the following capabilities:
     - Binary European Options
     - Smiles of European and Binary European Options (one maturity, many strikes)
     - American Options (exercise at the time steps, Longstaff-Schwartz policy)
-- Support for the following metrics:
-    - `pure_lrm`: likelihood ratio method on the density at maturity (Gaussian or from the FFT).
-    - `vibrato`: vibrato montecarlo method, for Black Scholes, Heston and any Levy process (FFT density of the last step).
-    - `vibrato_saltando`: vibrato conditioned on the last jump time (Kou, Merton) or on the subordinator (Variance Gamma, Normal Inverse Gaussian, with derivatives over `κ` and `T` too); exact for any number of steps.
-    - `vibrato_am`: American options, vibrato over every exercise date in Black Scholes, frozen exercise decisions for Levy and Heston.
+- Support for the following pricing methods, passed to FinancialMonteCarlo's `pricer(model, zero_rate, method, payoff)` (as FinancialFFT's `LewisMethod`):
+    - `PureLRM(mc, vb_mc)`: likelihood ratio method on the density at maturity (Gaussian or from the FFT).
+    - `Vibrato(mc, vb_mc)`: vibrato montecarlo method, for Black Scholes, Heston and any Levy process (FFT density of the last step).
+    - `VibratoSaltando(mc, vb_mc)`: vibrato conditioned on the last jump time (Kou, Merton) or on the subordinator (Variance Gamma, Normal Inverse Gaussian, with derivatives over `κ` and `T` too); exact for any number of steps.
+    - `Vibrato` on American options: vibrato over every exercise date in Black Scholes, frozen exercise decisions for Levy and Heston.
 - Support for the following integration methods of the last step:
     - `VibratoMonteCarloGaussLegendre`: Gauss-Legendre split at the strikes, the most accurate.
     - `VibratoMonteCarloAnalytic`: quadrature on a uniform grid.
@@ -84,7 +84,7 @@ EU_payoff = EuropeanOption(T, K)
 Model = BlackScholesProcess(σ, underlying);
 
 #Price and sensitivity
-@show EuPrice = pure_lrm(Model, zeroRate, mc, EU_payoff, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0));
+@show EuPrice = pricer(Model, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);
 ```
 <!-- END examples/hello_world.jl -->
 

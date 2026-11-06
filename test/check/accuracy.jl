@@ -11,17 +11,17 @@
     lewis = LewisMethod(600.0, 20000)
     mc_lrm = MonteCarloConfiguration(10_000, 300, FinancialMonteCarlo.AntitheticMC())
     mc_vibrato = MonteCarloConfiguration(80_000, 100, FinancialMonteCarlo.AntitheticMC())
-    lrm(model, rfCurve, mc, opt) = pure_lrm(model, rfCurve, mc, opt, VibratoMonteCarloAnalytic(20000, -20.0, 20.0))
-    saltando(model, rfCurve, mc, opt) = vibrato_saltando(model, rfCurve, mc, opt, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200))
+    lrm(model, rfCurve, mc, opt) = pricer(model, rfCurve, PureLRM(mc, VibratoMonteCarloAnalytic(20000, -20.0, 20.0)), opt)
+    saltando(model, rfCurve, mc, opt) = pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200)), opt)
     # Market inputs as functions of the differentiated variable.
     bump_S0(x) = (kou(σ, x, d; λ = 50.0), ZeroRate(r))
     bump_r(x) = (kou(σ, S0, d; λ = 50.0), ZeroRate(x))
 
     cases = [
-        (name = "pure_lrm, European, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false),
-        (name = "pure_lrm, Binary, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = BinaryEuropeanOption(T, K), abs_derivatives = true),
-        (name = "pure_lrm, European, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = EuropeanOption(T, K), abs_derivatives = false),
-        (name = "pure_lrm, Binary, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = BinaryEuropeanOption(T, K), abs_derivatives = false),
+        (name = "PureLRM, European, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false),
+        (name = "PureLRM, Binary, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = BinaryEuropeanOption(T, K), abs_derivatives = true),
+        (name = "PureLRM, European, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = EuropeanOption(T, K), abs_derivatives = false),
+        (name = "PureLRM, Binary, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = BinaryEuropeanOption(T, K), abs_derivatives = false),
         (name = "vibrato saltando, European, S0", metric = saltando, mc = mc_vibrato, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false),
     ]
 

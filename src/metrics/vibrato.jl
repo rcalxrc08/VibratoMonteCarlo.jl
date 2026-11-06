@@ -7,7 +7,8 @@ struct LRMInterfaceArguments{num_1, num_2}
 end
 
 Base.broadcastable(x::LRMInterfaceArguments) = Ref(x)
-function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -27,7 +28,8 @@ function vibrato(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Ab
     return result
 end
 
-function conditional(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt)
+function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Conditional, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
+    mcBaseData = method.mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -41,7 +43,8 @@ function conditional(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarl
     return result
 end
 
-function vibrato(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -60,7 +63,8 @@ function vibrato(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMo
     return result
 end
 
-function vibrato(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -78,7 +82,8 @@ function vibrato(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financia
     return result
 end
 
-function vibrato(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = get_unique_maturity(eu_opt)

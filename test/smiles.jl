@@ -15,12 +15,12 @@
     bs = BlackScholesProcess(σ, Underlying(S0, d))
 
     cases = (
-        ("vibrato, Black-Scholes", opt -> vibrato(bs, rfCurve, mc, opt, gl)),
-        ("vibrato, FFT density", opt -> vibrato(variance_gamma(σ, S0, d), rfCurve, MonteCarloConfiguration(200, 2), opt, analytic)),
-        ("vibrato_saltando, finite activity", opt -> vibrato_saltando(kou(σ, S0, d), rfCurve, mc, opt, gl)),
-        ("vibrato_saltando, infinite activity", opt -> vibrato_saltando(variance_gamma(σ, S0, d), rfCurve, mc, opt, gl)),
-        ("pure_lrm, Black-Scholes", opt -> pure_lrm(bs, rfCurve, mc, opt, gl)),
-        ("pure_lrm, FFT density", opt -> pure_lrm(variance_gamma(σ, S0, d), rfCurve, mc, opt, analytic))
+        ("vibrato, Black-Scholes", opt -> pricer(bs, rfCurve, Vibrato(mc, gl), opt)),
+        ("vibrato, FFT density", opt -> pricer(variance_gamma(σ, S0, d), rfCurve, Vibrato(MonteCarloConfiguration(200, 2), analytic), opt)),
+        ("VibratoSaltando, finite activity", opt -> pricer(kou(σ, S0, d), rfCurve, VibratoSaltando(mc, gl), opt)),
+        ("VibratoSaltando, infinite activity", opt -> pricer(variance_gamma(σ, S0, d), rfCurve, VibratoSaltando(mc, gl), opt)),
+        ("PureLRM, Black-Scholes", opt -> pricer(bs, rfCurve, PureLRM(mc, gl), opt)),
+        ("PureLRM, FFT density", opt -> pricer(variance_gamma(σ, S0, d), rfCurve, PureLRM(mc, analytic), opt))
     )
     @testset "$name" for (name, price) in cases
         for (smile, opts) in ((eu_smile, eu_opts), (bin_smile, bin_opts))
@@ -29,8 +29,8 @@
     end
 
     @testset "against the closed form, with derivatives" begin
-        @test pure_lrm(bs, rfCurve, mc, bin_smile, gl) ≈ blsbin.(S0, K, r, T, σ, d, isCall) rtol = 1e-9
-        delta_smile = ForwardDiff.derivative(x -> pure_lrm(BlackScholesProcess(σ, Underlying(x, d)), rfCurve, mc, eu_smile, gl), S0)
+        @test pricer(bs, rfCurve, PureLRM(mc, gl), bin_smile) ≈ blsbin.(S0, K, r, T, σ, d, isCall) rtol = 1e-9
+        delta_smile = ForwardDiff.derivative(x -> pricer(BlackScholesProcess(σ, Underlying(x, d)), rfCurve, PureLRM(mc, gl), eu_smile), S0)
         @test delta_smile ≈ ForwardDiff.derivative(x -> blsprice.(x, K, r, T, σ, d, isCall), S0) rtol = 1e-8
     end
 end

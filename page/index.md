@@ -326,7 +326,7 @@ The inner expectation is a smooth function of $X_{\tau}$ and of the parameters, 
 The inner expectation is the price of the same option over the remaining time $h$, for a call:
 $$C(S,h) = S e^{-d h} N(d_1) - K e^{-r h} N(d_2)$$
 $$d_1 = \frac{\log(\frac{S}{K}) + (r-d+\frac{\sigma^2}{2}) h}{\sigma \sqrt{h}}, \qquad d_2 = d_1 - \sigma \sqrt{h}$$
-where $N$ is the standard normal distribution function and $\varphi$ its density. Discounting up to $\tau$, the method `conditional` computes:
+where $N$ is the standard normal distribution function and $\varphi$ its density. Discounting up to $\tau$, the method `Conditional` computes:
 $$V_0 = e^{-r \tau}\, \mathbb{E}(C(S_{\tau},h))$$
 ```julia:conditional_derivatives
 #hideall
@@ -364,7 +364,7 @@ Let's assume now that $X_t$ is a finite activity Levy process, like Kou \cite{ko
 
 This $\tau$ is not a stopping time, since knowing it needs a look at the future of the path, so we condition on all the jumps and on the path up to $\tau$. After $\tau$ there are no more jumps and the process is a Brownian motion with a modified drift, which means a Black and Scholes model with dividend yield $d + \lambda \kappa$. Hence the inner expectation is known in closed form, even if the process has jumps:
 $$V_0 = \mathbb{E}(e^{-r \tau} C_{\lambda \kappa}(S_{\tau},T - \tau))$$
-where $C_{\lambda \kappa}$ is the price of the previous section with $d$ replaced by $d + \lambda \kappa$. The discount is inside the expectation since $\tau$ is different for every path. This is what `conditional_saltando` computes.
+where $C_{\lambda \kappa}$ is the price of the previous section with $d$ replaced by $d + \lambda \kappa$. The discount is inside the expectation since $\tau$ is different for every path. This is what `ConditionalSaltando` computes.
 ```julia:conditional_saltando_derivatives
 #hideall
 @variables λ κ
@@ -376,7 +376,7 @@ With $h = T - \tau$, the same derivatives become:
 \textoutput{conditional_saltando_derivatives}
 On the same paths, this is the exact limit of Vibrato Saltando for a perfect inner integration. It has the same limits of the fixed $\tau$ case, it works only for European and binary options, and the same ones of Vibrato Saltando: $\lambda$ and $T$ can't be differentiated, since the last jump time depends on them.
 
-For Variance Gamma and Normal Inverse Gaussian, `conditional_saltando` conditions on the subordinator $G_T$ instead (see Vibrato Saltando below): the inner price is Black and Scholes with volatility $\sigma \sqrt{G_T / T}$ and the rest of the drift as a dividend yield. There the price is a one dimensional integral over $G_T$, the formula of \cite{madan1998} for Variance Gamma, so the estimator is mostly a reference for `vibrato_saltando`.
+For Variance Gamma and Normal Inverse Gaussian, `ConditionalSaltando` conditions on the subordinator $G_T$ instead (see Vibrato Saltando below): the inner price is Black and Scholes with volatility $\sigma \sqrt{G_T / T}$ and the rest of the drift as a dividend yield. There the price is a one dimensional integral over $G_T$, the formula of \cite{madan1998} for Variance Gamma, so the estimator is mostly a reference for `VibratoSaltando`.
 \end{section}
 \begin{section}{title="Vibrato Montecarlo Method"}
 The pathwise method needs a smooth payoff, while the LRM has weights whose variance grows with the order of the sensitivity. Vibrato uses the best of each: it differentiates the path pathwise up to a time $\tau < T$, and applies the LRM only to what is left. The method was introduced in \cite{giles2009}, and its combination with automatic differentiation for high order sensitivities is studied in \cite{pages2018}.
@@ -496,14 +496,14 @@ All of the methods condition on something, and integrate the last part against i
 
 | Process | Function | Conditioning on | Law of $X_T$ | Inner expectation |
 |:--------|:---------|:----------------|:------------------------------------|:------------------|
-| Black and Scholes | `conditional` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | closed form |
-| Black and Scholes | `vibrato` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | integration |
-| Heston \cite{heston1993} | `vibrato` | path and variance $v$ up to $T - h$ | $\mathcal{N}(\mu, v_{T-h} h)$ | integration |
-| Levy | `vibrato` | path up to $T - h$ | FFT density | integration |
-| Kou, Merton | `conditional_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | closed form |
-| Kou, Merton | `vibrato_saltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | integration |
-| Variance Gamma, Normal Inverse Gaussian | `conditional_saltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | closed form |
-| Variance Gamma, Normal Inverse Gaussian | `vibrato_saltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | integration |
+| Black and Scholes | `Conditional` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | closed form |
+| Black and Scholes | `Vibrato` | path up to $T - h$ | $\mathcal{N}(\mu, \sigma^2 h)$ | integration |
+| Heston \cite{heston1993} | `Vibrato` | path and variance $v$ up to $T - h$ | $\mathcal{N}(\mu, v_{T-h} h)$ | integration |
+| Levy | `Vibrato` | path up to $T - h$ | FFT density | integration |
+| Kou, Merton | `ConditionalSaltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | closed form |
+| Kou, Merton | `VibratoSaltando` | jumps and path up to the last jump $\tau$ | $\mathcal{N}(\mu, \sigma^2 (T - \tau))$ | integration |
+| Variance Gamma, Normal Inverse Gaussian | `ConditionalSaltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | closed form |
+| Variance Gamma, Normal Inverse Gaussian | `VibratoSaltando` | subordinator $G_T$ | $\mathcal{N}(\mu, \sigma^2 G_T)$ | integration |
 
 
 \end{section}

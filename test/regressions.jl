@@ -16,10 +16,10 @@ using Statistics
     end
 
     # The Analytic grid was in absolute log-price, the default one truncated at S ≈ 148 (27% too low here).
-    @testset "pure_lrm with default Analytic grid on Kou" begin
+    @testset "PureLRM with default Analytic grid on Kou" begin
         model = kou(0.2, 100.0, 0.0)
         ref = pricer(model, rfCurve, LewisMethod(400.0, 200000), eu_opt)
-        res = pure_lrm(model, rfCurve, MonteCarloConfiguration(1_000, 10), eu_opt, VibratoMonteCarloAnalytic(2000))
+        res = pricer(model, rfCurve, PureLRM(MonteCarloConfiguration(1_000, 10), VibratoMonteCarloAnalytic(2000)), eu_opt)
         @test rel_err(res, ref) < 1e-3
     end
 
@@ -28,7 +28,7 @@ using Statistics
         model = kou(0.2, 100.0, 0.0; λ = 50.0)
         ref = pricer(model, rfCurve, LewisMethod(600.0, 20000), eu_opt)
         mc = MonteCarloConfiguration(40_000, 10, FinancialMonteCarlo.AntitheticMC())
-        res = vibrato_saltando(model, rfCurve, mc, eu_opt, VibratoMonteCarloAnalytic(200, -6.0, 6.0))
+        res = pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarloAnalytic(200, -6.0, 6.0)), eu_opt)
         # Errors observed over 8 seeds ≤ 9.4e-3.
         @test rel_err(res, ref) < 2e-2
     end
@@ -38,7 +38,7 @@ using Statistics
         model = variance_gamma(0.2, hyper(100.0, 1.0, 1.0, 0.0), 0.01)
         opt = EuropeanOption(1.0, 80.0)
         ref = pricer(model, ZeroRate(0.01), LewisMethod(400.0, 200000), opt)
-        res = vibrato_saltando(model, ZeroRate(0.01), MonteCarloConfiguration(40_000, 10), opt, VibratoMonteCarloStandard(200))
+        res = pricer(model, ZeroRate(0.01), VibratoSaltando(MonteCarloConfiguration(40_000, 10), VibratoMonteCarloStandard(200)), opt)
         test_value_and_derivatives(res, ref; rtol = 1e-2)
     end
 
@@ -46,7 +46,7 @@ using Statistics
     @testset "vibrato saltando VG volga with default Analytic grid" begin
         model = VarianceGammaProcess(hyper(0.2, 1.0, 1.0, 0.0), 0.1, 0.01, Underlying(100.0, 0.01))
         ref = pricer(model, ZeroRate(0.01), LewisMethod(400.0, 200000), eu_opt)
-        res = vibrato_saltando(model, ZeroRate(0.01), MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC()), eu_opt, VibratoMonteCarloAnalytic())
+        res = pricer(model, ZeroRate(0.01), VibratoSaltando(MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), eu_opt)
         test_value_and_derivatives(res, ref; rtol = 3e-2)
     end
 

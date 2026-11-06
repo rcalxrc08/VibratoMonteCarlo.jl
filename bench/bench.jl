@@ -29,15 +29,15 @@ rfCurve = ZeroRate(r);
 EUData = BinaryEuropeanOption(T, K)
 Model = KouProcess(sigma, lam, p, lamp, lamm, Underlying(S0, d));
 vb_mc = VibratoMonteCarloAnalytic(Nsim2, -5.0, 5.0)
-@btime vibrato_saltando($Model, $rfCurve, $mc, $EUData, $vb_mc);
+@btime pricer($Model, $rfCurve, VibratoSaltando($mc, $vb_mc), $EUData);
 @btime pricer($Model, $rfCurve, $mc, $EUData);
 
 bs = BlackScholesProcess(sigma, Underlying(S0, d));
-@btime vibrato($bs, $rfCurve, $mc, $EUData, $vb_mc);
+@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $EUData);
 @btime pricer($bs, $rfCurve, $mc, $EUData);
 
 eudatas = [EUData, EUData]
-@btime vibrato($bs, $rfCurve, $mc, $eudatas, $vb_mc);
+@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $eudatas);
 @btime pricer($bs, $rfCurve, $mc, $eudatas);
 vb_mc2 = VibratoMonteCarloStandard(Nsim2)
-@btime vibrato($bs, $rfCurve, $mc, $eudatas, $vb_mc2);
+@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc2), $eudatas);

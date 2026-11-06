@@ -39,20 +39,20 @@
             rel_err_at(i, res, ref) = rel_err(value_and_derivatives(res)[i], value_and_derivatives(ref)[i])
 
             @testset "Kou, vibrato saltando" begin
-                res = vibrato_saltando(kou_model, rfCurve, mc, eu_opt, vb_mc)
+                res = pricer(kou_model, rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
                 test_value_and_derivatives(res, kou_ref; rtol = 1e-2, rtol_second = rtol_second)
                 # Plain Float64 input must give the value of the AD run.
-                res_v = vibrato_saltando(kou(σ, S0_v, d), rfCurve, mc, eu_opt, vb_mc)
+                res_v = pricer(kou(σ, S0_v, d), rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
                 @test res_v ≈ value_and_derivatives(res)[1] rtol = 1e-12
             end
 
             @testset "Black Scholes, vibrato" begin
-                res = vibrato(bs_model, rfCurve, mc, eu_opt, vb_mc)
+                res = pricer(bs_model, rfCurve, Vibrato(mc, vb_mc), eu_opt)
                 test_value_and_derivatives(res, bs_ref; rtol = 1e-2, rtol_second = 1e-1)
             end
 
             @testset "Heston, vibrato" begin
-                res = vibrato(heston_model, rfCurve, mc, eu_opt, vb_mc)
+                res = pricer(heston_model, rfCurve, Vibrato(mc, vb_mc), eu_opt)
                 # The pathwise MC reference has no reliable second derivative.
                 # Always serial: the antithetic Heston of FinancialMonteCarlo uses correlation -ρ.
                 heston_ref = pricer(heston_model, rfCurve, MonteCarloConfiguration(Nsim, Nstep), eu_opt)
@@ -61,7 +61,7 @@
             end
 
             @testset "Variance Gamma, vibrato saltando" begin
-                res = vibrato_saltando(vg_model, rfCurve, mc, eu_opt, vb_mc)
+                res = pricer(vg_model, rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
                 test_value_and_derivatives(res, vg_ref; rtol = 1e-2, rtol_second = rtol_second)
             end
         end

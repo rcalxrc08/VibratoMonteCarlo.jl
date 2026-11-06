@@ -1,6 +1,6 @@
 using FinancialMonteCarlo, Random, Distributions;
 
-# The subordinator G_T of VG and NIG, for vibrato_saltando and conditional_saltando: X_T given G_T is Gaussian.
+# The subordinator G_T of VG and NIG, for VibratoSaltando and ConditionalSaltando: X_T given G_T is Gaussian.
 
 # Stirling series, after shifting the argument above 16 with Γ(x + 1) = x Γ(x). Only elementary functions, because
 # DualNumbers, HyperDualNumbers and TaylorSeries do not define loggamma.

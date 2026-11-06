@@ -19,17 +19,17 @@
         bs_model = BlackScholesProcess(σ, Underlying(S0, d))
         ref = blsprice(S0_h, K, r, T, σ, d)
         @testset "vibrato" begin
-            test_value_and_derivatives(vibrato(bs_model, rfCurve, mc, eu_opt, vb_mc), ref; rtol = 3e-2)
+            test_value_and_derivatives(pricer(bs_model, rfCurve, Vibrato(mc, vb_mc), eu_opt), ref; rtol = 3e-2)
         end
-        @testset "pure_lrm" begin
-            test_value_and_derivatives(pure_lrm(bs_model, rfCurve, mc, eu_opt, vb_mc), ref; rtol = 1e-2)
+        @testset "PureLRM" begin
+            test_value_and_derivatives(pricer(bs_model, rfCurve, PureLRM(mc, vb_mc), eu_opt), ref; rtol = 1e-2)
         end
     end
 
     @testset "Kou, vibrato saltando" begin
         # Errors observed over 8 seeds ≤ 2.3e-2 (value), 1.3e-2 (delta), 5.1e-2 (gamma).
         mc = MonteCarloConfiguration(40_000, 300, FinancialMonteCarlo.AntitheticMC())
-        res = vibrato_saltando(kou(σ, S0, d; λ = 50.0), rfCurve, mc, eu_opt, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200))
+        res = pricer(kou(σ, S0, d; λ = 50.0), rfCurve, VibratoSaltando(mc, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200)), eu_opt)
         ref = pricer(kou(σ, S0_h, d; λ = 50.0), rfCurve, LewisMethod(600.0, 20000), eu_opt)
         test_value_and_derivatives(res, ref; rtol = 4e-2, rtol_second = 1e-1)
     end
@@ -47,12 +47,12 @@
         analytic = VibratoMonteCarloAnalytic()
         am_opt = AmericanOption(T, K, false)
         cases = (
-            ("vibrato, Heston", x -> vibrato(heston(σ, x, d), rfCurve, MonteCarloConfiguration(500, 4), eu_opt, vb_mc)),
-            ("vibrato, Heston, antithetic", x -> vibrato(heston(σ, x, d), rfCurve, MonteCarloConfiguration(500, 4, FinancialMonteCarlo.AntitheticMC()), eu_opt, vb_mc)),
-            ("vibrato_am, Heston", x -> vibrato_am(heston(σ, x, d), rfCurve, MonteCarloConfiguration(500, 4), am_opt, vb_mc)),
-            ("vibrato, FFT density", x -> vibrato(kou(σ, x, d), rfCurve, MonteCarloConfiguration(200, 2), eu_opt, analytic)),
-            ("pure_lrm, FFT density", x -> pure_lrm(kou(σ, x, d), rfCurve, MonteCarloConfiguration(200, 2), eu_opt, analytic)),
-            ("vibrato_am, FFT density", x -> vibrato_am(kou(σ, x, d), rfCurve, MonteCarloConfiguration(200, 4), am_opt, analytic))
+            ("vibrato, Heston", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4), vb_mc), eu_opt)),
+            ("vibrato, Heston, antithetic", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4, FinancialMonteCarlo.AntitheticMC()), vb_mc), eu_opt)),
+            ("Vibrato (American), Heston", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4), vb_mc), am_opt)),
+            ("vibrato, FFT density", x -> pricer(kou(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(200, 2), analytic), eu_opt)),
+            ("PureLRM, FFT density", x -> pricer(kou(σ, x, d), rfCurve, PureLRM(MonteCarloConfiguration(200, 2), analytic), eu_opt)),
+            ("Vibrato (American), FFT density", x -> pricer(kou(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(200, 4), analytic), am_opt))
         )
         @testset "$name" for (name, price) in cases
             test_value_and_derivatives(price(taylor_expand(identity, S0_v, order = 2)), price(S0_h); rtol = 1e-9)
@@ -61,7 +61,7 @@
 
     @testset "TaylorN against ForwardDiff, Heston" begin
         mc = MonteCarloConfiguration(500, 4)
-        price(x) = vibrato(heston(x[2], x[1], d), rfCurve, mc, eu_opt, vb_mc)
+        price(x) = pricer(heston(x[2], x[1], d), rfCurve, Vibrato(mc, vb_mc), eu_opt)
         x0 = [S0_v, σ]
         res = price(taylor_expand(x -> x, x0; order = 2))
         @test [res[1][1], res[1][2]] ≈ ForwardDiff.gradient(price, x0) rtol = 1e-10
@@ -72,7 +72,7 @@
     @testset "TaylorN and ForwardDiff.hessian, FFT density" begin
         analytic = VibratoMonteCarloAnalytic()
         x0 = [S0_v, σ]
-        cases = (("vibrato", x -> vibrato(kou(x[2], x[1], d), rfCurve, MonteCarloConfiguration(200, 2), eu_opt, analytic)), ("pure_lrm", x -> pure_lrm(kou(x[2], x[1], d), rfCurve, MonteCarloConfiguration(200, 2), eu_opt, analytic)))
+        cases = (("vibrato", x -> pricer(kou(x[2], x[1], d), rfCurve, Vibrato(MonteCarloConfiguration(200, 2), analytic), eu_opt)), ("PureLRM", x -> pricer(kou(x[2], x[1], d), rfCurve, PureLRM(MonteCarloConfiguration(200, 2), analytic), eu_opt)))
         @testset "$name" for (name, price) in cases
             # Hyper duals along the directions i and j give the entry (i, j) of the Hessian.
             direction(i, j) = [hyper(x0[k], Float64(k == i), Float64(k == j), 0.0) for k in eachindex(x0)]

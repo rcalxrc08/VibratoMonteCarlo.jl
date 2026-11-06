@@ -3,6 +3,7 @@ module VibratoMonteCarlo
 using FinancialMonteCarlo, Statistics, MuladdMacro, IrrationalConstants
 using FastGaussQuadrature: gausshermite, gausslegendre
 include("utils.jl")
+include("methods.jl")
 include("metrics/lrm.jl")
 include("metrics/lrm_aug.jl")
 include("metrics/vibrato.jl")
@@ -13,6 +14,6 @@ include("simulation/simulate_with_jump_times.jl")
 include("simulation/simulate_with_last_vol.jl")
 include("simulation/subordinator.jl")
 
-export vibrato, vibrato_saltando, vibrato_am, pure_lrm, VibratoMonteCarloAnalytic, VibratoMonteCarloStandard, VibratoMonteCarloGaussLegendre
+export pricer, Vibrato, VibratoSaltando, PureLRM, VibratoMonteCarloAnalytic, VibratoMonteCarloStandard, VibratoMonteCarloGaussLegendre
 
 end # module

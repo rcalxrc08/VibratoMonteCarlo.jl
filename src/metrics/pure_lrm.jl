@@ -1,4 +1,5 @@
-function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::PureLRM, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -13,7 +14,8 @@ function pure_lrm(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialM
     return result
 end
 
-function pure_lrm(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato)
+function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::PureLRM, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = get_unique_maturity(eu_opt)

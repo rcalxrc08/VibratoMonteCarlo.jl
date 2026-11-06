@@ -3,7 +3,7 @@ using ReverseDiff
 
 @testset "AD backends agree" begin
     mc = MonteCarloConfiguration(2_000, 10)
-    price(S0) = vibrato(BlackScholesProcess(0.2, Underlying(S0, 0.0)), ZeroRate(0.02), mc, EuropeanOption(1.0, 100.0), VibratoMonteCarloAnalytic(50, -5.0, 5.0))
+    price(S0) = pricer(BlackScholesProcess(0.2, Underlying(S0, 0.0)), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloAnalytic(50, -5.0, 5.0)), EuropeanOption(1.0, 100.0))
     (val, delta, gamma) = value_and_derivatives(price(hyper(100.0, 1.0, 1.0, 0.0)))
     @test price(100.0) ≈ val rtol = 1e-12
 
@@ -16,4 +16,11 @@ using ReverseDiff
     @test only(ForwardDiff.hessian(x -> price(x[1]), [100.0])) ≈ gamma rtol = 1e-10
     @test only(ReverseDiff.gradient(x -> price(x[1]), [100.0])) ≈ delta rtol = 1e-12
     @test collect(value_and_derivatives(price(taylor_expand(identity, 100.0, order = 2)))) ≈ [val, delta, gamma] rtol = 1e-12
+end
+
+# The estimators are methods of FinancialMonteCarlo's pricer: no ambiguity with its methods, FinancialFFT's or among ours
+# (Vibrato on an AmericanPayoff against Vibrato on a European payoff).
+@testset "pricer interface" begin
+    @test isempty(Test.detect_ambiguities(VibratoMonteCarlo))
+    @test Vibrato(MonteCarloConfiguration(10, 2), VibratoMonteCarloGaussLegendre()) isa FinancialMonteCarlo.AbstractMethod
 end

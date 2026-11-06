@@ -4,24 +4,9 @@ using LinearAlgebra
 continuation_coefficients(x, y) = hcat(one.(x), x, x .^ 2) \ y
 continuation_value(α, x) = α[1] + x * (α[2] + x * α[3])
 
-"""
-    vibrato_am(mcProcess, rfCurve, mcBaseData, am_opt, vb_mc)
-
-Price of an American option exercisable at the `Nstep` dates of the time grid, with its sensitivities.
-
-The exercise policy comes from Longstaff-Schwartz (regression on `1, S, S^2` of the in the money paths, values only), so
-it carries no derivative. How the derivatives get through the exercise decisions depends on the process:
-- `BlackScholesProcess`: vibrato over every exercise date. The policy is fixed in price space and each path is simulated on
-  the half steps, so that every exercise date is the midpoint of a Brownian bridge: the exercise indicator and the payoff
-  are integrated against the bridge density with the likelihood ratio method. Unbiased for the policy at every order,
-  including the second order sensitivities w.r.t. `S0`; the variance of the second order ones grows with `Nstep`.
-- Lévy processes (FFT density of one step, requires `VibratoMonteCarloAnalytic`) and `HestonProcess` (Gaussian step with
-  the simulated variance, `ZeroRate` and serial or antithetic configurations only): the decision to exercise at `t_k` is
-  taken at `t_{k-1}`, the payoff is replaced by its vibrato expectation over the step and the decisions are frozen when
-  differentiating (Pagès, Pironneau, Sall). Value and first order sensitivities are accurate, second order ones miss
-  the effect of the moving exercise boundary and are biased.
-"""
-function vibrato_am(mcProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, am_opt::FinancialMonteCarlo.AmericanPayoff, vb_mc::AbstractVibrato)
+# American options: see the docstring of Vibrato.
+function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = am_opt.T
@@ -80,9 +65,10 @@ function frozen_laws(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve, mcBa
     value_law_at(i, k) = GaussianStep((v_value(rd) - V_value[i, k] / 2) * dt, sqrt(V_value[i, k] * dt))
     return S, law_at, value_law_at
 end
-frozen_laws(::FinancialMonteCarlo.ItoProcess, rfCurve, mcBaseData, T) = throw(ArgumentError("vibrato_am supports BlackScholesProcess, HestonProcess and Lévy processes."))
+frozen_laws(::FinancialMonteCarlo.ItoProcess, rfCurve, mcBaseData, T) = throw(ArgumentError("Vibrato on American options supports BlackScholesProcess, HestonProcess and Lévy processes."))
 
-function vibrato_am(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, am_opt::FinancialMonteCarlo.AmericanPayoff, vb_mc::AbstractVibrato)
+function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = am_opt.T

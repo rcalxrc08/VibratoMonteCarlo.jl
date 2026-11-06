@@ -1,4 +1,5 @@
-function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess}
+function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt::EuropeanLike)
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -18,11 +19,12 @@ function vibrato_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMo
     return result
 end
 
-function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt, vb_mc::AbstractVibrato) where {infiniteActivityProcess <: FinancialMonteCarlo.InfiniteActivityProcess}
+function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt::EuropeanLike)
     # X is a Brownian motion subordinated to G: X_T = log(S0) + drift_rn * T + θ * G_T + σ * W(G_T).
     # Given G_T the log price is exactly Gaussian, so the LRM step is taken over the whole subordinator path.
     # Conditioning on the last step only is exact as well, but for VG its increment of G is Gamma with shape dt / κ:
     # it is often so small that σ * sqrt(ΔG) is lost to rounding against log(S) and the LRM weights blow up.
+    mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -41,7 +43,8 @@ function vibrato_saltando(mcProcess::infiniteActivityProcess, rfCurve::Financial
     return result
 end
 
-function conditional_saltando(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess}
+function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
+    mcBaseData = method.mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -57,9 +60,10 @@ function conditional_saltando(mcProcess::finiteActivityProcess, rfCurve::Financi
     return result
 end
 
-function conditional_saltando(mcProcess::infiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, eu_opt) where {infiniteActivityProcess <: FinancialMonteCarlo.InfiniteActivityProcess}
-    # Given G_T the price is Black-Scholes with total variance σ² * G_T and mean of log(S_T) as in vibrato_saltando,
+function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
+    # Given G_T the price is Black-Scholes with total variance σ² * G_T and mean of log(S_T) as in VibratoSaltando,
     # on the same subordinator draws: σ * sqrt(G_T / T) is the volatility over T, the rest of the drift is a dividend yield.
+    mcBaseData = method.mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     d = FinancialMonteCarlo.dividend(mcProcess)

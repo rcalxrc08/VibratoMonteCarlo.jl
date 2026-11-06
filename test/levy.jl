@@ -15,12 +15,12 @@ using ReverseDiff
             # Conditioning on the whole subordinator path: exact for any Nstep, errors observed ≤ 9e-4.
             @testset "vibrato saltando" begin
                 mc = MonteCarloConfiguration(40_000, 100, FinancialMonteCarlo.AntitheticMC())
-                test_value_and_derivatives(vibrato_saltando(model, rfCurve, mc, eu_opt, VibratoMonteCarloAnalytic()), ref; rtol = 5e-3)
+                test_value_and_derivatives(pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarloAnalytic()), eu_opt), ref; rtol = 5e-3)
             end
             # The FFT density of the last step must be smooth: dt / κ = 2.5 here, errors observed ≤ 2.2e-3.
             @testset "vibrato" begin
                 mc = MonteCarloConfiguration(20_000, 2, FinancialMonteCarlo.AntitheticMC())
-                test_value_and_derivatives(vibrato(model, rfCurve, mc, eu_opt, VibratoMonteCarloAnalytic()), ref; rtol = 1e-2)
+                test_value_and_derivatives(pricer(model, rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), eu_opt), ref; rtol = 1e-2)
             end
         end
     end
@@ -56,7 +56,7 @@ end
         mc = MonteCarloConfiguration(100, 10)
         @test VibratoMonteCarlo.simulate_subordinator(model(0.2), mc, 1.0)[2] === true
         @test VibratoMonteCarlo.simulate_subordinator(model(0.2), mc, 1)[2] === true
-        @test vibrato_saltando(model(0.2), rfCurve, mc, EuropeanOption(1, 100), VibratoMonteCarloGaussLegendre()) == vibrato_saltando(model(0.2), rfCurve, mc, EuropeanOption(1.0, 100.0), VibratoMonteCarloGaussLegendre())
+        @test pricer(model(0.2), rfCurve, VibratoSaltando(mc, VibratoMonteCarloGaussLegendre()), EuropeanOption(1, 100)) == pricer(model(0.2), rfCurve, VibratoSaltando(mc, VibratoMonteCarloGaussLegendre()), EuropeanOption(1.0, 100.0))
     end
 
     # Worst error over 8 seeds with 500k paths ≤ 2 standard deviations of the run, the tolerances are 4 of them.
@@ -66,7 +66,7 @@ end
     cases = (("Variance Gamma", var_gamma, (0.007, 0.08, 0.9), (0.007, 0.025, 0.15)), ("Normal Inverse Gaussian", nig, (0.0018, 0.014, 0.11), (0.0018, 0.007, 0.15)))
     @testset "$name against Lewis" for (name, model, tol_κ, tol_T) in cases
         for (model_h, opt, tol) in ((model(hyper_of(0.2)), EuropeanOption(1.0, 100.0), tol_κ), (model(0.2), EuropeanOption(hyper_of(1.0), 100.0), tol_T))
-            res = value_and_derivatives(VibratoMonteCarlo.conditional_saltando(model_h, rfCurve, mc, opt))
+            res = value_and_derivatives(pricer(model_h, rfCurve, VibratoMonteCarlo.ConditionalSaltando(mc), opt))
             ref = value_and_derivatives(pricer(model_h, rfCurve, lewis, opt))
             @test all(abs.(res .- ref) .< tol)
         end
@@ -80,7 +80,7 @@ end
         mc_sobol = MonteCarloConfiguration(16_000, 10, FinancialMonteCarlo.SobolMode())
         @test VibratoMonteCarlo.simulate_subordinator(model(0.2), mc_sobol, 1.0)[1] != VibratoMonteCarlo.simulate_subordinator(model(0.2), MonteCarloConfiguration(16_000, 10), 1.0)[1]
         for ((process, opt), tol) in zip(((model(0.2, hyper_of(100.0)), EuropeanOption(1.0, 100.0)), (model(hyper_of(0.2)), EuropeanOption(1.0, 100.0)), (model(0.2), EuropeanOption(hyper_of(1.0), 100.0))), tols)
-            res = value_and_derivatives(vibrato_saltando(process, rfCurve, mc_sobol, opt, VibratoMonteCarloGaussLegendre()))
+            res = value_and_derivatives(pricer(process, rfCurve, VibratoSaltando(mc_sobol, VibratoMonteCarloGaussLegendre()), opt))
             ref = value_and_derivatives(pricer(process, rfCurve, lewis, opt))
             @test all(abs.(res .- ref) .< tol)
         end
@@ -88,8 +88,8 @@ end
 
     @testset "$name, AD backends agree" for (name, model) in models
         mc_small = MonteCarloConfiguration(2_000, 10)
-        price_κ(κ) = VibratoMonteCarlo.conditional_saltando(model(κ), rfCurve, mc_small, EuropeanOption(1.0, 100.0))
-        price_T(T) = VibratoMonteCarlo.conditional_saltando(model(0.2), rfCurve, mc_small, EuropeanOption(T, 100.0))
+        price_κ(κ) = pricer(model(κ), rfCurve, VibratoMonteCarlo.ConditionalSaltando(mc_small), EuropeanOption(1.0, 100.0))
+        price_T(T) = pricer(model(0.2), rfCurve, VibratoMonteCarlo.ConditionalSaltando(mc_small), EuropeanOption(T, 100.0))
         for (price, x) in ((price_κ, 0.2), (price_T, 1.0))
             (val, first_der, second_der) = value_and_derivatives(price(hyper_of(x)))
             @test DualNumbers.epsilon(price(dual(x, 1.0))) ≈ first_der rtol = 1e-11
@@ -104,8 +104,8 @@ end
         mc_small = MonteCarloConfiguration(500, 4)
         gl = VibratoMonteCarloGaussLegendre()
         K, isCall = [90.0, 100.0, 115.0], [true, false, true]
-        smile = ForwardDiff.derivative(κ -> vibrato_saltando(model(κ), rfCurve, mc_small, FinancialMonteCarlo.EuropeanOptionSmile(1.0, K, isCall), gl), 0.2)
-        alone = [ForwardDiff.derivative(κ -> vibrato_saltando(model(κ), rfCurve, mc_small, EuropeanOption(1.0, k, c), gl), 0.2) for (k, c) in zip(K, isCall)]
+        smile = ForwardDiff.derivative(κ -> pricer(model(κ), rfCurve, VibratoSaltando(mc_small, gl), FinancialMonteCarlo.EuropeanOptionSmile(1.0, K, isCall)), 0.2)
+        alone = [ForwardDiff.derivative(κ -> pricer(model(κ), rfCurve, VibratoSaltando(mc_small, gl), EuropeanOption(1.0, k, c)), 0.2) for (k, c) in zip(K, isCall)]
         @test smile ≈ alone rtol = 1e-8
     end
 end

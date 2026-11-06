@@ -17,12 +17,12 @@
 
     @testset "Merton, vibrato saltando" begin
         model = merton(σ, S0, d)
-        res = vibrato_saltando(model, rfCurve, mc, eu_opt, vb_mc)
+        res = pricer(model, rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
         test_close(res, pricer(model, rfCurve, mc, eu_opt); rtol = 2e-2)
     end
 
     @testset "Black Scholes, vibrato" begin
-        res = vibrato(BlackScholesProcess(σ, Underlying(S0, d)), rfCurve, mc, eu_opt, vb_mc)
+        res = pricer(BlackScholesProcess(σ, Underlying(S0, d)), rfCurve, Vibrato(mc, vb_mc), eu_opt)
         test_close(res, blsprice(S0, K, r, T, σ, d); rtol = 2e-2)
     end
 end
