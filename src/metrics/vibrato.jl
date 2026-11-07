@@ -7,7 +7,19 @@ struct LRMInterfaceArguments{num_1, num_2}
 end
 
 Base.broadcastable(x::LRMInterfaceArguments) = Ref(x)
-function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+
+# A smile with an inner rule on fixed nodes: one integral per option, on the same nodes. The integrand of a whole smile
+# builds its options and two vectors at every node (a vector per node and path); Gauss-Legendre also splits each option
+# at its own strike only. Not VibratoMonteCarloStandard, which draws new samples at every call.
+for inner in (:VibratoMonteCarloGaussLegendre, :VibratoMonteCarloAnalytic, :VibratoMonteCarloGaussHermite)
+    @eval function lrm_interface_vec!(mu, sigma, received_args::LRMInterfaceArguments{<:Any, <:FinancialMonteCarlo.AbstractSmile}, mcBaseData, vb_mc::$inner)
+        return map(opt -> lrm_interface_vec!(mu, sigma, LRMInterfaceArguments(received_args.Z, opt), mcBaseData, vb_mc), FinancialMonteCarlo.smile_to_options(received_args.option))
+    end
+end
+
+function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
@@ -43,7 +55,9 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
@@ -63,7 +77,9 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
@@ -82,7 +98,9 @@ function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financial
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r

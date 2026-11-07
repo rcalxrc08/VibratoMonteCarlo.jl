@@ -22,7 +22,7 @@ lamp = 30.0;
 # lamp = dual(30.0, 1.0);
 lamm = 20.0;
 mc = MonteCarloConfiguration(Nsim, Nstep);
-mc1 = MonteCarloConfiguration(Nsim, Nstep, FinancialMonteCarlo.AntitheticMC());
+mc1 = MonteCarloConfiguration(Nsim, Nstep; sampling = FinancialMonteCarlo.AntitheticMC());
 
 rfCurve = ZeroRate(r);
 

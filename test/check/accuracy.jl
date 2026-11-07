@@ -9,8 +9,8 @@
     d = 0.0
     σ = 0.2
     lewis = LewisMethod(600.0, 20000)
-    mc_lrm = MonteCarloConfiguration(10_000, 300, FinancialMonteCarlo.AntitheticMC())
-    mc_vibrato = MonteCarloConfiguration(80_000, 100, FinancialMonteCarlo.AntitheticMC())
+    mc_lrm = MonteCarloConfiguration(10_000, 300; sampling = FinancialMonteCarlo.AntitheticMC())
+    mc_vibrato = MonteCarloConfiguration(80_000, 100; sampling = FinancialMonteCarlo.AntitheticMC())
     lrm(model, rfCurve, mc, opt) = pricer(model, rfCurve, PureLRM(mc, VibratoMonteCarloAnalytic(20000, -20.0, 20.0)), opt)
     saltando(model, rfCurve, mc, opt) = pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200)), opt)
     # Market inputs as functions of the differentiated variable.

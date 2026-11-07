@@ -26,7 +26,7 @@ K, r, d, T, σ = 105.0, 0.02, 0.01, 1.0, 0.2
 model = BlackScholesProcess(σ, Underlying(S0, d))
 zero_rate = ZeroRate(r)
 option = BinaryEuropeanOption(T, K)
-mc = MonteCarloConfiguration(50_000, 10, FinancialMonteCarlo.AntitheticMC())
+mc = MonteCarloConfiguration(50_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
 exact = blsbin(S0, K, r, T, σ, d)
 
 methods = [Vibrato(mc, VibratoMonteCarloGaussLegendre()), PureLRM(mc, VibratoMonteCarloGaussLegendre()), VibratoMonteCarlo.Conditional(mc)]

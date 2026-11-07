@@ -28,7 +28,7 @@
 
     @testset "Kou, vibrato saltando" begin
         # Errors observed over 8 seeds ≤ 2.3e-2 (value), 1.3e-2 (delta), 5.1e-2 (gamma).
-        mc = MonteCarloConfiguration(40_000, 300, FinancialMonteCarlo.AntitheticMC())
+        mc = MonteCarloConfiguration(40_000, 300; sampling = FinancialMonteCarlo.AntitheticMC())
         res = pricer(kou(σ, S0, d; λ = 50.0), rfCurve, VibratoSaltando(mc, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(200)), eu_opt)
         ref = pricer(kou(σ, S0_h, d; λ = 50.0), rfCurve, LewisMethod(600.0, 20000), eu_opt)
         test_value_and_derivatives(res, ref; rtol = 4e-2, rtol_second = 1e-1)
@@ -48,7 +48,7 @@
         am_opt = AmericanOption(T, K, false)
         cases = (
             ("vibrato, Heston", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4), vb_mc), eu_opt)),
-            ("vibrato, Heston, antithetic", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4, FinancialMonteCarlo.AntitheticMC()), vb_mc), eu_opt)),
+            ("vibrato, Heston, antithetic", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4; sampling = FinancialMonteCarlo.AntitheticMC()), vb_mc), eu_opt)),
             ("Vibrato (American), Heston", x -> pricer(heston(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(500, 4), vb_mc), am_opt)),
             ("vibrato, FFT density", x -> pricer(kou(σ, x, d), rfCurve, Vibrato(MonteCarloConfiguration(200, 2), analytic), eu_opt)),
             ("PureLRM, FFT density", x -> pricer(kou(σ, x, d), rfCurve, PureLRM(MonteCarloConfiguration(200, 2), analytic), eu_opt)),

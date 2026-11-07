@@ -19,8 +19,8 @@ nig(S) = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(S, 0.0))
 heston(S) = HestonProcess(0.2, 0.2, 0.0, 0.2, 0.2, 0.2, Underlying(S, 0.0))
 gl = VibratoMonteCarloGaussLegendre()
 lewis = LewisMethod(400.0, 200000)
-gpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteCarloConfiguration(n, steps, method, FinancialMonteCarlo.CudaMode())
-cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteCarloConfiguration(n, steps, method)
+gpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteCarloConfiguration(n, steps; sampling = method, mode = FinancialMonteCarlo.CudaMode())
+cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteCarloConfiguration(n, steps; sampling = method)
 
 @testset "CUDA" begin
     # The matrix of paths × nodes on the device against the per path integration on the host: ≤ 3.9e-11 observed.
@@ -56,6 +56,10 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         device = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(), gl), smile)
         host = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(), gl), smile)
         @test reduce(vcat, value_and_derivatives.(device)) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
+        # a smile with its strikes on the device, in either mode: its options are built on the host
+        cu_smile = FinancialMonteCarlo.EuropeanOptionSmile(1.0, CuArray([90.0, 100.0, 115.0]), CuArray([true, false, true]))
+        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(device)) rtol = 1e-12
+        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
     end
 
     # CURAND paths, so only against the references. Worst relative errors over 6 GPU seeds with 100k paths (value, delta,

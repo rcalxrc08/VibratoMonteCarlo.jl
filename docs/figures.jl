@@ -34,7 +34,7 @@ hyper_of(x) = hyper(x, 1.0, 1.0, 0.0)
 function binary_greeks_figure(theme)
     spots = collect(range(70.0, 130.0, length = 25))
     fine = range(70.0, 130.0, length = 301)
-    mc = MonteCarloConfiguration(10_000, 10, FinancialMonteCarlo.AntitheticMC())
+    mc = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
     option = BinaryEuropeanOption(T, K)
     exact(S0) = value_delta_gamma(blsbin(hyper_of(S0), K, r, T, σ, d))
     vibrato(S0) = value_delta_gamma(pricer(BlackScholesProcess(σ, Underlying(hyper_of(S0), d)), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option))
@@ -73,7 +73,7 @@ function variance_gamma_figure(theme)
     option = EuropeanOption(T, K)
     exact = value_delta_gamma(pricer(model, zero_rate, LewisMethod(400.0, 200_000), option))[3]
     steps = [2, 4, 8, 16, 32]
-    mc(n) = MonteCarloConfiguration(20_000, n, FinancialMonteCarlo.AntitheticMC())
+    mc(n) = MonteCarloConfiguration(20_000, n; sampling = FinancialMonteCarlo.AntitheticMC())
     rel(x) = abs(value_delta_gamma(x)[3] - exact) / abs(exact)
     fft = [rel(pricer(model, zero_rate, Vibrato(mc(n), VibratoMonteCarloAnalytic()), option)) for n in steps]
     saltando = [rel(pricer(model, zero_rate, VibratoSaltando(mc(n), VibratoMonteCarloGaussLegendre()), option)) for n in steps]

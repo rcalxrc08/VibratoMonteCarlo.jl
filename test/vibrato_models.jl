@@ -26,8 +26,8 @@
     configs = [
         (name = "standard MC, analytic integration", mc = MonteCarloConfiguration(Nsim, Nstep), vb_mc = VibratoMonteCarloAnalytic(Nsim2, -5.0, 5.0)),
         (name = "standard MC, MC integration", mc = MonteCarloConfiguration(Nsim, Nstep), vb_mc = VibratoMonteCarloStandard(Nsim2)),
-        (name = "antithetic MC, MC integration", mc = MonteCarloConfiguration(Nsim, Nstep, FinancialMonteCarlo.AntitheticMC()), vb_mc = VibratoMonteCarloStandard(Nsim2)),
-        (name = "Sobol MC, MC integration", mc = MonteCarloConfiguration(Nsim, Nstep, FinancialMonteCarlo.SobolMode()), vb_mc = VibratoMonteCarloStandard(Nsim2)),
+        (name = "antithetic MC, MC integration", mc = MonteCarloConfiguration(Nsim, Nstep; sampling = FinancialMonteCarlo.AntitheticMC()), vb_mc = VibratoMonteCarloStandard(Nsim2)),
+        (name = "Sobol MC, MC integration", mc = MonteCarloConfiguration(Nsim, Nstep; sampling = FinancialMonteCarlo.SobolMC()), vb_mc = VibratoMonteCarloStandard(Nsim2)),
     ]
 
     for (name, mc, vb_mc) in configs

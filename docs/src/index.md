@@ -71,7 +71,7 @@ S0 = hyper(100.0, 1.0, 1.0, 0.0)   # the input to differentiate
 K, r, d, T, σ = 100.0, 0.02, 0.01, 1.0, 0.2
 model = BlackScholesProcess(σ, Underlying(S0, d))
 zero_rate = ZeroRate(r)
-mc = MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC())
+mc = MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
 
 price = pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), EuropeanOption(T, K))
 (value = price.value, delta = price.epsilon1, gamma = price.epsilon12)

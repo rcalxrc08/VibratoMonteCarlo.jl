@@ -8,6 +8,10 @@ Base.broadcastable(x::AbstractVibratoMethod) = Ref(x)
 # Payoffs that depend on S_T only: the last step (or the whole maturity) is integrated against its density.
 const EuropeanLike = Union{FinancialMonteCarlo.EuropeanPayoff, FinancialMonteCarlo.AbstractSmile}
 
+# The inner integration and the paths priced on the host draw from the one generator of the configuration
+# (FinancialMonteCarlo.host_rng): a batched mode has one per batch.
+check_mode(mc) = mc.mode isa FinancialMonteCarlo.AbstractBatchedMode && throw(ArgumentError("VibratoMonteCarlo does not support MultiThreading or MultiProcess"))
+
 """
     Vibrato(mc, vb_mc)
 
@@ -25,6 +29,10 @@ against the density of the last step with the likelihood ratio method.
 struct Vibrato{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato} <: AbstractVibratoMethod
     mc::M
     vb_mc::V
+    function Vibrato(mc::M, vb_mc::V) where {M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato}
+        check_mode(mc)
+        return new{M, V}(mc, vb_mc)
+    end
 end
 
 """
@@ -38,6 +46,10 @@ is Gaussian, and `vb_mc` integrates the payoff against it. Exact for any `Nstep`
 struct VibratoSaltando{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato} <: AbstractVibratoMethod
     mc::M
     vb_mc::V
+    function VibratoSaltando(mc::M, vb_mc::V) where {M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato}
+        check_mode(mc)
+        return new{M, V}(mc, vb_mc)
+    end
 end
 
 """
@@ -50,6 +62,10 @@ for the other processes (requires `VibratoMonteCarloAnalytic`). `mc` only provid
 struct PureLRM{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato} <: AbstractVibratoMethod
     mc::M
     vb_mc::V
+    function PureLRM(mc::M, vb_mc::V) where {M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato}
+        check_mode(mc)
+        return new{M, V}(mc, vb_mc)
+    end
 end
 
 # Not exported, mainly test oracles: the same paths as Vibrato (Black-Scholes) and VibratoSaltando, with the conditional
@@ -61,6 +77,10 @@ Same paths as `Vibrato` on `BlackScholesProcess`, with the last step priced in c
 """
 struct Conditional{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration} <: AbstractVibratoMethod
     mc::M
+    function Conditional(mc::M) where {M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration}
+        check_mode(mc)
+        return new{M}(mc)
+    end
 end
 
 """
@@ -71,4 +91,14 @@ of `VibratoSaltando`.
 """
 struct ConditionalSaltando{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration} <: AbstractVibratoMethod
     mc::M
+    function ConditionalSaltando(mc::M) where {M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration}
+        check_mode(mc)
+        return new{M}(mc)
+    end
 end
+
+# The shared interface of the pricing methods (FinancialMonteCarlo 0.6): the mode of a Vibrato method is the one of its
+# MonteCarloConfiguration, so that a caller can move a method to another mode like any other (FinancialCalibrator does).
+FinancialMonteCarlo.execution_mode(method::AbstractVibratoMethod) = FinancialMonteCarlo.execution_mode(method.mc)
+FinancialMonteCarlo.with_mode(method::Union{Vibrato, VibratoSaltando, PureLRM}, mode::FinancialMonteCarlo.AbstractMode) = typeof(method).name.wrapper(FinancialMonteCarlo.with_mode(method.mc, mode), method.vb_mc)
+FinancialMonteCarlo.with_mode(method::Union{Conditional, ConditionalSaltando}, mode::FinancialMonteCarlo.AbstractMode) = typeof(method).name.wrapper(FinancialMonteCarlo.with_mode(method.mc, mode))

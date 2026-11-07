@@ -1,4 +1,6 @@
-function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
@@ -19,7 +21,9 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
+    # the single options of a smile are built on the host, in every mode: its strikes come to the host first
+    eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     # X is a Brownian motion subordinated to G: X_T = log(S0) + drift_rn * T + θ * G_T + σ * W(G_T).
     # Given G_T the log price is exactly Gaussian, so the LRM step is taken over the whole subordinator path.
     # Conditioning on the last step only is exact as well, but for VG its increment of G is Gamma with shape dt / κ:

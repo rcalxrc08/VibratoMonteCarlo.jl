@@ -46,7 +46,7 @@ end
     S0 = hyper(S0_v, 1.0, 1.0, 0.0)
     rfCurve = ZeroRate(r)
     Nstep = 10
-    mc = MonteCarloConfiguration(40_000, Nstep, FinancialMonteCarlo.AntitheticMC())
+    mc = MonteCarloConfiguration(40_000, Nstep; sampling = FinancialMonteCarlo.AntitheticMC())
     bs_model = BlackScholesProcess(σ, Underlying(S0, 0.0))
 
     # Vibrato over every exercise date. Errors observed over 8 seeds ≤ 6.0e-3 (value), 1.1e-2 (delta), 5.4e-2 (gamma);
@@ -66,12 +66,12 @@ end
         test_value_and_derivatives(res, blsprice(S0, K, r, T, σ, 0.0); rtol = 1.5e-2, rtol_second = 2e-2)
         # Frozen decisions, FFT density of one step. Errors observed ≤ 1.4e-2 (value), 5.3e-3 (delta), 2.4e-2 (gamma).
         kou_model = kou(σ, S0, 0.0)
-        res = pricer(kou_model, rfCurve, Vibrato(MonteCarloConfiguration(20_000, 10, FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
+        res = pricer(kou_model, rfCurve, Vibrato(MonteCarloConfiguration(20_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
         test_value_and_derivatives(res, pricer(kou_model, rfCurve, LewisMethod(400.0, 200000), EuropeanOption(T, K)); rtol = 3e-2, rtol_second = 5e-2)
         # Frozen decisions, Gaussian step with the simulated variance. The MC reference has no reliable second derivative.
         # Errors observed ≤ 9.8e-3 (value), 4.1e-3 (delta).
         heston_model = heston(σ, S0, 0.0)
-        res = pricer(heston_model, rfCurve, Vibrato(MonteCarloConfiguration(40_000, 25, FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
+        res = pricer(heston_model, rfCurve, Vibrato(MonteCarloConfiguration(40_000, 25; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
         heston_ref = pricer(heston_model, rfCurve, MonteCarloConfiguration(400_000, 25), EuropeanOption(T, K))
         @test rel_err(res.value, heston_ref.value) < 2e-2
         @test rel_err(res.epsilon1, heston_ref.epsilon1) < 1e-2

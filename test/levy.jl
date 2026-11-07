@@ -14,12 +14,12 @@ using ReverseDiff
         @testset "$name" begin
             # Conditioning on the whole subordinator path: exact for any Nstep, errors observed ≤ 9e-4.
             @testset "vibrato saltando" begin
-                mc = MonteCarloConfiguration(40_000, 100, FinancialMonteCarlo.AntitheticMC())
+                mc = MonteCarloConfiguration(40_000, 100; sampling = FinancialMonteCarlo.AntitheticMC())
                 test_value_and_derivatives(pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarloAnalytic()), eu_opt), ref; rtol = 5e-3)
             end
             # The FFT density of the last step must be smooth: dt / κ = 2.5 here, errors observed ≤ 2.2e-3.
             @testset "vibrato" begin
-                mc = MonteCarloConfiguration(20_000, 2, FinancialMonteCarlo.AntitheticMC())
+                mc = MonteCarloConfiguration(20_000, 2; sampling = FinancialMonteCarlo.AntitheticMC())
                 test_value_and_derivatives(pricer(model, rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), eu_opt), ref; rtol = 1e-2)
             end
         end
@@ -72,12 +72,12 @@ end
         end
     end
 
-    # G_T is one dimensional: with SobolMode it is the quantile of its law at Sobol points, and the error decreases like 1 / N
+    # G_T is one dimensional: with SobolMC it is the quantile of its law at Sobol points, and the error decreases like 1 / N
     # (16k points: 10-100 times below the spread of plain MC). The points are deterministic, the tolerances are 3 times
     # the errors observed.
     sobol_cases = (("Variance Gamma", var_gamma, ((1e-3, 1e-4, 1e-6), (1e-3, 4e-2, 1.2), (1e-3, 4e-3, 8e-2))), ("Normal Inverse Gaussian", nig, ((3e-4, 6e-5, 2e-6), (3e-4, 8e-3, 0.15), (3e-4, 3e-4, 1e-2))))
     @testset "$name, Sobol" for (name, model, tols) in sobol_cases
-        mc_sobol = MonteCarloConfiguration(16_000, 10, FinancialMonteCarlo.SobolMode())
+        mc_sobol = MonteCarloConfiguration(16_000, 10; sampling = FinancialMonteCarlo.SobolMC())
         @test VibratoMonteCarlo.simulate_subordinator(model(0.2), mc_sobol, 1.0)[1] != VibratoMonteCarlo.simulate_subordinator(model(0.2), MonteCarloConfiguration(16_000, 10), 1.0)[1]
         for ((process, opt), tol) in zip(((model(0.2, hyper_of(100.0)), EuropeanOption(1.0, 100.0)), (model(hyper_of(0.2)), EuropeanOption(1.0, 100.0)), (model(0.2), EuropeanOption(hyper_of(1.0), 100.0))), tols)
             res = value_and_derivatives(pricer(process, rfCurve, VibratoSaltando(mc_sobol, VibratoMonteCarloGaussLegendre()), opt))

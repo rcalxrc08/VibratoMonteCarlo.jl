@@ -83,8 +83,8 @@ end
 # With VibratoMonteCarloStandard the inner samples are drawn again for every outer path (Z is only a buffer):
 # sharing them would turn their error into a bias that does not average out over the outer paths.
 # A CudaMode configuration lands here for the paths priced on the host (PureLRM, American options, FFT density): it has a CPU rng.
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::Union{FinancialMonteCarlo.SerialMonteCarloConfig, FinancialMonteCarlo.CudaMonteCarloConfig}, ::VibratoMonteCarloStandard)
-    Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, ::VibratoMonteCarloStandard)
+    Z = randn!(FinancialMonteCarlo.host_rng(mcBaseData), received_args.Z)
     eu_opt = received_args.option
     args = IntegrandArguments(mu, sigma, eu_opt)
     output = mean(integrand_lrm_vec.(Z, args))
@@ -133,6 +133,13 @@ function gauss_legendre_segment(za, zb, x, w, args)
     end for j in eachindex(x))
 end
 
+segment_bounds(z_min, cuts::Tuple, z_max) = (z_min, cuts..., z_max)
+segment_bounds(z_min, cuts::AbstractVector, z_max) = [z_min; cuts; z_max]
+segment_starts(bounds::Tuple) = Base.front(bounds)
+segment_ends(bounds::Tuple) = Base.tail(bounds)
+segment_starts(bounds::AbstractVector) = @view bounds[1:(end-1)]
+segment_ends(bounds::AbstractVector) = @view bounds[2:end]
+
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloGaussLegendre)
     x, w = received_args.Z
     eu_opt = received_args.option
@@ -146,12 +153,14 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     # The singular points in standard deviations (from values only, so they carry no derivative), still sorted.
     # Outside the bounds the payoff is smooth on the whole range and the piece is skipped.
     cuts = map(p -> clamp((p - v_value_mu) / v_value_sigma, z_min, z_max), singular_points(eu_opt))
-    bounds = (z_min, cuts..., z_max)
-    return sum(gauss_legendre_segment(bounds[i], bounds[i+1], x, w, args) for i = 1:(length(bounds)-1) if bounds[i] < bounds[i+1])
+    bounds = segment_bounds(z_min, cuts, z_max)
+    # A piece of zero length (a cut clamped to a bound) contributes zero, its half-width multiplying every term: no filter,
+    # whose sum cannot be inferred. A tuple for an option (its length is known), a vector for a smile.
+    return sum(map((za, zb) -> gauss_legendre_segment(za, zb, x, w, args), segment_starts(bounds), segment_ends(bounds)))
 end
 
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::Union{FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, FinancialMonteCarlo.CudaAntitheticMonteCarloConfig}, ::VibratoMonteCarloStandard)
-    Z = randn!(mcBaseData.parallelMode.rng, received_args.Z)
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}, ::VibratoMonteCarloStandard)
+    Z = randn!(FinancialMonteCarlo.host_rng(mcBaseData), received_args.Z)
     eu_opt = received_args.option
     args = IntegrandArguments(mu, sigma, eu_opt)
     output = mean(integrand_lrm_vec_anti.(Z, args))
@@ -161,16 +170,16 @@ using Sobol, StatsFuns
 # Inner samples from a one dimensional Sobol sequence (cld(Nsim_lrm, 2) uniforms, each point paired with its reflection),
 # randomly shifted modulo 1 for every outer path (Cranley-Patterson rotation): each path gets an unbiased estimate
 # and their errors are independent.
-function init_lrm_vec(x::VibratoMonteCarloStandard, ::FinancialMonteCarlo.SerialSobolMonteCarloConfig)
+function init_lrm_vec(x::VibratoMonteCarloStandard, ::FinancialMonteCarlo.SobolConfig)
     seq = SobolSeq(1)
     U = [only(next!(seq)) for _ = 1:cld(x.Nsim_lrm, 2)]
     return (U, similar(U))
 end
 
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SerialSobolMonteCarloConfig, ::VibratoMonteCarloStandard)
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SobolConfig, ::VibratoMonteCarloStandard)
     U, Z = received_args.Z
     eu_opt = received_args.option
-    shift = rand(mcBaseData.parallelMode.rng)
+    shift = rand(FinancialMonteCarlo.host_rng(mcBaseData))
     @. Z = norminvcdf(mod(U + shift, 1))
     args = IntegrandArguments(mu, sigma, eu_opt)
     output = mean(integrand_lrm_vec_anti.(Z, args))
@@ -193,7 +202,7 @@ device_samples(mu, Z, _, ::VibratoMonteCarloAnalytic) = (node_row(mu, Z), (maxim
 device_samples(mu, Z, _, ::VibratoMonteCarloGaussHermite) = (node_row(mu, Z[1] .* sqrt2), node_row(mu, Z[2]))
 # Fresh inner samples for every path, as on the CPU, from the CURAND generator seeded by set_seed!, and antithetic pairs
 # with AntitheticMC.
-device_samples(mu, Z, mcBaseData, vb_mc::VibratoMonteCarloStandard) = (randn!(similar(mu, Float64, length(mu), vb_mc.Nsim_lrm)), mcBaseData isa FinancialMonteCarlo.CudaAntitheticMonteCarloConfig)
+device_samples(mu, Z, mcBaseData, vb_mc::VibratoMonteCarloStandard) = (randn!(similar(mu, Float64, length(mu), vb_mc.Nsim_lrm)), mcBaseData.sampling isa FinancialMonteCarlo.AntitheticMC)
 
 integrand_at(z, mu, sigma, option) = integrand_lrm_vec(z, IntegrandArguments(mu, sigma, option))
 integrand_at_anti(z, mu, sigma, option) = integrand_lrm_vec_anti(z, IntegrandArguments(mu, sigma, option))

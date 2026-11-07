@@ -1,7 +1,7 @@
 using FinancialMonteCarlo, Random;
 # Heston paths with the whole variance path: returns (V, S), V[:, j] is the variance at the time of S[:, j]. The same code
 # runs on the GPU: the arrays come from FinancialMonteCarlo (CuArrays with CudaMode) and the normals from normals!.
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::Union{FinancialMonteCarlo.SerialMonteCarloConfig, FinancialMonteCarlo.CudaMonteCarloConfig}, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -22,9 +22,9 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     dt = T / Nstep
     isDualZeroVol = zero(T * σ₀ * κ * θ * λ1 * σ * ρ)
     isDualZero = isDualZeroVol * S0 * zero(T * r * σ₀ * κ * θ * λ1 * σ * ρ)
-    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, isDualZero)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(isDualZero))
     view(X, :, 1) .= isDualZero
-    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, σ₀^2 + isDualZeroVol)
+    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(σ₀^2 + isDualZeroVol))
     view(V, :, 1) .= σ₀^2 + isDualZeroVol
     isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     e1 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero)), Nsim)
@@ -45,7 +45,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     return (V, X)
 end
 
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::Union{FinancialMonteCarlo.SerialAntitheticMonteCarloConfig, FinancialMonteCarlo.CudaAntitheticMonteCarloConfig}, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)
@@ -67,13 +67,13 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     dt = T / Nstep
     isDualZeroVol = zero(T * σ₀ * κ * θ * λ1 * σ * ρ)
     isDualZero = isDualZeroVol * S0 * zero(T * r * σ₀ * κ * θ * λ1 * σ * ρ)
-    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, isDualZero)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(isDualZero))
     view(X, :, 1) .= isDualZero
     isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     Nsim_2 = div(Nsim, 2)
     Xp = @views X[1:Nsim_2, :]
     Xm = @views X[(Nsim_2+1):end, :]
-    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, σ₀^2 + isDualZeroVol)
+    V = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(σ₀^2 + isDualZeroVol))
     view(V, :, 1) .= σ₀^2 + isDualZeroVol
     Vp = @views V[1:Nsim_2, :]
     Vm = @views V[(Nsim_2+1):end, :]
@@ -98,8 +98,8 @@ end
 
 # Quasi Monte Carlo, as the Sobol Heston of FinancialMonteCarlo: one Sobol point of dimension 2 Nstep per path, the first
 # Nstep coordinates drive the price and the others, correlated through ρ, the variance. Without this method a Sobol
-# configuration would fall into the SerialMonteCarloConfig one above, which matches any method, and use the rng.
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SerialSobolMonteCarloConfig, T::numb) where {numb <: Number}
+# configuration would fall into the MonteCarloConfiguration one above, which matches any sampling, and use the rng.
+function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SobolConfig, T::numb) where {numb <: Number}
     r = rfCurve.r
     S0 = mcProcess.underlying.S0
     d = FinancialMonteCarlo.dividend(mcProcess)

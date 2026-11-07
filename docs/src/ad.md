@@ -20,7 +20,7 @@ ForwardDiff covers nested duals, so `ForwardDiff.hessian` gives the second deriv
 ```@example ad
 using VibratoMonteCarlo, FinancialMonteCarlo, ForwardDiff
 
-mc = MonteCarloConfiguration(20_000, 10, FinancialMonteCarlo.AntitheticMC())
+mc = MonteCarloConfiguration(20_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
 price(x) = pricer(BlackScholesProcess(x[2], Underlying(x[1], 0.0)), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloGaussLegendre()), BinaryEuropeanOption(1.0, 100.0))
 ForwardDiff.hessian(price, [100.0, 0.2])
 ```
@@ -55,7 +55,7 @@ the last step on the GPU:
 
 ```julia
 using CUDA
-mc = MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.StandardMC(), FinancialMonteCarlo.CudaMode())
+mc = MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.StandardMC(), mode = FinancialMonteCarlo.CudaMode())
 pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option)
 ```
 

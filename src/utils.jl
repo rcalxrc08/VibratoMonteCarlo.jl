@@ -4,21 +4,20 @@ using FinancialToolbox
     VibratoMonteCarloStandard(Nsim_lrm = 200)
 
 Inner integration by Monte Carlo: `Nsim_lrm` standard normal samples for every outer path, drawn again for each path from
-the generator of the `MonteCarloConfiguration`. With `AntitheticMC` they come in antithetic pairs, with `SobolMode`
+the generator of the `MonteCarloConfiguration`. With `AntitheticMC` they come in antithetic pairs, with `SobolMC`
 they are a one dimensional Sobol sequence randomly shifted for every path (Cranley-Patterson). Gaussian inner laws only.
 """
 struct VibratoMonteCarloStandard <: AbstractVibrato
     Nsim_lrm::Int
-    mode::FinancialMonteCarlo.SerialMode
-    function VibratoMonteCarloStandard(Nsim_lrm::Int = 200, mode::FinancialMonteCarlo.SerialMode = FinancialMonteCarlo.SerialMode())
+    function VibratoMonteCarloStandard(Nsim_lrm::Int = 200)
         @assert Nsim_lrm > 0 "Error, number of simulation for VibratoMonteCarloStandard must be positive."
-        return new(Nsim_lrm, mode)
+        return new(Nsim_lrm)
     end
 end
 
 function init_lrm_vec(x::VibratoMonteCarloStandard, mcBaseData)
     Z = Array{Float64}(undef, x.Nsim_lrm)
-    randn!(mcBaseData.parallelMode.rng, Z)
+    randn!(FinancialMonteCarlo.host_rng(mcBaseData), Z)
     return Z
 end
 
@@ -89,15 +88,14 @@ get_unique_maturity(euopt) = euopt.T
 # GPU (FinancialMonteCarlo.CudaMode, with `using CUDA`): FinancialMonteCarlo simulates on the device, the inner integration
 # runs there too (lrm_paths), and code that indexes single paths takes them to the host. Every transfer is one copy of a
 # whole array, so no GPU array is indexed by scalars. AbstractCudaMode exists without CUDA, so no extension is needed.
-const CudaConfig = FinancialMonteCarlo.MonteCarloConfiguration{<:Integer, <:Integer, <:FinancialMonteCarlo.AbstractMonteCarloMethod, <:FinancialMonteCarlo.AbstractCudaMode}
+const CudaConfig = FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AbstractSampling, <:FinancialMonteCarlo.AbstractCudaMode}
 to_host(x::Array) = x
 to_host(x::AbstractArray) = Array(x)
-# x on the device of a CudaConfig, unchanged otherwise.
-on_device(mcBaseData, mcProcess, x) = x
-on_device(mcBaseData::CudaConfig, mcProcess, x::AbstractVector) = copyto!(FinancialMonteCarlo.get_array_type(mcBaseData, mcProcess, first(x)), x)
-# Standard normals in place: from the CPU rng, or on the GPU from CURAND (seeded by set_seed!).
-normals!(mcBaseData, e) = randn!(mcBaseData.parallelMode.rng, e)
-normals!(::CudaConfig, e) = randn!(e)
+# x on the device of the mode of the configuration (CuArray with the element type kept, or Array).
+on_device(mcBaseData, mcProcess, x) = FinancialMonteCarlo.to_mode(x, mcBaseData.mode)
+# Standard normals in place: from the host generator, or from CURAND for a CuArray (FinancialMonteCarlo's CUDA extension,
+# seeded by set_seed!).
+normals!(mcBaseData, e) = FinancialMonteCarlo.draw_normals!(e, mcBaseData)
 # Mean over the paths of lrm_paths: a vector (of vectors for a smile on the CPU), or a matrix with one column per option.
 path_mean(x::AbstractVector) = mean(x)
 path_mean(x::AbstractMatrix) = vec(to_host(mean(x; dims = 1)))

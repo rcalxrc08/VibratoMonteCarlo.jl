@@ -18,8 +18,8 @@ VibratoMonteCarlo = {path = ".."}
 [compat]
 Documenter = "1"
 DocumenterCitations = "1"
-FinancialFFT = "0.4"
-FinancialMonteCarlo = "0.5.2"
+FinancialFFT = "0.5"
+FinancialMonteCarlo = "0.6"
 FinancialToolbox = "0.7, 0.8"
 ForwardDiff = "0.10, 1"
 HyperDualNumbers = "4"

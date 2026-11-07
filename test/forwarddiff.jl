@@ -8,7 +8,7 @@
     K = 105.0
     T = 1.0
     d = 0.0
-    mc = MonteCarloConfiguration(100_000, 30, FinancialMonteCarlo.AntitheticMC())
+    mc = MonteCarloConfiguration(100_000, 30; sampling = FinancialMonteCarlo.AntitheticMC())
     vb_mc = VibratoMonteCarloAnalytic(100, -5.0, 5.0)
     rfCurve = ZeroRate(r)
     eu_opt = EuropeanOption(T, K)

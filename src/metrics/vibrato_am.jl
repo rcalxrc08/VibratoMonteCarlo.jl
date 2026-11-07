@@ -84,7 +84,8 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     regions = exercise_regions(S_policy, am_opt, exp(-v_value(r) * dt), v_value(S0), v_value(σ) * sqrt(T))
     # Pass 2: paths on the half steps. Column 2k is s_k = (k - 1/2) dt, the exercise date t_k = k dt is the midpoint
     # of [s_k, s_{k+1}] and given its ends log S_{t_k} is Gaussian (Brownian bridge).
-    mc_half = MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.monteCarloMethod, mcBaseData.parallelMode, mcBaseData.init_rng)
+    # same sampling, mode and random state (the default constructor, with every field), twice the steps
+    mc_half = FinancialMonteCarlo.MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.sampling, mcBaseData.mode, mcBaseData.rng, mcBaseData.reseed)
     S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T))
     args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData), am_opt)
     drift = r - d - drift_correction(mcProcess)

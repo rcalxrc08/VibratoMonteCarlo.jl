@@ -10,7 +10,7 @@ using Statistics
     # Antithetic paths used correlation -ρ between price and variance (corr ≈ +0.78 here).
     @testset "Heston antithetic correlation sign" begin
         h = HestonProcess(0.5, 0.2, 0.0, 2.0, -0.9, 0.04, Underlying(100.0, 0.0))
-        mc = MonteCarloConfiguration(20_000, 50, FinancialMonteCarlo.AntitheticMC())
+        mc = MonteCarloConfiguration(20_000, 50; sampling = FinancialMonteCarlo.AntitheticMC())
         v, S = VibratoMonteCarlo.simulate_with_last_vol(h, ZeroRate(0.0), mc, 1.0)
         @test cor(v, log.(S[:, end])) < -0.5
     end
@@ -27,7 +27,7 @@ using Statistics
     @testset "vibrato saltando on Kou with coarse grid" begin
         model = kou(0.2, 100.0, 0.0; λ = 50.0)
         ref = pricer(model, rfCurve, LewisMethod(600.0, 20000), eu_opt)
-        mc = MonteCarloConfiguration(40_000, 10, FinancialMonteCarlo.AntitheticMC())
+        mc = MonteCarloConfiguration(40_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
         res = pricer(model, rfCurve, VibratoSaltando(mc, VibratoMonteCarloAnalytic(200, -6.0, 6.0)), eu_opt)
         # Errors observed over 8 seeds ≤ 9.4e-3.
         @test rel_err(res, ref) < 2e-2
@@ -46,14 +46,14 @@ using Statistics
     @testset "vibrato saltando VG volga with default Analytic grid" begin
         model = VarianceGammaProcess(hyper(0.2, 1.0, 1.0, 0.0), 0.1, 0.01, Underlying(100.0, 0.01))
         ref = pricer(model, ZeroRate(0.01), LewisMethod(400.0, 200000), eu_opt)
-        res = pricer(model, ZeroRate(0.01), VibratoSaltando(MonteCarloConfiguration(100_000, 10, FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), eu_opt)
+        res = pricer(model, ZeroRate(0.01), VibratoSaltando(MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), eu_opt)
         test_value_and_derivatives(res, ref; rtol = 3e-2)
     end
 
-    # SobolMode fell into the SerialMonteCarloConfig methods, which match any method, and silently used the rng: on Heston
+    # SobolMC fell into the (then SerialMonteCarloConfig) methods, which matched any sampling, and silently used the rng: on Heston
     # (simulate_with_vol) and for G_T of VG and NIG the results were those of plain MC.
     @testset "Sobol is used on Heston and on the subordinator" begin
-        sobol = MonteCarloConfiguration(1_000, 10, FinancialMonteCarlo.SobolMode())
+        sobol = MonteCarloConfiguration(1_000, 10; sampling = FinancialMonteCarlo.SobolMC())
         plain = MonteCarloConfiguration(1_000, 10)
         model = heston(0.2, 100.0, 0.0)
         (V, X) = VibratoMonteCarlo.simulate_with_vol(model, rfCurve, sobol, 1.0)

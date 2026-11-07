@@ -1,7 +1,7 @@
 using FinancialMonteCarlo, Random;
 
 function generate_last_jump_time_and_value(row_X_i, λ, zero_time, zero_drift, T, mcProcess, dt, mcBaseData)
-    t_i = randexp(mcBaseData.parallelMode.rng) / λ
+    t_i = randexp(FinancialMonteCarlo.host_rng(mcBaseData)) / λ
     t_i_1 = t_i / T
     T_jump = zero_time
     x_jump = zero_drift
@@ -18,7 +18,7 @@ function generate_last_jump_time_and_value(row_X_i, λ, zero_time, zero_drift, T
         # (The value at jump_idx already contains diffusion beyond t_i, using it with t_i counts that diffusion twice.)
         T_jump = (jump_idx - 2) * dt
         x_jump = row_X_i[jump_idx-1] + jumps_in_step
-        t_i += randexp(mcBaseData.parallelMode.rng) / λ
+        t_i += randexp(FinancialMonteCarlo.host_rng(mcBaseData)) / λ
         t_i_1 = t_i / T
     end
     return T_jump, x_jump
@@ -37,7 +37,7 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     zero_drift = drift_rn * 0 * T
     Nsim = mcBaseData.Nsim
     Nsteps = mcBaseData.Nstep
-    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, zero_drift)
+    X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(zero_drift))
     FinancialMonteCarlo.simulate!(X, BrownianMotion(σ, drift_rn), mcBaseData, T)
     # The jumps are added path by path with the CPU rng: on the host, then the results go back to the device.
     X = to_host(X)

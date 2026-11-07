@@ -31,9 +31,9 @@ function simulate_subordinator(mcProcess, mcBaseData, T)
     return (on_device(mcBaseData, mcProcess, G_T), weight)
 end
 
-draw_subordinator(law, mcBaseData) = rand(mcBaseData.parallelMode.rng, law, mcBaseData.Nsim)
+draw_subordinator(law, mcBaseData) = rand(FinancialMonteCarlo.host_rng(mcBaseData), law, mcBaseData.Nsim)
 # G_T is one dimensional: its quantile at the points of a one dimensional Sobol sequence, skipped as in FinancialMonteCarlo.
-function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.SerialSobolMonteCarloConfig)
+function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.SobolConfig)
     seq = SobolSeq(1)
     skip(seq, mcBaseData.Nsim)
     return [quantile(law, only(next!(seq))) for _ in 1:mcBaseData.Nsim]
