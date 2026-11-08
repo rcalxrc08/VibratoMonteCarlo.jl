@@ -110,3 +110,8 @@ These are limits of the methods, measured against the Lewis formula, not defects
 - Derivatives over ``\kappa`` through the law of ``G_T`` are the noisiest: at ``5 \cdot 10^5`` paths the standard
   deviation of ``\partial_\kappa`` is 3% on Variance Gamma and 1.2% on NIG.
 - `Vibrato` on American options on Black and Scholes has an unbiased gamma, but its variance grows with `Nstep`.
+- On Kou and Merton, `VibratoSaltando` with `SobolMC` or `AntitheticMC` applies them to the diffusion only: the jump
+  times and sizes are drawn with the generator, as in FinancialMonteCarlo's own paths
+  ([#30](https://github.com/rcalxrc08/VibratoMonteCarlo.jl/issues/30),
+  [FinancialMonteCarlo.jl#34](https://github.com/rcalxrc08/FinancialMonteCarlo.jl/issues/34)). On Variance Gamma and
+  Normal Inverse Gaussian both apply to ``G_T``, drawn by inversion.

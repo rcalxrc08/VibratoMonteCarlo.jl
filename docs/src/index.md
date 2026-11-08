@@ -42,8 +42,9 @@ development.
 
 ## Features
 
-- Pricing methods: [`Vibrato`](@ref), [`VibratoSaltando`](@ref) and [`PureLRM`](@ref), with American options through `Vibrato`, see [Methods](methods.md). The theory is in [Pathwise and likelihood ratio methods](lrm.md), [Conditioning: Vibrato and Vibrato Saltando](vibrato.md), [Numerical refinements](refinements.md) and [American options](american.md).
+- Pricing methods: [`Vibrato`](@ref), [`VibratoSaltando`](@ref) and [`PureLRM`](@ref), with American options through `Vibrato`, see [Methods](methods.md). The theory is in [Pathwise and likelihood ratio methods](lrm.md), [The Spectral Theorem](spectral.md), [Conditioning: Vibrato and Vibrato Saltando](vibrato.md), [Numerical refinements](refinements.md) and [American options](american.md).
 - Inner integrations: [`VibratoMonteCarloGaussLegendre`](@ref) (split at the strikes, exact to about 1e-14), [`VibratoMonteCarloAnalytic`](@ref) and [`VibratoMonteCarloStandard`](@ref) (Monte Carlo: standard, antithetic, Sobol).
+- The Spectral Theorem: in Black and Scholes every sensitivity of order ``n`` is a payoff independent combination of ``2n + 1`` prices, and its dual in frequency space links the likelihood ratio and pathwise methods, and this package to FinancialFFT.jl, see [The Spectral Theorem](spectral.md).
 - Models: Black and Scholes, Heston, Kou, Merton, Variance Gamma, Normal Inverse Gaussian. The densities of the Lévy processes come from FinancialFFT.jl.
 - Payoffs: European and binary options, calls and puts, their smiles (several strikes, one maturity), and American options.
 - Sensitivities of any order with DualNumbers.jl, HyperDualNumbers.jl, ForwardDiff.jl (nested too), ReverseDiff.jl, TaylorSeries.jl and Mooncake.jl, see [Automatic differentiation](@ref).
@@ -107,6 +108,6 @@ julia --project=test/cuda -e 'import Pkg; Pkg.instantiate(); include("test/cuda/
 ## Contents
 
 ```@contents
-Pages = ["lrm.md", "vibrato.md", "refinements.md", "american.md", "methods.md", "ad.md", "api.md"]
+Pages = ["lrm.md", "spectral.md", "vibrato.md", "refinements.md", "american.md", "methods.md", "ad.md", "api.md"]
 Depth = 2
 ```

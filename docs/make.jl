@@ -21,5 +21,5 @@ makedocs(
     modules = [VibratoMonteCarlo],
     checkdocs = :exports,
     plugins = [bib],
-    pages = ["index.md", "Theory" => ["lrm.md", "vibrato.md", "refinements.md", "american.md"], "methods.md", "ad.md", "api.md", "references.md"],
+    pages = ["index.md", "Theory" => ["lrm.md", "spectral.md", "vibrato.md", "refinements.md", "american.md"], "methods.md", "ad.md", "api.md", "references.md"],
 )

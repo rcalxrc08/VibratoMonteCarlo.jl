@@ -8,7 +8,7 @@
 This package is built on top of [FinancialMonteCarlo.jl](https://github.com/rcalxrc08/FinancialMonteCarlo.jl) and [FinancialFFT.jl](https://github.com/rcalxrc08/FinancialFFT.jl).
 Standard montecarlo methods lacks of differentiability, which makes automatic differentiation useless.
 The main aim of this package is to provide a feasible way to compute sensitivities of any order for various types of payoffs using montecarlo methods.
-The [documentation](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/) has the theory of the methods, examples and the API.
+The [documentation](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/) has the theory of the methods, examples and the API. Its [Spectral Theorem](https://rcalxrc08.github.io/VibratoMonteCarlo.jl/spectral/) page shows that in Black and Scholes every sensitivity of order n is a payoff independent combination of 2n + 1 prices, and how its dual in frequency space links this package to FinancialFFT.jl.
 It currently contains the following capabilities:
 
 - Support for the following Single Name Models:

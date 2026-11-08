@@ -113,3 +113,62 @@ function subordinated_weights()
     mu_sub = log(S_0) + (r - d - ψ) * T + β * δ^2
     return display_math(["w_{\\Delta} = " * latex_weight(mu_sub, s_bs, S_0, 1, x, Z), "w_{\\Gamma} = " * latex_weight(mu_sub, s_bs, S_0, 2, x, Z)])
 end
+
+# The Spectral Theorem (spectral.md). Primal: for θ = r the score polynomial of order n is (δ / σ)^n He_n(Z), checked
+# on numbers below, since T / (σ √T) = δ / σ.
+hermite(k, y) = k == 0 ? one(y) : k == 1 ? y : y * hermite(k - 1, y) - (k - 1) * hermite(k - 2, y)
+function hermite_r_weights(max_order = 4)
+    lines = map(1:max_order) do n
+        weight = generate_weight(mu_lrm, s_lrm, r, n, x, Z)
+        point = Dict(S_0 => 100.0, r => 0.02, d => 0.01, σ => 0.2, δ => 0.7, Z => 0.3)
+        expected = (0.7 / 0.2)^n * hermite(n, 0.3)
+        @assert isapprox(Symbolics.value(substitute(weight, point)), expected; rtol = 1e-12) "the r weight of order $n is not a Hermite polynomial"
+        "\\frac{\\partial^{$n}_{r} f}{f} = " * latex_weight(weight)
+    end
+    return display_math(lines)
+end
+
+# Dual: L(w) = log E[e^{w X_T}] of Black and Scholes, w = iu, without the discount (V_0 = E[Φ(X_T)] as in lrm.md).
+@variables w [latexwrapper = identity]
+const L_bs = w * (log(S_0) + (r - d) * T - T * σ^2 / 2) + T * σ^2 * w^2 / 2
+# ∂^n_θ e^L / e^L, a polynomial in w: the multiplier of order n.
+multiplier(tgt_var, order) = simplify(expand(expand_derivatives((Differential(tgt_var)^order)(exp(L_bs))) / exp(L_bs)))
+latex_poly(p) = latexify(p, env = :raw, mult_symbol = "")
+dual_symbols() = display_math(["\\partial_{$name} L = " * latex_poly(simplify(expand(expand_derivatives(Differential(tgt_var)(L_bs))))) for (name, tgt_var) in (("S_0", S_0), ("r", r), ("d", d), ("\\sigma", σ), ("T", T))])
+dual_multipliers() = display_math(["B_{$n}^{$name}(w) = " * latex_poly(multiplier(tgt_var, n)) for (name, tgt_var) in (("S_0", S_0), ("\\sigma", σ)) for n = 2:3])
+# ∂_w^k e^L / e^L: E[Φ(X_T) X_T^k] in the basis D_j = E[Φ^{(j)}(X_T)], the coefficient of w^j going to D_j.
+function stein_bridge(max_order = 3)
+    lines = map(1:max_order) do k
+        # L of a Gaussian of mean μ and standard deviation s: μ = log(S_0) + (r - d - σ^2 / 2) T, s = σ √T for L_bs.
+        L_gauss = μ * w + s^2 * w^2 / 2
+        p = expand(simplify(expand_derivatives((Differential(w)^k)(exp(L_gauss))) / exp(L_gauss)))
+        coefficients = [j == 0 ? substitute(p, Dict(w => 0)) : Symbolics.coeff(p, w^j) for j = 0:k]
+        "\\mathbb{E}(\\Phi(X_T) X_T^{$k}) = " * join(("\\left(" * latex_poly(simplify(c)) * "\\right) D_{$j}" for (j, c) in zip(0:k, coefficients)), " + ")
+    end
+    return display_math(lines)
+end
+
+# General dual theorem: the first derivatives of the exponents of FinancialFFT (characteristic_exponent_i), each checked
+# against it at a point before differentiating.
+using FinancialMonteCarlo, FinancialFFT
+@variables θ μ_J σ_J p λ_p λ_m
+const exponents = (
+    (name = "Merton", ψ = σ^2 * w^2 / 2 + λ * (exp(μ_J * w + σ_J^2 * w^2 / 2) - 1), params = (λ, μ_J, σ_J), values = Dict(σ => 0.2, λ => 0.5, μ_J => -0.1, σ_J => 0.15), model = MertonProcess(0.2, 0.5, -0.1, 0.15, Underlying(100.0))),
+    (name = "Kou", ψ = σ^2 * w^2 / 2 + λ * w * (p / (λ_p - w) - (1 - p) / (λ_m + w)), params = (λ, p, λ_p, λ_m), values = Dict(σ => 0.2, λ => 1.0, p => 0.4, λ_p => 10.0, λ_m => 5.0), model = KouProcess(0.2, 1.0, 0.4, 10.0, 5.0, Underlying(100.0))),
+    (name = "VG", ψ = -log(1 - θ * κ * w - σ^2 * κ * w^2 / 2) / κ, params = (σ, θ, κ), values = Dict(σ => 0.2, θ => -0.15, κ => 0.2), model = VarianceGammaProcess(0.2, -0.15, 0.2, Underlying(100.0))),
+    (name = "NIG", ψ = (1 - sqrt(1 - 2 * θ * κ * w - σ^2 * κ * w^2)) / κ, params = (σ, θ, κ), values = Dict(σ => 0.2, θ => -0.1, κ => 0.2), model = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(100.0))),
+)
+# Latexify writes the names with an underscore in \mathtt.
+latex_score(e) = replace(latex_poly(e), "\\mathtt{\\lambda\\_p}" => "\\lambda_+", "\\mathtt{\\lambda\\_m}" => "\\lambda_-", "\\mathtt{\\mu\\_J}" => "\\mu_J", "\\mathtt{\\sigma\\_J}" => "\\sigma_J")
+function frequency_scores()
+    lines = String[]
+    for e in exponents
+        # substitute does not fold exp, log and sqrt of constants: evaluate the expression it leaves.
+        at_point = Core.eval(@__MODULE__, Symbolics.toexpr(substitute(e.ψ, merge(e.values, Dict(w => 0.7)))))
+        @assert isapprox(at_point, FinancialFFT.characteristic_exponent_i(0.7, e.model); rtol = 1e-13) "ψ of $(e.name) differs from characteristic_exponent_i"
+        for param in e.params
+            push!(lines, "\\partial_{" * latex_score(param) * "} \\psi_{\\text{$(e.name)}}(w) = " * latex_score(simplify(expand_derivatives(Differential(param)(e.ψ)))))
+        end
+    end
+    return display_math(lines)
+end
