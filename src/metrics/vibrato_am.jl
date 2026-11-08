@@ -168,6 +168,16 @@ end
 
 # Value at the previous date of a path that, at the exercise date (bridge mean m, standard deviation s), is exercised
 # in region (discounted payoff) and otherwise continues with value W.
+# The integrands of the bridge as callable structs, and the sum over the segments with sum(f, segments): a generator
+# whose elements build a closure is not inferred on Julia 1.10.
+struct PayoffAt{O}
+    option::O
+end
+(p::PayoffAt)(x) = payout_f(x, p.option)
+struct UnitPayoff end
+(::UnitPayoff)(x) = 1
+segments_integral(segments, m, s, h) = sum(segment -> lrm_segment(segment[1], segment[2], m, s, h), segments)
+
 function bridge_vibrato(W, m, s, region, am_opt, discount)
     mv = v_value(m)
     sv = v_value(s)
@@ -179,7 +189,7 @@ function bridge_vibrato(W, m, s, region, am_opt, discount)
     end
     # All the bridge mass in the continuation region.
     isempty(exercise) && return W
-    payoff_integral = sum(lrm_segment(a, b, m, s, x -> payout_f(x, am_opt)) for (a, b) in exercise)
+    payoff_integral = segments_integral(exercise, m, s, PayoffAt(am_opt))
     continuation = Tuple{typeof(mv), typeof(mv)}[]
     a = -BRIDGE_Z
     for (lo, hi) in exercise
@@ -187,6 +197,6 @@ function bridge_vibrato(W, m, s, region, am_opt, discount)
         a = hi
     end
     a < BRIDGE_Z && push!(continuation, (a, BRIDGE_Z))
-    stay = isempty(continuation) ? zero(payoff_integral) : sum(lrm_segment(a, b, m, s, _ -> 1) for (a, b) in continuation)
+    stay = isempty(continuation) ? zero(payoff_integral) : segments_integral(continuation, m, s, UnitPayoff())
     return discount * payoff_integral + W * stay
 end
