@@ -63,4 +63,28 @@ using Statistics
         vg = variance_gamma(0.2, 100.0, 0.0)
         @test VibratoMonteCarlo.simulate_subordinator(vg, sobol, 1.0)[1] != VibratoMonteCarlo.simulate_subordinator(vg, plain, 1.0)[1]
     end
+
+    # AntitheticMC drew G_T with rand, as plain MC: no antithetic pairs and no variance reduction on VG and NIG (#29).
+    # Now the quantiles at U and 1 - U. Spread over 6 seeds of 10k paths, observed ratios plain / antithetic: 50 on the
+    # VG value, 23 on the NIG delta (the NIG value only gains 2).
+    @testset "AntitheticMC on the subordinator (#29)" begin
+        anti(seed) = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC(), seed = seed)
+        plain(seed) = MonteCarloConfiguration(10_000, 10; seed = seed)
+        vg(S0) = VarianceGammaProcess(0.2, -0.15, 0.2, Underlying(S0, 0.0))
+        nig(S0) = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(S0, 0.0))
+        for model in (vg(100.0), nig(100.0))
+            G_T = VibratoMonteCarlo.simulate_subordinator(model, anti(1), 1.0)[1]
+            law = FinancialMonteCarlo.compute_subordinator_law(model, model.κ, 1.0)
+            half = div(length(G_T), 2)
+            @test VibratoMonteCarlo.Distributions.cdf.(law, G_T[1:half]) .+ VibratoMonteCarlo.Distributions.cdf.(law, G_T[(half+1):end]) ≈ ones(half) rtol = 1e-8
+            @test G_T != VibratoMonteCarlo.simulate_subordinator(model, plain(1), 1.0)[1]
+        end
+        spread(f, mc) = std([f(mc(seed)) for seed = 1:6])
+        for method in (mc -> VibratoSaltando(mc, VibratoMonteCarloGaussLegendre()), VibratoMonteCarlo.ConditionalSaltando)
+            vg_value(mc) = pricer(vg(100.0), rfCurve, method(mc), eu_opt)
+            nig_delta(mc) = pricer(nig(hyper(100.0, 1.0, 1.0, 0.0)), rfCurve, method(mc), eu_opt).epsilon1
+            @test spread(vg_value, anti) < spread(vg_value, plain) / 10
+            @test spread(nig_delta, anti) < spread(nig_delta, plain) / 5
+        end
+    end
 end

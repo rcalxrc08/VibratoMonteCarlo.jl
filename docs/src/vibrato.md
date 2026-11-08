@@ -194,6 +194,7 @@ X_T|G_T \sim \mathcal{N}(\mu, s^2)
 ```
 
 Hence only ``G_T`` has to be simulated (Gamma for Variance Gamma, Inverse Gaussian for Normal Inverse Gaussian), and the LRM applies to the Gaussian inner expectation with no time discretization.
+Since ``G_T`` is one dimensional, it is drawn by inversion with antithetic and Sobol sampling: the quantiles of its law at ``U`` and ``1 - U``, or at the points of a one dimensional Sobol sequence.
 The delta and gamma weights are once more the same, now with ``\delta = \sqrt{G_T}``:
 ```@eval
 Main.DocumentationFormulas.subordinated_weights()

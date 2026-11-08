@@ -32,6 +32,12 @@ function simulate_subordinator(mcProcess, mcBaseData, T)
 end
 
 draw_subordinator(law, mcBaseData) = rand(FinancialMonteCarlo.host_rng(mcBaseData), law, mcBaseData.Nsim)
+# G_T is one dimensional, so its antithetic pairs are the quantiles at U and 1 - U (cquantile at U), with the halves
+# ordered as the paths of FinancialMonteCarlo (path_sides). Nsim is even for AntitheticMC.
+function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC})
+    U = rand(FinancialMonteCarlo.host_rng(mcBaseData), div(mcBaseData.Nsim, 2))
+    return vcat(quantile.(law, U), cquantile.(law, U))
+end
 # G_T is one dimensional: its quantile at the points of a one dimensional Sobol sequence, skipped as in FinancialMonteCarlo.
 function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.SobolConfig)
     seq = SobolSeq(1)
