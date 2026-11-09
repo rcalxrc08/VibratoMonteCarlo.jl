@@ -87,4 +87,33 @@ using Statistics
             @test spread(nig_delta, anti) < spread(nig_delta, plain) / 5
         end
     end
+
+    # SobolMC and AntitheticMC covered only the diffusion of Kou and Merton: the jumps came from the rng (#30). Now they
+    # come from a fixed number of uniforms per path, the Sobol coordinates after the diffusion or the reflections 1 - u.
+    @testset "Sobol and antithetic on the Kou and Merton jumps (#30)" begin
+        kou_30(S0) = KouProcess(0.2, 3.0, 0.3, 10.0, 8.0, Underlying(S0, 0.01))
+        merton_30(S0) = MertonProcess(0.2, 3.0, -0.05, 0.1, Underlying(S0, 0.01))
+        # The quantiles of the jump laws, against their means on a midpoint grid of the uniforms.
+        u_grid = ((1:100_000) .- 0.5) ./ 100_000
+        kou_jumps = kou_30(100.0)
+        @test mean(VibratoMonteCarlo.jump_quantile.(Ref(kou_jumps), u_grid)) ≈ kou_jumps.p / kou_jumps.λ₊ - (1 - kou_jumps.p) / kou_jumps.λ₋ rtol = 1e-3
+        @test mean(VibratoMonteCarlo.jump_quantile.(Ref(merton_30(100.0)), u_grid)) ≈ -0.05 rtol = 1e-3
+        # With Sobol the paths no longer depend on the seed, the jumps included.
+        sobol(seed) = MonteCarloConfiguration(1_000, 10; sampling = FinancialMonteCarlo.SobolMC(), seed = seed)
+        for model in (kou_30(100.0), merton_30(100.0))
+            @test VibratoMonteCarlo.simulate_log_with_jump_times(model, rfCurve, sobol(1), 1.0) == VibratoMonteCarlo.simulate_log_with_jump_times(model, rfCurve, sobol(2), 1.0)
+        end
+        # Kou against Lewis with 16k Sobol points: relative errors 3e-4, 1.3e-3, 2.2e-3 on value, delta and gamma
+        # (3.4e-2 on gamma with the jumps from the rng); the tolerance is 3 times the largest.
+        S0 = hyper(100.0, 1.0, 1.0, 0.0)
+        res = pricer(kou_30(S0), rfCurve, VibratoSaltando(MonteCarloConfiguration(16_000, 10; sampling = FinancialMonteCarlo.SobolMC()), VibratoMonteCarloGaussLegendre()), eu_opt)
+        ref = pricer(kou_30(S0), rfCurve, LewisMethod(400.0, 200000), eu_opt)
+        test_value_and_derivatives(res, ref; rtol = 7e-3)
+        # Antithetic jumps: spread of the Kou delta over 8 seeds of 10k paths, 2.6e-3 against 5.7e-3 for plain MC
+        # (6.9e-3 with the jumps from the rng); unbiased, the mean error over 32 seeds is within one standard error.
+        anti(seed) = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC(), seed = seed)
+        plain(seed) = MonteCarloConfiguration(10_000, 10; seed = seed)
+        kou_delta(mc) = pricer(kou_30(S0), rfCurve, VibratoSaltando(mc, VibratoMonteCarloGaussLegendre()), eu_opt).epsilon1
+        @test std([kou_delta(anti(seed)) for seed = 1:8]) < std([kou_delta(plain(seed)) for seed = 1:8]) / 1.5
+    end
 end
