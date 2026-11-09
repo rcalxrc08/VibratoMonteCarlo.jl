@@ -151,12 +151,13 @@ end
 # General dual theorem: the first derivatives of the exponents of FinancialFFT (characteristic_exponent_i), each checked
 # against it at a point before differentiating.
 using FinancialMonteCarlo, FinancialFFT
-@variables θ μ_J σ_J p λ_p λ_m
+# ϑ is the drift θ of the subordinated Brownian motion: θ is the generic parameter in the pages.
+@variables ϑ μ_J σ_J p λ_p λ_m
 const exponents = (
     (name = "Merton", ψ = σ^2 * w^2 / 2 + λ * (exp(μ_J * w + σ_J^2 * w^2 / 2) - 1), params = (λ, μ_J, σ_J), values = Dict(σ => 0.2, λ => 0.5, μ_J => -0.1, σ_J => 0.15), model = MertonProcess(0.2, 0.5, -0.1, 0.15, Underlying(100.0))),
     (name = "Kou", ψ = σ^2 * w^2 / 2 + λ * w * (p / (λ_p - w) - (1 - p) / (λ_m + w)), params = (λ, p, λ_p, λ_m), values = Dict(σ => 0.2, λ => 1.0, p => 0.4, λ_p => 10.0, λ_m => 5.0), model = KouProcess(0.2, 1.0, 0.4, 10.0, 5.0, Underlying(100.0))),
-    (name = "VG", ψ = -log(1 - θ * κ * w - σ^2 * κ * w^2 / 2) / κ, params = (σ, θ, κ), values = Dict(σ => 0.2, θ => -0.15, κ => 0.2), model = VarianceGammaProcess(0.2, -0.15, 0.2, Underlying(100.0))),
-    (name = "NIG", ψ = (1 - sqrt(1 - 2 * θ * κ * w - σ^2 * κ * w^2)) / κ, params = (σ, θ, κ), values = Dict(σ => 0.2, θ => -0.1, κ => 0.2), model = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(100.0))),
+    (name = "VG", ψ = -log(1 - ϑ * κ * w - σ^2 * κ * w^2 / 2) / κ, params = (σ, ϑ, κ), values = Dict(σ => 0.2, ϑ => -0.15, κ => 0.2), model = VarianceGammaProcess(0.2, -0.15, 0.2, Underlying(100.0))),
+    (name = "NIG", ψ = (1 - sqrt(1 - 2 * ϑ * κ * w - σ^2 * κ * w^2)) / κ, params = (σ, ϑ, κ), values = Dict(σ => 0.2, ϑ => -0.1, κ => 0.2), model = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(100.0))),
 )
 # Latexify writes the names with an underscore in \mathtt.
 latex_score(e) = replace(latex_poly(e), "\\mathtt{\\lambda\\_p}" => "\\lambda_+", "\\mathtt{\\lambda\\_m}" => "\\lambda_-", "\\mathtt{\\mu\\_J}" => "\\mu_J", "\\mathtt{\\sigma\\_J}" => "\\sigma_J")
