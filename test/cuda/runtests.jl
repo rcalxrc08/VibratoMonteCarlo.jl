@@ -14,6 +14,7 @@ bin = BinaryEuropeanOption(1.0, 100.0)
 smile = FinancialMonteCarlo.EuropeanOptionSmile(1.0, [90.0, 100.0, 115.0], [true, false, true])
 bs(S, σ = 0.2) = BlackScholesProcess(σ, Underlying(S, 0.0))
 kou(S) = KouProcess(0.2, 5.0, 0.3, 30.0, 20.0, Underlying(S, 0.0))
+merton(S) = MertonProcess(0.2, 5.0, -0.05, 0.1, Underlying(S, 0.0))
 var_gamma(S; κ = 0.2) = VarianceGammaProcess(0.2, -0.15, κ, Underlying(S, 0.0))
 nig(S) = NormalInverseGaussianProcess(0.2, -0.1, 0.2, Underlying(S, 0.0))
 heston(S) = HestonProcess(0.2, 0.2, 0.0, 0.2, 0.2, 0.2, Underlying(S, 0.0))
@@ -97,6 +98,44 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         cu_smile = FinancialMonteCarlo.EuropeanOptionSmile(1.0, CuArray([90.0, 100.0, 115.0]), CuArray([true, false, true]))
         @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(anti), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(device)) rtol = 1e-12
         @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(anti), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
+    end
+
+    # The last jumps gathered on the device, against the old host algorithm on the same draws: the CURAND diffusion again,
+    # taken to the host, the same JumpList of FinancialMonteCarlo (same host generator state), and path by path its jumps
+    # in time order added to the row, the grid point before the step of the last jump plus the jumps of that step.
+    @testset "last jumps on the device" begin
+        for model in (kou(hyper_of(100.0)), merton(hyper_of(100.0))), sampling in (FinancialMonteCarlo.StandardMC(), FinancialMonteCarlo.AntitheticMC())
+            mc = gpu(sampling; n = 20_000)
+            FinancialMonteCarlo.set_seed!(mc)
+            (T_jumps, X_f) = VMC.simulate_log_with_jump_times(model, rf, mc, 1.0)
+            @test T_jumps isa CuArray && X_f isa CuArray
+            FinancialMonteCarlo.set_seed!(mc)
+            drift = rf.r - VMC.drift_correction(model)
+            X = FinancialMonteCarlo.get_matrix_type(mc, model, typeof(drift))
+            FinancialMonteCarlo.simulate!(X, BrownianMotion(model.σ, drift), mc, 1.0)
+            X = Array(X)
+            jumps = FinancialMonteCarlo.JumpList{Float64}()
+            FinancialMonteCarlo.add_jumps!(jumps, model, mc, 1.0)
+            offsets, steps, sizes = FinancialMonteCarlo.jumps_by_path(jumps, mc.Nsim)
+            T_ref = zeros(mc.Nsim)
+            X_ref = zeros(mc.Nsim)
+            for i = 1:mc.Nsim
+                row = X[i, :]
+                path_jumps = offsets[i]:(offsets[i+1]-1)
+                last_idx = 0
+                jumps_in_step = 0.0
+                for k in path_jumps[sortperm(steps[path_jumps])]
+                    row[steps[k]:end] .+= sizes[k]
+                    jumps_in_step = steps[k] == last_idx ? jumps_in_step + sizes[k] : sizes[k]
+                    last_idx = steps[k]
+                    T_ref[i] = (last_idx - 2) / mc.Nstep
+                    X_ref[i] = row[last_idx-1] + jumps_in_step
+                end
+            end
+            @test count(>(0), T_ref) > mc.Nsim / 2
+            @test Array(T_jumps) ≈ T_ref rtol = 1e-14
+            @test all(all(isapprox.(value_and_derivatives(x), value_and_derivatives(log(model.underlying.S0) + y); rtol = 1e-12)) for (x, y) in zip(Array(X_f), X_ref))
+        end
     end
 
     # CURAND paths, so only against the references. Worst relative errors over 6 GPU seeds with 100k paths (value, delta,
