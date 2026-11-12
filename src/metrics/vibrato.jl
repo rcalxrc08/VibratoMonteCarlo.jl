@@ -107,10 +107,10 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     T = get_unique_maturity(eu_opt)
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
-    # The FFT density is evaluated path by path: on the host.
-    S = to_host(FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato))
+    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
     S_end = @views S[:, end]
-    Z = fft_step_law(mcProcess, rfCurve, step_vibrato)
-    result = mean(lrm_interface_aug!(Z, eu_opt, vb_mc, St) for St in S_end) * exp(-r * T)
+    # on the device of the paths in CudaMode, the density and the integration too
+    law = fft_step_law(mcProcess, rfCurve, step_vibrato, mcBaseData.mode)
+    result = path_mean(aug_paths(law, eu_opt, vb_mc, S_end, mcBaseData)) * exp(-r * T)
     return result
 end

@@ -61,10 +61,11 @@ pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option)
 
 - On the device: the paths of FinancialMonteCarlo.jl, the variance of Heston, the subordinator ``G_T`` of VG and NIG with
   plain Monte Carlo (FinancialMonteCarlo.jl's Gamma and inverse Gaussian sampler), the paths of Kou and Merton up to their
-  last jump, and the inner integration on the matrix of paths and nodes, with the samples of `VibratoMonteCarloStandard`
-  drawn by CURAND.
+  last jump, the FFT density of the last step (`Vibrato` and `PureLRM` on Lévy processes, computed by FinancialFFT.jl in
+  the mode of the configuration), and the inner integration on the matrix of paths and nodes, with the samples of
+  `VibratoMonteCarloStandard` drawn by CURAND.
 - On the host, then copied to the device: the antithetic ``G_T`` (pairs of quantiles) and the jump times and sizes of Kou
   and Merton (drawn by FinancialMonteCarlo.jl, as for its own GPU paths).
-- On the host: the FFT density, American options and `PureLRM`.
+- On the host: American options and `PureLRM` on Itô processes.
 - The numbers must be isbits on the device: hyper duals and ForwardDiff (nested too) are tested. TaylorSeries and
   ReverseDiff cannot run there.

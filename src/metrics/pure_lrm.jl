@@ -23,6 +23,8 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
     T = get_unique_maturity(eu_opt)
-    Z = fft_step_law(mcProcess, rfCurve, T)
-    return lrm_interface_aug!(Z, eu_opt, vb_mc, mcProcess.underlying.S0) * exp(-r * T)
+    # one point, S0, on the device of the configuration: in CudaMode the density is computed and evaluated there
+    law = fft_step_law(mcProcess, rfCurve, T, mcBaseData.mode)
+    S0 = on_device(mcBaseData, mcProcess, [mcProcess.underlying.S0])
+    return path_mean(aug_paths(law, eu_opt, vb_mc, S0, mcBaseData)) * exp(-r * T)
 end

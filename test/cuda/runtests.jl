@@ -174,10 +174,51 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         @test hess[1, 2] ≈ pricer(bs(hyper(100.0, 1.0, 0.0, 0.0), hyper(0.2, 0.0, 1.0, 0.0)), rf, Vibrato(gpu(), gl), eu).epsilon12 rtol = 1e-10
     end
 
+    # The FFT density of the last step (Vibrato and PureLRM on non-Ito processes) is computed and evaluated on the device.
+    @testset "FFT density on the device" begin
+        an = VibratoMonteCarloAnalytic()
+        for model in (kou(hyper_of(100.0)), nig(hyper_of(100.0)), var_gamma(hyper_of(100.0); κ = 0.1))
+            # the FFTs of the device and of the host: values within 2.1e-15, the moments of the grid within 1e-14
+            host_law = VMC.fft_step_law(model, rf, 0.25)
+            device_law = VMC.fft_step_law(model, rf, 0.25, FinancialMonteCarlo.CudaMode())
+            @test device_law.density.values isa CuArray
+            @test maximum(abs.(Array(device_law.density.values) .- host_law.density.values)) < 1e-13
+            @test device_law.mean ≈ host_law.mean atol = 1e-13
+            @test device_law.std ≈ host_law.std rtol = 1e-12
+            # the integration of the same paths with the same law (the device one, also taken to the host), device against
+            # host: values ≤ 1.2e-13, gammas ≤ 1.1e-12 apart (absolute)
+            same_law = VMC.FFTStepLaw(FinancialFFT.adapt(Array, device_law.density), device_law.mean, device_law.std)
+            S = hyper.(100.0 .* exp.(0.2 .* randn(3_000)), 1.0, 1.0, 0.0)
+            for opt in (eu, bin, smile)
+                host = VMC.aug_paths(same_law, opt, an, S, cpu())
+                host = host isa AbstractVector{<:AbstractVector} ? permutedims(reduce(hcat, host)) : host
+                device = Array(VMC.aug_paths(device_law, opt, an, CuArray(S), gpu()))
+                @test all(all(isapprox.(value_and_derivatives(x), value_and_derivatives(y); rtol = 1e-12, atol = 1e-11)) for (x, y) in zip(device, host))
+            end
+            # PureLRM has no paths: the device gives the host result up to the FFTs
+            for opt in (eu, bin)
+                @test value_and_derivatives(pricer(model, rf, PureLRM(gpu(), an), opt)) ≈ value_and_derivatives(pricer(model, rf, PureLRM(cpu(), an), opt)) rtol = 1e-9
+            end
+            @test reduce(vcat, value_and_derivatives.(pricer(model, rf, PureLRM(gpu(), an), smile))) ≈ reduce(vcat, value_and_derivatives.(pricer(model, rf, PureLRM(cpu(), an), smile))) rtol = 1e-9
+        end
+        # parameters with derivatives in the density computed on the device, and nested ForwardDiff duals there
+        kou_σ(σ) = KouProcess(σ, 5.0, 0.3, 30.0, 20.0, Underlying(100.0, 0.0))
+        @test value_and_derivatives(pricer(kou_σ(hyper_of(0.2)), rf, PureLRM(gpu(), an), eu)) ≈ value_and_derivatives(pricer(kou_σ(hyper_of(0.2)), rf, PureLRM(cpu(), an), eu)) rtol = 1e-9
+        fft_vibrato(x) = pricer(KouProcess(x[2], 5.0, 0.3, 30.0, 20.0, Underlying(x[1], 0.0)), rf, Vibrato(gpu(; n = 5_000, steps = 4), an), eu)
+        hess = ForwardDiff.hessian(fft_vibrato, [100.0, 0.2])
+        @test hess[1, 1] ≈ fft_vibrato([hyper_of(100.0), 0.2]).epsilon12 rtol = 1e-9
+        @test hess[2, 2] ≈ fft_vibrato([100.0, hyper_of(0.2)]).epsilon12 rtol = 1e-9
+        @test hess[1, 2] ≈ fft_vibrato([hyper(100.0, 1.0, 0.0, 0.0), hyper(0.2, 0.0, 1.0, 0.0)]).epsilon12 rtol = 1e-9
+        # CURAND paths, so against Lewis: worst relative errors over 6 seeds (value, delta, gamma)
+        # 1.7e-2, 1.2e-2, 4.0e-3 on Kou, 1.3e-2, 9.0e-3, 2.5e-3 on NIG (50k paths, 4 steps)
+        for model in (kou(hyper_of(100.0)), nig(hyper_of(100.0)))
+            ref = value_and_derivatives(pricer(model, rf, lewis, eu))
+            @test all(abs.(value_and_derivatives(pricer(model, rf, Vibrato(gpu(; n = 50_000, steps = 4), an), eu)) .- ref) .< [3.5e-2, 2.5e-2, 8e-3] .* abs.(ref))
+        end
+    end
+
     # The paths go to the host where the code indexes them (FFT density, exercise policy): they run, near the CPU ones.
     @testset "host parts" begin
-        fft = pricer(kou(hyper_of(100.0)), rf, Vibrato(gpu(; n = 2_000, steps = 2), VibratoMonteCarloAnalytic()), eu)
-        @test abs(fft.value / pricer(kou(100.0), rf, lewis, eu) - 1) < 5e-2
         put = AmericanOption(1.0, 100.0, false)
         for model in (bs(hyper_of(100.0)), heston(hyper_of(100.0)))
             device = pricer(model, rf, Vibrato(gpu(; n = 20_000), gl), put)
