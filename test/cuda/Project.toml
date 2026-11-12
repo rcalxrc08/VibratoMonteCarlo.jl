@@ -13,6 +13,6 @@ VibratoMonteCarlo = {path = "../.."}
 
 [compat]
 CUDA = "5, 6"
-FinancialFFT = "0.5"
-FinancialMonteCarlo = "0.6"
+FinancialFFT = "0.6"
+FinancialMonteCarlo = "0.7"
 julia = "1.11"
