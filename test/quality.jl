@@ -23,6 +23,7 @@ end
         ("VibratoSaltando, Merton, smile", merton(0.2, 100.0, 0.01), VibratoSaltando(mc(200, 4), gl), smile),
         ("VibratoSaltando, VG", variance_gamma(0.2, 100.0, 0.01), VibratoSaltando(mc(200, 4), gl), opt),
         ("PureLRM, FFT density", kou(0.2, 100.0, 0.01), PureLRM(mc(200, 2), analytic), opt),
+        ("PureLRM, Heston", heston(0.2, 100.0, 0.01), PureLRM(mc(200, 2), analytic), opt),
         ("Vibrato, American", BlackScholesProcess(0.2, und), Vibrato(mc(200, 4), gl), AmericanOption(1.0, 105.0, false)),
     ]
     @testset "$name" for (name, model, method, payoff) in cases

@@ -7,6 +7,7 @@ CUDA.functional() || error("no functional CUDA device")
 CUDA.allowscalar(false)
 
 value_and_derivatives(x::Hyper) = [x.value, x.epsilon1, x.epsilon12]
+parts(x) = x isa Hyper ? value_and_derivatives(x) : [x]
 hyper_of(x) = hyper(x, 1.0, 1.0, 0.0)
 rf = ZeroRate(0.02)
 eu = EuropeanOption(1.0, 100.0)
@@ -217,14 +218,69 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         end
     end
 
-    # The paths go to the host where the code indexes them (FFT density, exercise policy): they run, near the CPU ones.
-    @testset "host parts" begin
+    # American options: the regressions run on the host on values, the smoothed payoffs and the bridge vibrato on the
+    # device, compared with the host on the same paths and laws.
+    @testset "American options on the device" begin
         put = AmericanOption(1.0, 100.0, false)
+        # the Black-Scholes bridge at one exercise date: an unbounded region and a bounded one, paths on both sides
+        m = hyper.(log(100.0) .+ 0.2 .* randn(2_000), 1.0, 1.0, 0.0)
+        W = hyper.(5.0 .+ rand(2_000), 0.3, 0.3, 0.01)
+        s = hyper(0.03, 0.01, 0.01, 0.0)
+        for region in ([(-Inf, log(95.0))], [(-Inf, log(90.0)), (log(98.0), log(99.0))], Tuple{Float64, Float64}[])
+            host = VMC.bridge_step(W, m, s, region, put, 0.99, cpu())
+            device = Array(VMC.bridge_step(CuArray(W), CuArray(m), s, region, put, 0.99, gpu()))
+            # the second derivatives cancel terms of order 1 / s^2: ≤ 2.8e-14, 2.8e-12, 1.3e-10 apart (absolute)
+            @test all(all(isapprox.(value_and_derivatives(x), value_and_derivatives(y); rtol = 1e-12, atol = 1e-9)) for (x, y) in zip(device, host))
+        end
+        # the frozen smoothed payoffs of a set of paths, each at its own column
+        S = hyper.(100.0 .* exp.(0.2 .* randn(2_000, 5)), 1.0, 1.0, 0.0)
+        paths = collect(1:3:2_000)
+        cols = rand(1:5, length(paths))
+        args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(VibratoMonteCarloAnalytic(), cpu()), put)
+        f = FinancialFFT.density(kou(hyper_of(100.0)), rf, FinancialMonteCarlo.with_mode(FFTDensityInverter(), FinancialMonteCarlo.CudaMode()), 0.1)
+        device_laws = VMC.FrozenFFT(VMC.fft_step_law(f), VMC.value_law(f))
+        host_f = FinancialFFT.adapt(Array, f)
+        host_laws = VMC.FrozenFFT(VMC.fft_step_law(host_f), VMC.value_law(host_f))
+        V = hyper.(0.04 .+ 0.01 .* rand(2_000, 5), 0.0, 0.0, 0.0)
+        heston_laws(V) = VMC.FrozenHeston(hyper(0.02, 0.0, 0.0, 0.0), V, VMC.v_value.(V), 0.1)
+        for (host_laws, device_laws, vb_mc) in ((host_laws, device_laws, VibratoMonteCarloAnalytic()), (heston_laws(V), heston_laws(CuArray(V)), gl)), values in (Val(true), Val(false))
+            args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(vb_mc, cpu()), put)
+            host_S = values isa Val{true} ? VMC.v_value.(S) : S
+            host = VMC.step_payoffs(host_laws, values, host_S, paths, cols, args, cpu(), vb_mc)
+            device = Array(VMC.step_payoffs(device_laws, values, CuArray(host_S), paths, cols, args, gpu(), vb_mc))
+            @test all(all(isapprox.(parts(x), parts(y); rtol = 1e-12, atol = 1e-11)) for (x, y) in zip(device, host))
+        end
+        # the pricers, on CURAND paths: against the host pricer (BS, Heston) and, for a call without dividends, against the
+        # European price (Kou). Kou: worst relative errors over 6 seeds 1.6e-2, 1.1e-2 (value, delta)
         for model in (bs(hyper_of(100.0)), heston(hyper_of(100.0)))
             device = pricer(model, rf, Vibrato(gpu(; n = 20_000), gl), put)
             host = pricer(model, rf, Vibrato(cpu(; n = 20_000), gl), put)
             @test abs(device.value / host.value - 1) < 3e-2
         end
-        @test pricer(bs(100.0), rf, PureLRM(gpu(), VibratoMonteCarloStandard(64)), eu) == pricer(bs(100.0), rf, PureLRM(cpu(), VibratoMonteCarloStandard(64)), eu)
+        call = AmericanOption(1.0, 100.0, true)
+        ref = value_and_derivatives(pricer(kou(hyper_of(100.0)), rf, lewis, eu))
+        res = value_and_derivatives(pricer(kou(hyper_of(100.0)), rf, Vibrato(gpu(; n = 20_000, steps = 4), VibratoMonteCarloAnalytic()), call))
+        @test all(abs.(res[1:2] .- ref[1:2]) .< [3.5e-2, 2.5e-2] .* abs.(ref[1:2]))
+    end
+
+    # PureLRM integrates one point: on the device too, the same integral as the host (≤ 1e-15 observed) with a quadrature,
+    # against blsprice with CURAND inner samples. Heston goes through the FFT density.
+    @testset "PureLRM on the device" begin
+        for vb_mc in (gl, VibratoMonteCarloAnalytic(), VMC.VibratoMonteCarloGaussHermite(64)), opt in (eu, bin)
+            @test value_and_derivatives(pricer(bs(hyper_of(100.0)), rf, PureLRM(gpu(), vb_mc), opt)) ≈ value_and_derivatives(pricer(bs(hyper_of(100.0)), rf, PureLRM(cpu(), vb_mc), opt)) rtol = 1e-12
+        end
+        @test reduce(vcat, value_and_derivatives.(pricer(bs(hyper_of(100.0)), rf, PureLRM(gpu(), gl), smile))) ≈ reduce(vcat, value_and_derivatives.(pricer(bs(hyper_of(100.0)), rf, PureLRM(cpu(), gl), smile))) rtol = 1e-12
+        ref = blsprice(100.0, 100.0, 0.02, 1.0, 0.2, 0.0)
+        @test abs(pricer(bs(100.0), rf, PureLRM(gpu(), VibratoMonteCarloStandard(100_000)), eu) / ref - 1) < 2e-2
+        # Heston through its FFT density (the marginal at T), on the device: within 4.2e-10 of the host (the FFTs differ by
+        # about 2e-15), and nested ForwardDiff duals there against hyper duals
+        an = VibratoMonteCarloAnalytic()
+        for opt in (eu, EuropeanOption(1.0, 120.0))
+            @test value_and_derivatives(pricer(heston(hyper_of(100.0)), rf, PureLRM(gpu(), an), opt)) ≈ value_and_derivatives(pricer(heston(hyper_of(100.0)), rf, PureLRM(cpu(), an), opt)) rtol = 1e-8
+        end
+        heston_lrm(x) = pricer(HestonProcess(x[2], 0.2, 0.0, 0.2, 0.2, 0.2, Underlying(x[1], 0.0)), rf, PureLRM(gpu(), an), eu)
+        hess = ForwardDiff.hessian(heston_lrm, [100.0, 0.2])
+        @test hess[1, 1] ≈ heston_lrm([hyper_of(100.0), 0.2]).epsilon12 rtol = 1e-9
+        @test hess[2, 2] ≈ heston_lrm([100.0, hyper_of(0.2)]).epsilon12 rtol = 1e-9
     end
 end

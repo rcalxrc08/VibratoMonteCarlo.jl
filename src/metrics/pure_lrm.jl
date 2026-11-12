@@ -8,15 +8,21 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     σ = mcProcess.σ
     T = get_unique_maturity(eu_opt)
     drift_rn = r - d - drift_correction(mcProcess)
-    mu = @muladd log(mcProcess.underlying.S0) + drift_rn * T
+    # one point, on the device of the configuration: the integration of lrm_paths, as for the paths of Vibrato
+    mu = on_device(mcBaseData, mcProcess, [@muladd(log(mcProcess.underlying.S0) + drift_rn * T)])
     Z = init_lrm_vec(vb_mc, mcBaseData)
     sigma_jump = σ * sqrt(T)
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = lrm_interface_vec!(mu, sigma_jump, args, mcBaseData, vb_mc) * exp(-r * T)
+    result = path_mean(lrm_paths(mu, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::PureLRM, eu_opt_::EuropeanLike)
+# The FFT density of log(S_T / S0): Lévy processes, and Heston, whose marginal density at T is not Gaussian (FinancialFFT
+# computes it from its characteristic function; the Gaussian method above needs σ and the drift correction of a Lévy
+# exponent, which Heston has not).
+pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::PureLRM, eu_opt_::EuropeanLike) = pure_lrm_fft(mcProcess, rfCurve, method, eu_opt_)
+pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::PureLRM, eu_opt_::EuropeanLike) = pure_lrm_fft(mcProcess, rfCurve, method, eu_opt_)
+function pure_lrm_fft(mcProcess, rfCurve, method::PureLRM, eu_opt_)
     # the single options of a smile are built on the host, in every mode: its strikes come to the host first
     eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc

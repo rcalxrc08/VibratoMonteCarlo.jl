@@ -74,4 +74,3 @@ function subordinator_mean(x::AbstractVector{<:AbstractVector}, weight::Abstract
     baseline = v_value.(mean(x))
     return mean(map((x_i, w) -> @.(muladd(x_i - baseline, w, baseline)), x, weight))
 end
-

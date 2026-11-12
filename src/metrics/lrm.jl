@@ -82,7 +82,7 @@ end
 
 # With VibratoMonteCarloStandard the inner samples are drawn again for every outer path (Z is only a buffer):
 # sharing them would turn their error into a bias that does not average out over the outer paths.
-# A CudaMode configuration lands here for the paths priced on the host (PureLRM, American options, FFT density): it has a CPU rng.
+# A CudaMode configuration does not land here: every caller goes through lrm_paths, whose device method draws with CURAND.
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, ::VibratoMonteCarloStandard)
     Z = randn!(FinancialMonteCarlo.host_rng(mcBaseData), received_args.Z)
     eu_opt = received_args.option

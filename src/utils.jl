@@ -86,8 +86,9 @@ init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints
 get_unique_maturity(euopt) = euopt.T
 
 # GPU (FinancialMonteCarlo.CudaMode, with `using CUDA`): FinancialMonteCarlo simulates on the device, the inner integration
-# runs there too (lrm_paths), and code that indexes single paths takes them to the host. Every transfer is one copy of a
-# whole array, so no GPU array is indexed by scalars. AbstractCudaMode exists without CUDA, so no extension is needed.
+# runs there too (lrm_paths, aug_paths), and only the regressions of American options take the values of the paths to
+# the host. Every transfer is one copy of a whole array, so no GPU array is indexed by scalars. AbstractCudaMode exists
+# without CUDA, so no extension is needed.
 const CudaConfig = FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AbstractSampling, <:FinancialMonteCarlo.AbstractCudaMode}
 to_host(x::Array) = x
 to_host(x::AbstractArray) = Array(x)

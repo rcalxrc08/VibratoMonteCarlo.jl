@@ -8,7 +8,7 @@ integration of the last step:
 |:--|:--|:--|:--|
 | [`Vibrato`](@ref) | `Vibrato(mc, vb_mc)` | the path up to the last time step | Black and Scholes, Heston, Lévy processes (FFT density) |
 | [`VibratoSaltando`](@ref) | `VibratoSaltando(mc, vb_mc)` | the jumps (Kou, Merton) or the subordinator ``G_T`` (VG, NIG) | Kou, Merton, Variance Gamma, Normal Inverse Gaussian |
-| [`PureLRM`](@ref) | `PureLRM(mc, vb_mc)` | nothing: the density at maturity | Black and Scholes, Lévy processes (FFT density) |
+| [`PureLRM`](@ref) | `PureLRM(mc, vb_mc)` | nothing: the density at maturity | Black and Scholes, Lévy processes and Heston (FFT density) |
 | [`VibratoMonteCarlo.Conditional`](@ref) | `VibratoMonteCarlo.Conditional(mc)` | as `Vibrato`, closed form inner price | Black and Scholes |
 | [`VibratoMonteCarlo.ConditionalSaltando`](@ref) | `VibratoMonteCarlo.ConditionalSaltando(mc)` | as `VibratoSaltando`, closed form inner price | Kou, Merton, Variance Gamma, Normal Inverse Gaussian |
 
@@ -55,9 +55,12 @@ converge slowly:
 ![Relative error of the gamma of a binary call against the number of nodes of one inner integral](assets/figures/quadrature-light.svg)![Relative error of the gamma of a binary call against the number of nodes of one inner integral](assets/figures/quadrature-dark.svg)
 
 Gauss-Legendre is therefore the default choice on Gaussian laws. The FFT density of the Lévy processes, through
-`Vibrato`, `PureLRM` and American options, needs `VibratoMonteCarloAnalytic`: it comes from `FFTDensityInverter` of
-[FinancialFFT.jl](https://github.com/rcalxrc08/FinancialFFT.jl), evaluated by `FinancialFFT.density_values` at all the
-nodes of a path in one call.
+`Vibrato`, `PureLRM` and American options, and of Heston through `PureLRM`, needs `VibratoMonteCarloAnalytic`: it comes
+from `FFTDensityInverter` of [FinancialFFT.jl](https://github.com/rcalxrc08/FinancialFFT.jl), evaluated by
+`FinancialFFT.density_values` at all the nodes of a path in one call. Its trapezoid is not split at the strike, so a
+binary payoff converges only linearly in the node spacing (2-3% on the value of a binary with the 200 default nodes on
+Kou and Heston, ten times less with 2000), and derivatives that live in the tails of the density, as the one over the
+vol of vol of Heston, need wider bounds than ±7 standard deviations (±10 for 1e-6).
 
 ## Choosing a method
 

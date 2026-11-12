@@ -66,6 +66,7 @@ pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option)
   `VibratoMonteCarloStandard` drawn by CURAND.
 - On the host, then copied to the device: the antithetic ``G_T`` (pairs of quantiles) and the jump times and sizes of Kou
   and Merton (drawn by FinancialMonteCarlo.jl, as for its own GPU paths).
-- On the host: American options and `PureLRM` on Itô processes.
+- On the host: the Longstaff–Schwartz regressions of American options and their exercise regions, on the values of the
+  paths. The smoothed payoffs and the Brownian bridge vibrato of the exercise dates run on the device.
 - The numbers must be isbits on the device: hyper duals and ForwardDiff (nested too) are tested. TaylorSeries and
   ReverseDiff cannot run there.

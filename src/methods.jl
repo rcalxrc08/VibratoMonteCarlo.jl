@@ -56,7 +56,7 @@ end
     PureLRM(mc, vb_mc)
 
 Likelihood ratio method on the density at maturity, with no path simulation: Gaussian for Black-Scholes, from the FFT
-for the other processes (requires `VibratoMonteCarloAnalytic`). `mc` only provides the seed and, for
+for the Lévy processes and Heston (its marginal density at maturity; requires `VibratoMonteCarloAnalytic`). `mc` only provides the seed and, for
 `VibratoMonteCarloStandard`, the random numbers.
 """
 struct PureLRM{M <: FinancialMonteCarlo.AbstractMonteCarloConfiguration, V <: AbstractVibrato} <: AbstractVibratoMethod
