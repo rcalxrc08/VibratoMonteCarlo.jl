@@ -23,26 +23,37 @@ end
 # Draws G_T and its weight. The law depends on κ and T, and a draw is not a smooth function of them (rejection samplers),
 # so G_T comes from their values and the dependence goes through the density, in the same v_mod weight of the LRM step.
 # Without derivatives on κ and T the weight is true, which leaves the integrand unchanged without computing the density.
+# G_T and the weight are on the device of the configuration: the weight is one broadcast there (the process is isbits).
 function simulate_subordinator(mcProcess, mcBaseData, T)
     κ = mcProcess.κ
     G_T = draw_subordinator(FinancialMonteCarlo.compute_subordinator_law(mcProcess, v_value(κ), v_value(T)), mcBaseData)
-    weight = (carries_derivatives(κ) || carries_derivatives(T)) ? on_device(mcBaseData, mcProcess, map(g -> v_mod(subordinator_log_density(mcProcess, g, T, κ)), G_T)) : true
-    # Drawn on the host (Distributions has no GPU sampler, and Sobol is sequential), used on the device.
-    return (on_device(mcBaseData, mcProcess, G_T), weight)
+    weight = (carries_derivatives(κ) || carries_derivatives(T)) ? (@. v_mod(subordinator_log_density($(Ref(mcProcess)), G_T, T, κ))) : true
+    return (G_T, weight)
 end
 
-draw_subordinator(law, mcBaseData) = rand(FinancialMonteCarlo.host_rng(mcBaseData), law, mcBaseData.Nsim)
+# Plain MC: FinancialMonteCarlo's draw of the subordinator, rand from the host generator, or on the GPU for a CuArray
+# (CudaMode: a kernel draws the Gamma of VG and the inverse Gaussian of NIG, seeded from the host generator).
+function draw_subordinator(law, mcBaseData)
+    G_T = FinancialMonteCarlo.draw_buffer(mcBaseData, Float64, mcBaseData.Nsim)
+    FinancialMonteCarlo.draw_subordinator!(G_T, law, mcBaseData)
+    return G_T
+end
 # G_T is one dimensional, so its antithetic pairs are the quantiles at U and 1 - U (cquantile at U), with the halves
-# ordered as the paths of FinancialMonteCarlo (path_sides). Nsim is even for AntitheticMC.
+# ordered as the paths of FinancialMonteCarlo (path_sides): the path i + Nsim / 2 pairs the path i. Nsim is even for
+# AntitheticMC. FinancialMonteCarlo's own antithetic subordinated paths share the subordinator between the two halves and
+# reflect the normals; here the normals are integrated out given G_T, so sharing it would give two equal halves (#29).
+# The quantiles are computed on the host and uploaded: the GPU sampler of FinancialMonteCarlo is a rejection sampler,
+# which cannot be paired.
 function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC})
     U = rand(FinancialMonteCarlo.host_rng(mcBaseData), div(mcBaseData.Nsim, 2))
-    return vcat(quantile.(law, U), cquantile.(law, U))
+    return on_device(mcBaseData, law, vcat(quantile.(law, U), cquantile.(law, U)))
 end
 # G_T is one dimensional: its quantile at the points of a one dimensional Sobol sequence, skipped as in FinancialMonteCarlo.
+# The sequence is sequential: on the host, then uploaded.
 function draw_subordinator(law, mcBaseData::FinancialMonteCarlo.SobolConfig)
     seq = SobolSeq(1)
     skip(seq, mcBaseData.Nsim)
-    return [quantile(law, only(next!(seq))) for _ in 1:mcBaseData.Nsim]
+    return on_device(mcBaseData, law, [quantile(law, only(next!(seq))) for _ = 1:mcBaseData.Nsim])
 end
 
 # Mean over the paths with the weight of simulate_subordinator. As in integrand_lrm_base the score terms have zero mean,

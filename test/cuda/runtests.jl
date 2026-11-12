@@ -46,20 +46,57 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         @test V isa CuArray
     end
 
-    # G_T is drawn on the host, so the device gives the host result: ≤ 1.5e-15 observed.
-    @testset "same G_T as the host" begin
+    # Plain MC draws G_T on the device (FinancialMonteCarlo's Gamma and inverse Gaussian kernel), so only its law can be
+    # compared with the host: the empirical distribution function at the deciles, within 4 standard errors.
+    @testset "G_T drawn on the device" begin
+        n = 200_000
+        for model in (var_gamma(100.0), nig(100.0))
+            law = FinancialMonteCarlo.compute_subordinator_law(model, model.κ, 1.0)
+            (G_T, weight) = VMC.simulate_subordinator(model, gpu(; n = n), 1.0)
+            @test G_T isa CuArray
+            @test weight === true
+            G = Array(G_T)
+            for p = 0.1:0.1:0.9
+                @test abs(count(<=(VMC.Distributions.quantile(law, p)), G) / n - p) < 4 * sqrt(p * (1 - p) / n)
+            end
+            # set_seed! makes the draws reproducible (the kernel is seeded from the host generator), a new seed changes them
+            draw(mc) = (FinancialMonteCarlo.set_seed!(mc); Array(VMC.simulate_subordinator(model, mc, 1.0)[1]))
+            @test draw(gpu(; n = n)) == draw(gpu(; n = n))
+            @test draw(gpu(; n = n)) != draw(MonteCarloConfiguration(n, 10; mode = FinancialMonteCarlo.CudaMode(), seed = 7))
+        end
+        # the weight of κ and T on the device, against the host on the same G_T: ≤ 1e-15 observed
+        model = var_gamma(100.0; κ = hyper_of(0.2))
+        (G_T, weight) = VMC.simulate_subordinator(model, gpu(; n = 10_000), hyper_of(1.0))
+        @test weight isa CuArray
+        host_weight = map(g -> VMC.v_mod(VMC.subordinator_log_density(model, g, hyper_of(1.0), model.κ)), Array(G_T))
+        @test all(isapprox.(value_and_derivatives.(Array(weight)), value_and_derivatives.(host_weight); rtol = 1e-12))
+    end
+
+    # AntitheticMC draws the quantiles of G_T on the host and uploads them, so the device gives the host result: ≤ 1.5e-15
+    # observed. The antithetic halves are ordered as FinancialMonteCarlo's path_sides. (FinancialMonteCarlo refuses SobolMC
+    # in CudaMode.)
+    @testset "antithetic G_T as the host" begin
+        anti = FinancialMonteCarlo.AntitheticMC()
         cases = ((var_gamma(hyper_of(100.0)), eu), (var_gamma(100.0; κ = hyper_of(0.2)), eu), (nig(hyper_of(100.0)), bin))
         for (model, opt) in cases
-            @test value_and_derivatives(pricer(model, rf, VibratoSaltando(gpu(), gl), opt)) ≈ value_and_derivatives(pricer(model, rf, VibratoSaltando(cpu(), gl), opt)) rtol = 1e-12
-            @test value_and_derivatives(pricer(model, rf, VMC.ConditionalSaltando(gpu()), opt)) ≈ value_and_derivatives(pricer(model, rf, VMC.ConditionalSaltando(cpu()), opt)) rtol = 1e-12
+            @test value_and_derivatives(pricer(model, rf, VibratoSaltando(gpu(anti), gl), opt)) ≈ value_and_derivatives(pricer(model, rf, VibratoSaltando(cpu(anti), gl), opt)) rtol = 1e-12
+            @test value_and_derivatives(pricer(model, rf, VMC.ConditionalSaltando(gpu(anti)), opt)) ≈ value_and_derivatives(pricer(model, rf, VMC.ConditionalSaltando(cpu(anti)), opt)) rtol = 1e-12
         end
-        device = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(), gl), smile)
-        host = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(), gl), smile)
+        for model in (var_gamma(100.0), nig(100.0))
+            law = FinancialMonteCarlo.compute_subordinator_law(model, model.κ, 1.0)
+            mc = gpu(anti; n = 10_000)
+            G = Array(VMC.simulate_subordinator(model, mc, 1.0)[1])
+            sides = FinancialMonteCarlo.path_sides(reshape(1:mc.Nsim, :, 1), mc)
+            first_half, second_half = (vec(collect(side[1])) for side in sides)
+            @test VMC.Distributions.cdf.(law, G[first_half]) .+ VMC.Distributions.cdf.(law, G[second_half]) ≈ ones(length(first_half)) rtol = 1e-8
+        end
+        device = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(anti), gl), smile)
+        host = pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(anti), gl), smile)
         @test reduce(vcat, value_and_derivatives.(device)) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
         # a smile with its strikes on the device, in either mode: its options are built on the host
         cu_smile = FinancialMonteCarlo.EuropeanOptionSmile(1.0, CuArray([90.0, 100.0, 115.0]), CuArray([true, false, true]))
-        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(device)) rtol = 1e-12
-        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
+        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(gpu(anti), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(device)) rtol = 1e-12
+        @test reduce(vcat, value_and_derivatives.(pricer(nig(hyper_of(100.0)), rf, VibratoSaltando(cpu(anti), gl), cu_smile))) ≈ reduce(vcat, value_and_derivatives.(host)) rtol = 1e-12
     end
 
     # CURAND paths, so only against the references. Worst relative errors over 6 GPU seeds with 100k paths (value, delta,
@@ -79,6 +116,11 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         )
         for (res, ref, tol) in cases
             @test all(abs.(value_and_derivatives(res) .- ref) .< tol .* abs.(ref))
+        end
+        # G_T from the device sampler: worst relative errors over 6 seeds (value, delta, gamma) 1.2e-3, 1.7e-3, 1.5e-3.
+        for model in (var_gamma(hyper_of(100.0)), nig(hyper_of(100.0))), method in (mc -> VibratoSaltando(mc, gl), VMC.ConditionalSaltando)
+            ref = value_and_derivatives(pricer(model, rf, lewis, eu))
+            @test all(abs.(value_and_derivatives(pricer(model, rf, method(gpu()), eu)) .- ref) .< [2.5e-3, 3.5e-3, 3e-3] .* abs.(ref))
         end
         smile_res = pricer(bs(hyper_of(100.0)), rf, Vibrato(gpu(), gl), smile)
         smile_ref = blsprice.(hyper_of(100.0), [90.0, 100.0, 115.0], 0.02, 1.0, 0.2, 0.0, [true, false, true])
