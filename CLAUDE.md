@@ -9,7 +9,7 @@ Guidance for working in this repository.
 It builds on the author's own packages:
 - **FinancialMonteCarlo.jl**: processes (`BlackScholesProcess`, `KouProcess`, `MertonProcess`, `HestonProcess`, `VarianceGammaProcess`, `NormalInverseGaussianProcess`), payoffs, `MonteCarloConfiguration`, `ZeroRate`, `simulate`, `pricer`, and `set_seed!`.
 - **FinancialFFT.jl**: the transition densities of the non-Ito processes (`density` with `FFTDensityInverter`, evaluated by `density_values`), `characteristic_exponent_i` for the drifts, and `LewisMethod` reference prices.
-- **FinancialToolbox.jl**: `blsprice`/`blsbin`, used for closed-form checks and `analytic_pricer`.
+- **FinancialToolbox.jl** (0.8: `d` is a required argument of `blsprice`, `normcdf` uses `erfc`): `blsprice`/`blsbin`, used for closed-form checks and `analytic_pricer`.
 
 Some dependencies come from a private registry. Add it before `Pkg.instantiate()`:
 ```julia
