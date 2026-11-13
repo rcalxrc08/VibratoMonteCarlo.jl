@@ -14,8 +14,6 @@ TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 VibratoMonteCarlo = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
 
 [sources]
-FinancialFFT = {path = "C:/Users/Nicola/.julia/dev/FinancialFFT"}
-FinancialMonteCarlo = {path = "C:/Users/Nicola/.julia/dev/FinancialMonteCarlo"}
 VibratoMonteCarlo = {path = ".."}
 
 [compat]
