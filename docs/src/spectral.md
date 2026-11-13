@@ -1,8 +1,27 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Theory 02</span> Original result · Nicola Scaramuzzino, 2024</p>
+```
+
 # The Spectral Theorem
 
 In Black and Scholes every sensitivity of order ``n`` of a European option, with respect to any input, is a linear
 combination of the prices of ``2n + 1`` contracts, with coefficients that do not depend on the payoff. This is the
 Spectral Theorem. It is the meeting point of the two halves of this family of packages:
+
+```@raw html
+<div class="fc-meta"><span>Black–Scholes</span><span>Faà di Bruno</span><span>Fourier duality</span><span class="is-live">computed at build time</span></div>
+<nav class="fc-toc">
+<a href="#Setting"><b>01</b>Setting</a>
+<a href="#The-theorem"><b>02</b>The theorem</a>
+<a href="#The-Fourier-dictionary"><b>03</b>The Fourier dictionary</a>
+<a href="#The-dual-theorem"><b>04</b>The dual theorem</a>
+<a href="#Where-the-two-theorems-meet"><b>05</b>Where the two theorems meet</a>
+<a href="#The-general-dual-theorem"><b>06</b>The general dual theorem</a>
+<a href="#The-theorem-inside-the-estimators"><b>07</b>The theorem inside the estimators</a>
+</nav>
+</div>
+```
 
 - VibratoMonteCarlo.jl differentiates the **log density** of the price at maturity, through the likelihood ratio
   weights of [Pathwise and likelihood ratio methods](lrm.md), computed by `v_mod`.
@@ -16,7 +35,8 @@ package to the Fourier methods of FinancialFFT.jl.
 
 !!! info "History"
     The differentiation of the FFT methods and the Vibrato Monte Carlo methods were both part of the thesis
-    [scaramuzzino2017](@cite). The Spectral Theorem for Black and Scholes came later, in 2024, by chance.
+    [scaramuzzino2017](@cite). The Spectral Theorem is an original result of the author of these packages, Nicola Scaramuzzino:
+    its Black and Scholes version was found later, in 2024, by chance.
     Its dual version on the complex plane is what ties the two parts together: this page states it, in the polynomial
     form that reduces to derivatives of the payoff and in general, for every parameter of every model with a
     characteristic exponent. Its implementation in FinancialFFT.jl is the next step.

@@ -1,8 +1,25 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Guide 01</span> Estimators and inner integrations</p>
+```
+
 # Methods
 
 Every estimator is a method struct passed to `pricer`, in the place of the `MonteCarloConfiguration` of
 FinancialMonteCarlo.jl. It holds the configuration of the outer simulation and, where there is one, the inner
 integration of the last step:
+
+```@raw html
+<div class="fc-meta"><span>Vibrato</span><span>VibratoSaltando</span><span>PureLRM</span><span class="is-live">computed at build time</span></div>
+<nav class="fc-toc">
+<a href="#Inner-integrations"><b>01</b>Inner integrations</a>
+<a href="#Choosing-a-method"><b>02</b>Choosing a method</a>
+<a href="#Smiles"><b>03</b>Smiles</a>
+<a href="#American-options"><b>04</b>American options</a>
+<a href="#Limits"><b>05</b>Limits</a>
+</nav>
+</div>
+```
 
 | Method | Constructor | Conditions on | Models |
 |:--|:--|:--|:--|

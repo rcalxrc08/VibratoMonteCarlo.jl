@@ -1,7 +1,22 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Theory 04</span> Variance and accuracy</p>
+```
+
 # Numerical refinements
 
 The estimators of [Conditioning: Vibrato and Vibrato Saltando](@ref) are exact in theory; the following refinements make the inner expectation accurate in practice.
 In all of them the inner law is Gaussian, ``X_T | X_{\tau} \sim \mathcal{N}(\mu, s^2)``, and the inner expectation is computed on the standardized variable ``Z = (X_T - \mu)/s``.
+
+```@raw html
+<div class="fc-meta"><span>centering</span><span>inner samples</span><span>quadrature</span></div>
+<nav class="fc-toc">
+<a href="#Payoff-Centering"><b>01</b>Payoff Centering</a>
+<a href="#Independent-Inner-Samples"><b>02</b>Independent Inner Samples</a>
+<a href="#Quadrature"><b>03</b>Quadrature</a>
+</nav>
+</div>
+```
 
 ## Payoff Centering
 For every ``\theta`` the density integrates to one:

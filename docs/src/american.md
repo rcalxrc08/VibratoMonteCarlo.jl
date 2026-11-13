@@ -1,6 +1,20 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Theory 05</span> Vibrato over every exercise date</p>
+```
+
 # American options
 
 An American option, exercisable at the dates ``t_k = k\,h``, ``k = 1, \dots, N``, ``h = T/N``, has the price
+
+```@raw html
+<div class="fc-meta"><span>Longstaff–Schwartz</span><span>Vibrato</span></div>
+<nav class="fc-toc">
+<a href="#Why-freezing-the-exercise-is-not-enough"><b>01</b>Why freezing the exercise is not enough</a>
+<a href="#Vibrato-over-every-exercise-date"><b>02</b>Vibrato over every exercise date</a>
+</nav>
+</div>
+```
 
 ```math
 V_0 = \sup_{\tau} \mathbb{E}(e^{-r \tau} \Phi(X_{\tau}))

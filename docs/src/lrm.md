@@ -1,5 +1,20 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Theory 01</span> Two ways to differentiate an expectation</p>
+```
+
 # Pathwise and likelihood ratio methods
 
+
+```@raw html
+<div class="fc-meta"><span>pathwise</span><span>likelihood ratio</span></div>
+<nav class="fc-toc">
+<a href="#The-basic-settings"><b>01</b>The basic settings</a>
+<a href="#Pathwise-Method"><b>02</b>Pathwise Method</a>
+<a href="#Likelihood-Ratio-Method"><b>03</b>Likelihood Ratio Method</a>
+</nav>
+</div>
+```
 ## The basic settings
 Let's assume we have an underlying stock price varying as a stochastic process called ``S_t`` and
 let's assume without loss of generality that ``S_t>0`` a.e..\\

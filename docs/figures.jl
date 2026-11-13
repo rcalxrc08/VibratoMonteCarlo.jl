@@ -10,7 +10,7 @@ const FIGURES = mkpath(joinpath(@__DIR__, "src", "assets", "figures"))
 
 # Categorical slots in fixed order (validated for colour vision deficiencies on adjacent pairs, in both modes), and
 # the ink of the text, of the axes and of the grid.
-const THEMES = (light = (series = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"], text = "#1f2328", muted = "#5b6470", axis = "#b9b4ab", grid = "#e6e3de"), dark = (series = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300"], text = "#e6e8eb", muted = "#9aa3ad", axis = "#4a525c", grid = "#2a2f36"))
+const THEMES = (light = (series = ["#2563d9", "#0a8a6f", "#b86e0b", "#0b7fb3", "#2f8a3c", "#c2456e"], text = "#1f2328", muted = "#5b6470", axis = "#b9b4ab", grid = "#e6e3de", diverging = ["#2563d9", "#f7f6f3", "#c47a12"]), dark = (series = ["#4f8cff", "#00d4aa", "#ffb84d", "#38cfff", "#7ee787", "#ff6b9d"], text = "#f5f7fa", muted = "#a0aec0", axis = "#3a4466", grid = "#252d47", diverging = ["#4f8cff", "#151b2e", "#ffb84d"]))
 # The secondary encoding of the series: the light slots 3-5 are below 3:1 contrast on the surface.
 const MARKERS = [:circle, :rect, :utriangle, :diamond, :dtriangle, :star5]
 
@@ -87,3 +87,16 @@ end
 save_themes(binary_greeks_figure, "binary_greeks")
 save_themes(quadrature_figure, "quadrature")
 save_themes(variance_gamma_figure, "variance_gamma")
+# The hero of the home page: the gamma of a binary call across spot and maturity, from PureLRM with Gauss-Legendre (one
+# integral against the density at maturity, exact up to rounding) differentiated with hyper-dual numbers, and Vibrato
+# Monte Carlo estimates of the same gamma as points; drawn in perspective by surface.jl.
+include(joinpath(@__DIR__, "surface.jl"))
+let spots = collect(range(60.0, 140.0; length = 46)), maturities = collect(range(0.15, 2.0; length = 34))
+    lrm = PureLRM(MonteCarloConfiguration(1, 1), VibratoMonteCarloGaussLegendre())
+    gamma(method, S, t) = pricer(BlackScholesProcess(σ, Underlying(hyper(S, 1.0, 1.0, 0.0), d)), zero_rate, method, BinaryEuropeanOption(t, K)).epsilon12
+    gammas = [gamma(lrm, S, t) for t in maturities, S in spots]
+    vibrato = Vibrato(MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloGaussLegendre())
+    points = [(S, t, gamma(vibrato, S, t), true) for t in (0.5, 1.5) for S = 70.0:10.0:130.0]
+    m = ceil(maximum(abs, gammas) / 0.001) * 0.001
+    write_surface(FIGURES, "hero-surface", spots, maturities, gammas; zlims = (-m, m), points = points, xticks = [s => string(round(Int, s)) for s = 60:20:140], yticks = [0.5 => "6M", 1.0 => "1Y", 1.5 => "18M", 2.0 => "2Y"], zticks = [g => string(g) for g = (-m):0.002:m], xlabel = "spot", ylabel = "maturity", zlabel = "gamma", label = "Gamma of a binary call across spot and maturity")
+end

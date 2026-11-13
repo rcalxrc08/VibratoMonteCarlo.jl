@@ -8,12 +8,15 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 HyperDualNumbers = "50ceba7f-c3ee-5a84-a6e8-3ad40456ec97"
 Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 VibratoMonteCarlo = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
 
-[sources.VibratoMonteCarlo]
-path = ".."
+[sources]
+FinancialFFT = {path = "C:/Users/Nicola/.julia/dev/FinancialFFT"}
+FinancialMonteCarlo = {path = "C:/Users/Nicola/.julia/dev/FinancialMonteCarlo"}
+VibratoMonteCarlo = {path = ".."}
 
 [compat]
 Documenter = "1"

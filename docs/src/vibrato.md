@@ -1,5 +1,21 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Theory 03</span> Conditioning, and the original Vibrato Saltando</p>
+```
+
 # Conditioning: Vibrato and Vibrato Saltando
 
+
+```@raw html
+<div class="fc-meta"><span>Vibrato</span><span>Vibrato Saltando</span><span>Lévy</span></div>
+<nav class="fc-toc">
+<a href="#Conditional-Expectation"><b>01</b>Conditional Expectation</a>
+<a href="#Conditional-Saltando-Expectation"><b>02</b>Conditional Saltando Expectation</a>
+<a href="#Vibrato-Montecarlo-Method"><b>03</b>Vibrato Montecarlo Method</a>
+<a href="#Vibrato-Saltando-Montecarlo"><b>04</b>Vibrato Saltando Montecarlo</a>
+</nav>
+</div>
+```
 ## Conditional Expectation
 The payoff is not smooth, but its conditional expectation is. Let's fix ``\tau < T``, let's call ``h = T - \tau`` and let's assume that the underlying process is a Levy process. Since:
 
@@ -141,6 +157,10 @@ Each sensitivity is then, with ``w`` the corresponding weight:
 For ``\tau = 0`` these are the LRM weights of [Likelihood Ratio Method for Black and Scholes](@ref). The smaller ``\delta`` is, the larger the weights are, and only the centering of the payoff keeps their variance under control. In ``w_{\mathcal{V}}`` the term with ``W_{\tau}`` comes from the path, while ``Z^2 - 1`` comes from the last step alone.
 
 ## Vibrato Saltando Montecarlo
+
+!!! tip "Original contribution"
+    Vibrato Saltando is an original method of the author of this package, Nicola Scaramuzzino, introduced in the
+    Master Thesis [scaramuzzino2017](@cite) and extended here to infinite activity processes.
 Vibrato needs the law of the last step, and for a Levy process that is only available numerically. For Variance Gamma it can even be singular on a short step.
 Vibrato Saltando [scaramuzzino2017](@cite) chooses what to condition on so that the inner law is exactly Gaussian, for any number of time steps.
 

@@ -1,8 +1,22 @@
+```@raw html
+<div class="fc-page-head">
+<p class="fc-kicker"><span>Guide 02</span> Greeks of any order</p>
+```
+
 # Automatic differentiation
 
 Prices are generic in the number type of the inputs: the model, the underlying, the curve and the maturity. Passing an
 automatic differentiation number gives the derivatives of the price, of any order, with each back-end loaded with its
 package:
+
+```@raw html
+<div class="fc-meta"><span>HyperDualNumbers</span><span>ForwardDiff</span><span>Mooncake</span><span>GPU</span></div>
+<nav class="fc-toc">
+<a href="#How-it-works"><b>01</b>How it works</a>
+<a href="#GPU"><b>02</b>GPU</a>
+</nav>
+</div>
+```
 
 | Method | DualNumbers | HyperDualNumbers | TaylorSeries | ForwardDiff | ReverseDiff | Mooncake |
 |:--|:--|:--|:--|:--|:--|:--|

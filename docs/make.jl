@@ -14,12 +14,4 @@ module DocumentationFormulas
 include(joinpath(@__DIR__, "formulas.jl"))
 end
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style = :authoryear)
-makedocs(
-    format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true", assets = ["assets/favicon.ico", "assets/figures.css", "assets/style.css", "assets/citations.css"], edit_link = "master", size_threshold = 400 * 2^10),
-    repo = Remotes.GitHub("rcalxrc08", "VibratoMonteCarlo.jl"),
-    sitename = "VibratoMonteCarlo.jl",
-    modules = [VibratoMonteCarlo],
-    checkdocs = :exports,
-    plugins = [bib],
-    pages = ["index.md", "Theory" => ["lrm.md", "spectral.md", "vibrato.md", "refinements.md", "american.md"], "methods.md", "ad.md", "api.md", "references.md"],
-)
+makedocs(format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true", assets = ["assets/favicon.ico", "assets/figures.css", "assets/style.css", "assets/site.css", "assets/home.css", "assets/citations.css", "assets/dark.js"], edit_link = "master", size_threshold = 400 * 2^10), repo = Remotes.GitHub("rcalxrc08", "VibratoMonteCarlo.jl"), sitename = "VibratoMonteCarlo.jl", modules = [VibratoMonteCarlo], checkdocs = :exports, plugins = [bib], pages = ["Home" => "index.md", "Theory" => ["Pathwise and likelihood ratio" => "lrm.md", "The Spectral Theorem" => "spectral.md", "Vibrato and Vibrato Saltando" => "vibrato.md", "Numerical refinements" => "refinements.md", "American options" => "american.md"], "Guides" => ["Methods" => "methods.md", "Automatic differentiation" => "ad.md"], "Reference" => ["API" => "api.md", "References" => "references.md"]])
