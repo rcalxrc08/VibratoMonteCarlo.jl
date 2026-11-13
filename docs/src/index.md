@@ -17,10 +17,9 @@
 <span class="k">gamma</span> = price.epsilon12</code></pre>
 </div>
 <figure class="fc-hero-figure">
-<img src="assets/figures/hero-surface-dark.svg" alt="Gamma of a binary call across spot and maturity, from the likelihood ratio method, with Vibrato Monte Carlo estimates as dots">
-<img src="assets/figures/hero-surface-light.svg" alt="Gamma of a binary call across spot and maturity, from the likelihood ratio method, with Vibrato Monte Carlo estimates as dots">
-<figcaption><span class="fc-legend"><i class="fc-dot"></i>Vibrato Monte Carlo, 100,000 paths <i class="fc-ramp"></i>gamma of a binary call, <code>PureLRM</code> with Gauss–Legendre</span>
-Computed with VibratoMonteCarlo.jl when this site was built, by automatic differentiation of the prices with hyper-dual numbers. The pathwise gamma of this option is zero everywhere.</figcaption>
+<img src="assets/figures/hero-gamma-dark.svg" alt="Gamma of a binary call: finite differences on plain Monte Carlo, Vibrato, and the formula">
+<img src="assets/figures/hero-gamma-light.svg" alt="Gamma of a binary call: finite differences on plain Monte Carlo, Vibrato, and the formula">
+<figcaption>The gamma of a binary call on the same 10<sup>4</sup> paths: finite differences of plain Monte Carlo prices are noise, Vibrato follows the formula. Computed when this site was built.</figcaption>
 </figure>
 </div>
 ```

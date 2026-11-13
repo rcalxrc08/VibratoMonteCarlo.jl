@@ -87,16 +87,23 @@ end
 save_themes(binary_greeks_figure, "binary_greeks")
 save_themes(quadrature_figure, "quadrature")
 save_themes(variance_gamma_figure, "variance_gamma")
-# The hero of the home page: the gamma of a binary call across spot and maturity, from PureLRM with Gauss-Legendre (one
-# integral against the density at maturity, exact up to rounding) differentiated with hyper-dual numbers, and Vibrato
-# Monte Carlo estimates of the same gamma as points; drawn in perspective by surface.jl.
-include(joinpath(@__DIR__, "surface.jl"))
-let spots = collect(range(60.0, 140.0; length = 46)), maturities = collect(range(0.15, 2.0; length = 34))
-    lrm = PureLRM(MonteCarloConfiguration(1, 1), VibratoMonteCarloGaussLegendre())
-    gamma(method, S, t) = pricer(BlackScholesProcess(σ, Underlying(hyper(S, 1.0, 1.0, 0.0), d)), zero_rate, method, BinaryEuropeanOption(t, K)).epsilon12
-    gammas = [gamma(lrm, S, t) for t in maturities, S in spots]
-    vibrato = Vibrato(MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloGaussLegendre())
-    points = [(S, t, gamma(vibrato, S, t), true) for t in (0.5, 1.5) for S = 70.0:10.0:130.0]
-    m = ceil(maximum(abs, gammas) / 0.001) * 0.001
-    write_surface(FIGURES, "hero-surface", spots, maturities, gammas; zlims = (-m, m), points = points, xticks = [s => string(round(Int, s)) for s = 60:20:140], yticks = [0.5 => "6M", 1.0 => "1Y", 1.5 => "18M", 2.0 => "2Y"], zticks = [g => string(g) for g = (-m):0.002:m], xlabel = "spot", ylabel = "maturity", zlabel = "gamma", label = "Gamma of a binary call across spot and maturity")
+# The hero of the home page: the gamma of a binary call by finite differences on plain Monte Carlo (noise), by Vibrato with
+# hyper dual numbers, and the formula of Black and Scholes, on the same 10^4 paths.
+function hero_figure(theme)
+    spots = collect(range(70.0, 130.0; length = 31))
+    option = BinaryEuropeanOption(T, K)
+    mc = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
+    plain(S) = pricer(BlackScholesProcess(σ, Underlying(S, d)), zero_rate, mc, option)
+    h = 1.0
+    finite_differences = [(plain(S + h) - 2 * plain(S) + plain(S - h)) / h^2 for S in spots]
+    vibrato = [pricer(BlackScholesProcess(σ, Underlying(hyper_of(S), d)), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option).epsilon12 for S in spots]
+    fine = range(70.0, 130.0; length = 301)
+    exact = [blsbin(hyper_of(S), K, r, T, σ, d).epsilon12 for S in fine]
+    p = base_plot(theme; size = (760, 600), xlabel = "spot", ylabel = "gamma of a binary call", legend = :topright, xlims = (68, 132), ylims = (-0.0022, 0.0026))
+    hline!(p, [0]; color = theme.axis, linewidth = 1, label = nothing)
+    scatter!(p, spots, finite_differences; color = theme.series[3], markersize = 4.5, markerstrokewidth = 0, alpha = 0.85, label = "plain Monte Carlo, finite differences")
+    plot!(p, fine, exact; color = theme.series[1], linewidth = 2.5, label = "Black–Scholes formula")
+    scatter!(p, spots, vibrato; color = theme.series[2], marker = :diamond, markersize = 6, markerstrokewidth = 0, label = "Vibrato, hyper-dual numbers")
+    return p
 end
+save_themes(hero_figure, "hero-gamma")
