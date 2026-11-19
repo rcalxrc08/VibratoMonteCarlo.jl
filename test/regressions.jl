@@ -111,13 +111,13 @@ using Statistics
         res = pricer(kou_30(S0), rfCurve, VibratoSaltando(MonteCarloConfiguration(64_000, 10; sampling = FinancialMonteCarlo.SobolMC()), VibratoMonteCarloGaussLegendre()), eu_opt)
         ref = pricer(kou_30(S0), rfCurve, LewisMethod(400.0, 200000), eu_opt)
         test_value_and_derivatives(res, ref; rtol = 7e-3)
-        # Antithetic jumps: spread of the Kou delta over 128 seeds of 10k paths, 3.6e-3 against 5.5e-3 for plain MC (ratio
-        # 1.53 with FinancialMonteCarlo 0.9, whose antithetic jumps no longer draw a uniform for the type of their table,
-        # FinancialMonteCarlo#54; the blocks of 32 seeds give 1.37 to 1.67, so 32 seeds cannot hold a threshold of 1.4).
-        # Unbiased, the mean error is within 1.1 standard errors.
+        # Antithetic jumps: the spread of the Kou delta over seeds of 10k paths, antithetic against plain MC, is about 1.45
+        # times smaller (1.13: 1.51 on 384 seeds; 1.10, whose MersenneTwister seeding differs: 1.28 and 1.37 on two blocks
+        # of 128 seeds, 1.44 before FinancialMonteCarlo#54). On 128 seeds the ratio scatters by ±0.13, so 256 seeds and a
+        # threshold of 1.2 (3 standard deviations below). Unbiased, the mean error is within 1.1 standard errors.
         anti(seed) = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC(), seed = seed)
         plain(seed) = MonteCarloConfiguration(10_000, 10; seed = seed)
         kou_delta(mc) = pricer(kou_30(S0), rfCurve, VibratoSaltando(mc, VibratoMonteCarloGaussLegendre()), eu_opt).epsilon1
-        @test std([kou_delta(anti(seed)) for seed = 1:128]) < std([kou_delta(plain(seed)) for seed = 1:128]) / 1.3
+        @test std([kou_delta(anti(seed)) for seed = 1:256]) < std([kou_delta(plain(seed)) for seed = 1:256]) / 1.2
     end
 end
