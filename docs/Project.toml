@@ -13,14 +13,14 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 VibratoMonteCarlo = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
 
-[sources]
-VibratoMonteCarlo = {path = ".."}
+[sources.VibratoMonteCarlo]
+path = ".."
 
 [compat]
 Documenter = "1"
 DocumenterCitations = "1"
 FinancialFFT = "0.6"
-FinancialMonteCarlo = "0.7"
+FinancialMonteCarlo = "0.7, 0.8"
 FinancialToolbox = "0.7, 0.8"
 ForwardDiff = "0.10, 1"
 HyperDualNumbers = "4"
