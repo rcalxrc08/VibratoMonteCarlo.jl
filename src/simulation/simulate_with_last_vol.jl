@@ -13,7 +13,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     κ = mcProcess.κ
     ρ = mcProcess.ρ
     θ = mcProcess.θ
-    @assert T > 0
+    check_domain(T > 0, T, "Time to Maturity must be positive")
 
     ## Simulate
     κ_s = κ + λ1
@@ -57,7 +57,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     κ = mcProcess.κ
     ρ = mcProcess.ρ
     θ = mcProcess.θ
-    @assert T > 0
+    check_domain(T > 0, T, "Time to Maturity must be positive")
 
     ####Simulation
     ## Simulate
@@ -86,8 +86,8 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
         normals!(mcBaseData, e1)
         normals!(mcBaseData, e2_rho)
         @. e2 = e1 * ρ + e2_rho * sqrt(1 - ρ * ρ)
-        @views @. Xp[:, j+1] = Xp[:, j] + ((r - d) - 0.5 * v_m_1) * dt + sqrt(v_m_1) * sqrt(dt) * e1
-        @views @. Xm[:, j+1] = Xm[:, j] + ((r - d) - 0.5 * v_m_2) * dt - sqrt(v_m_2) * sqrt(dt) * e1
+        @views @. Xp[:, j+1] = Xp[:, j] + ((r - d) - v_m_1 / 2) * dt + sqrt(v_m_1) * sqrt(dt) * e1
+        @views @. Xm[:, j+1] = Xm[:, j] + ((r - d) - v_m_2 / 2) * dt - sqrt(v_m_2) * sqrt(dt) * e1
         @views @. Vp[:, j+1] = max(v_m_1 + κ_s * (θ_s - v_m_1) * dt + σ * sqrt(v_m_1) * sqrt(dt) * e2, isDualZero_eps)
         @views @. Vm[:, j+1] = max(v_m_2 + κ_s * (θ_s - v_m_2) * dt - σ * sqrt(v_m_2) * sqrt(dt) * e2, isDualZero_eps)
     end
@@ -111,7 +111,7 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     κ = mcProcess.κ
     ρ = mcProcess.ρ
     θ = mcProcess.θ
-    @assert T > 0
+    check_domain(T > 0, T, "Time to Maturity must be positive")
 
     κ_s = κ + λ1
     θ_s = κ * θ / κ_s

@@ -19,7 +19,7 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     S_value = v_value.(S)
     S_value_host = to_host(S_value)
     Nsim = size(S, 1)
-    args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData), am_opt)
+    args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData, S), am_opt)
     # the smoothed values of the paths `paths` at the column k, on the host
     smoothed_values(paths, k) = to_host(step_payoffs(laws, Val(true), S_value, paths, k, args, mcBaseData, vb_mc))
     df = exp(-v_value(r) * dt)
@@ -114,7 +114,7 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     # same sampling, mode and random state (the default constructor, with every field), twice the steps
     mc_half = FinancialMonteCarlo.MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.sampling, mcBaseData.mode, mcBaseData.rng, mcBaseData.reseed)
     S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T)
-    args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData), am_opt)
+    args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData, S), am_opt)
     drift = r - d - drift_correction(mcProcess)
     bridge_std = σ * sqrt(dt) / 2
     # Vibrato over the last half step for the payoff at maturity, then backwards over each exercise date, all the paths

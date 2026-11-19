@@ -25,7 +25,7 @@ value_law(f::FinancialFFT.FFTDensity) = fft_step_law(FinancialFFT.FFTDensity(v_v
 # The inner integral of one path. As for Gaussian processes, x_min and x_max are in standard deviations of the log
 # increment around its mean, and the grid is built from values only, so it carries no derivative.
 function lrm_interface_aug!(law::FFTStepLaw, eu_opt, mc::VibratoMonteCarloAnalytic, St)
-    z = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
+    z = init_lrm_vec(mc, nothing, St)
     centre = v_value(log(St)) + law.mean
     # a vector, not a range: shifting a range by an AD number makes a range of AD numbers, which TaylorSeries cannot index
     x = collect(centre .+ law.std .* z)
@@ -33,10 +33,9 @@ function lrm_interface_aug!(law::FFTStepLaw, eu_opt, mc::VibratoMonteCarloAnalyt
     # pathwise derivatives. The density is zero outside its range: the floor keeps the logarithm finite there.
     dens = FinancialFFT.density_values(law.density, x .- log(St))
     density_val = floor_density.(dens, eps_value(first(dens)))
-    # Ref: neither the option nor the baseline (a vector for a smile) are broadcast over
-    option = Ref(eu_opt)
+    # Ref: the baseline (a vector for a smile) is not broadcast over; the option broadcasts as a scalar already
     baseline = Ref(payout_f(centre, eu_opt))
-    f_vals = @. v_value(density_val) * integrand_lrm_base(x, log(density_val), option, baseline)
+    f_vals = @. v_value(density_val) * integrand_lrm_base(x, log(density_val), eu_opt, baseline)
     # trapezoid: weights 1, 2, ..., 2, 1 times dx / 2
     weights = PatternVector(mc.Npoints, PaddedFillPattern(Int8(1), Int8(2), Int8(1)))
     return law.std * step(z) * sum(weights .* f_vals) / 2
@@ -51,9 +50,9 @@ aug_paths(law, option, vb_mc, S_end, mcBaseData) = map(St -> lrm_interface_aug!(
 # paths go in blocks of AUG_BLOCK_NODES nodes (32 MB per array with hyper duals), which keeps the memory bounded.
 const AUG_BLOCK_NODES = 2^20
 function aug_paths(law::FFTStepLaw, option, mc::VibratoMonteCarloAnalytic, S_end::AbstractVector, ::CudaConfig)
-    z = range(mc.x_min, length = mc.Npoints, stop = mc.x_max)
+    z = init_lrm_vec(mc, nothing, S_end)
     # trapezoid: weights 1, 2, ..., 2, 1 times dx / 2, with dx = std * step(z)
-    trapezoid = PatternVector(mc.Npoints, PaddedFillPattern(1.0, 2.0, 1.0)) .* (law.std * step(z) / 2)
+    trapezoid = PatternVector(mc.Npoints, PaddedFillPattern(Int8(1), Int8(2), Int8(1))) .* (law.std * step(z) / 2)
     z_row = node_row(S_end, z)
     w_row = node_row(S_end, trapezoid)
     block = max(1, div(AUG_BLOCK_NODES, mc.Npoints))
@@ -66,7 +65,7 @@ function aug_block(law::FFTStepLaw, option, z_row, w_row, St)
     dens = FinancialFFT.density_values(law.density, x .- log_St)
     return aug_columns(x, centre, dens, w_row, option)
 end
-aug_columns(x, centre, dens, w_row, option) = (option_ref = Ref(option); density_eps = eps_value(zero(eltype(dens))); sum_nodes(@. aug_integrand(x, centre, dens, density_eps, option_ref) * w_row))
+aug_columns(x, centre, dens, w_row, option) = (density_eps = eps_value(zero(eltype(dens))); sum_nodes(@. aug_integrand(x, centre, dens, density_eps, option) * w_row))
 aug_columns(x, centre, dens, w_row, smile::FinancialMonteCarlo.AbstractSmile) = reduce(hcat, [aug_columns(x, centre, dens, w_row, opt) for opt in FinancialMonteCarlo.smile_to_options(smile)])
 # The density floored at eps (a float), in the type of the density: max(::Hyper, ::Float64) returns either argument
 # unconverted, so it is not inferred (#52), and a broadcast on the GPU needs a concrete type.

@@ -1,5 +1,11 @@
 abstract type AbstractVibrato end
 using FinancialToolbox
+# Validation of the inputs (#58): explicit exceptions, never @assert, which throws a generic AssertionError (not to be told
+# apart from a bug) and may be disabled. DomainError for a value out of its domain (FinancialCalibrator turns it into an
+# infinite loss), ArgumentError for a misconfigured method, checked in its constructor so it fails before any pricing.
+check_domain(cond::Bool, value, msg::AbstractString) = cond ? nothing : throw(DomainError(value, msg))
+check_argument(cond::Bool, msg::AbstractString) = cond ? nothing : throw(ArgumentError(msg))
+
 """
     VibratoMonteCarloStandard(Nsim_lrm = 200)
 
@@ -10,13 +16,17 @@ they are a one dimensional Sobol sequence randomly shifted for every path (Cranl
 struct VibratoMonteCarloStandard <: AbstractVibrato
     Nsim_lrm::Int
     function VibratoMonteCarloStandard(Nsim_lrm::Int = 200)
-        @assert Nsim_lrm > 0 "Error, number of simulation for VibratoMonteCarloStandard must be positive."
+        check_argument(Nsim_lrm > 0, "number of inner simulations of VibratoMonteCarloStandard must be positive, got $Nsim_lrm")
         return new(Nsim_lrm)
     end
 end
 
-function init_lrm_vec(x::VibratoMonteCarloStandard, mcBaseData)
-    Z = Array{Float64}(undef, x.Nsim_lrm)
+# The inner samples, nodes and grids have the floating point type of the paths (#45), as the normals of FinancialMonteCarlo
+# (get_rng_type: Float32 for Float32 paths, Float64 for AD numbers), so that a Float32 model is not promoted to Float64.
+rng_type(paths) = typeof(FinancialMonteCarlo.get_rng_type(zero(eltype(paths))))
+
+function init_lrm_vec(x::VibratoMonteCarloStandard, mcBaseData, paths)
+    Z = Array{rng_type(paths)}(undef, x.Nsim_lrm)
     randn!(FinancialMonteCarlo.host_rng(mcBaseData), Z)
     return Z
 end
@@ -33,14 +43,16 @@ struct VibratoMonteCarloAnalytic <: AbstractVibrato
     x_max::Float64
     # ±5 standard deviations miss part of the score terms in the upper tail, where a call payoff is large: volga was 3-45% off on VG.
     function VibratoMonteCarloAnalytic(Npoints::Int = 200, x_min::Float64 = -7.0, x_max::Float64 = 7.0)
-        @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloAnalytic must be positive."
+        check_argument(Npoints > 0, "number of integration points of VibratoMonteCarloAnalytic must be positive, got $Npoints")
+        check_argument(x_min < x_max, "grid of VibratoMonteCarloAnalytic must have x_min < x_max, got [$x_min, $x_max]")
         return new(Npoints, x_min, x_max)
     end
 end
 Base.broadcastable(x::T) where {T <: AbstractVibrato} = Ref(x)
 
-function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any)
-    return range(x.x_min, length = x.Npoints, stop = x.x_max)
+function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any, paths)
+    U = rng_type(paths)
+    return range(U(x.x_min), length = x.Npoints, stop = U(x.x_max))
 end
 
 """
@@ -52,12 +64,12 @@ kink or the jump of a payoff: prefer `VibratoMonteCarloGaussLegendre`.
 struct VibratoMonteCarloGaussHermite <: AbstractVibrato
     Npoints::Int
     function VibratoMonteCarloGaussHermite(Npoints::Int = 200)
-        @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloGaussHermite must be positive."
+        check_argument(Npoints > 0, "number of integration points of VibratoMonteCarloGaussHermite must be positive, got $Npoints")
         return new(Npoints)
     end
 end
 
-init_lrm_vec(x::VibratoMonteCarloGaussHermite, ::Any) = gausshermite(x.Npoints)
+init_lrm_vec(x::VibratoMonteCarloGaussHermite, ::Any, paths) = map(v -> convert(Vector{rng_type(paths)}, v), gausshermite(x.Npoints))
 
 # Gauss-Legendre in the standardized variable, on [-GAUSS_LEGENDRE_Z, GAUSS_LEGENDRE_Z + sigma] split at the payoff singular points
 # (singular_points), with Npoints nodes per piece. Every piece has a smooth integrand, so the rule converges exponentially:
@@ -73,7 +85,7 @@ on Black and Scholes, American options on Black and Scholes).
 struct VibratoMonteCarloGaussLegendre <: AbstractVibrato
     Npoints::Int
     function VibratoMonteCarloGaussLegendre(Npoints::Int = 48)
-        @assert Npoints > 0 "Error, number of integration points for VibratoMonteCarloGaussLegendre must be positive."
+        check_argument(Npoints > 0, "number of integration points of VibratoMonteCarloGaussLegendre must be positive, got $Npoints")
         return new(Npoints)
     end
 end
@@ -81,7 +93,7 @@ end
 const GAUSS_LEGENDRE_Z = 8.5
 
 # Nodes and weights on [-1, 1].
-init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any) = gausslegendre(x.Npoints)
+init_lrm_vec(x::VibratoMonteCarloGaussLegendre, ::Any, paths) = map(v -> convert(Vector{rng_type(paths)}, v), gausslegendre(x.Npoints))
 
 get_unique_maturity(euopt) = euopt.T
 

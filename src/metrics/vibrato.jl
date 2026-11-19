@@ -33,7 +33,7 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     X = FinancialMonteCarlo.simulate(BrownianMotion(σ, drift_rn), mcBaseData, T - step_vibrato)
     mu_jump = @views @muladd @. X[:, end] + drift_rn * step_vibrato + log(S0)
     sigma_jump = σ * sqrt(step_vibrato)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
     result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
@@ -70,7 +70,7 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     drift_rn = r - d - drift_correction(mcProcess)
     mu_jump = @views @muladd @. log(S[:, end]) + drift_rn * step_vibrato
     sigma_jump = σ * sqrt(step_vibrato)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
     result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
@@ -91,8 +91,7 @@ function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financial
     drift_rn = r - d
     mu_jump = @views @. log(S[:, end]) + (drift_rn - vol / 2) * dt
     sigma_jump = @. sqrt(dt * vol)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
-    # Z = init_lrm_vec(vb_mc, mu_jump[1] + sigma_jump[1])
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     args = LRMInterfaceArguments(Z, eu_opt)
     result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
     return result

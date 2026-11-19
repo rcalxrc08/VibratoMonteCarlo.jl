@@ -43,3 +43,43 @@ end
     @test_throws ArgumentError Vibrato(MonteCarloConfiguration(200, 4; mode = FinancialMonteCarlo.MultiThreading()), gl)
     @test_throws ArgumentError VibratoMonteCarlo.Conditional(MonteCarloConfiguration(200, 4; mode = FinancialMonteCarlo.MultiThreading()))
 end
+
+# Invalid inputs throw explicit exceptions, not AssertionError (#58): a misconfigured method fails in its constructor with
+# ArgumentError, a maturity out of its domain with DomainError.
+@testset "Input validation" begin
+    @test_throws ArgumentError VibratoMonteCarloStandard(0)
+    @test_throws ArgumentError VibratoMonteCarloAnalytic(0)
+    @test_throws ArgumentError VibratoMonteCarloAnalytic(100, 3.0, -3.0)
+    @test_throws ArgumentError VibratoMonteCarlo.VibratoMonteCarloGaussHermite(-1)
+    @test_throws ArgumentError VibratoMonteCarloGaussLegendre(0)
+    model = HestonProcess(0.2, 0.2, 0.0, 0.2, 0.2, 0.2, Underlying(100.0, 0.0))
+    for mc in (MonteCarloConfiguration(10, 2), MonteCarloConfiguration(10, 2; sampling = FinancialMonteCarlo.AntitheticMC()), MonteCarloConfiguration(10, 2; sampling = FinancialMonteCarlo.SobolMC()))
+        @test_throws DomainError VibratoMonteCarlo.simulate_with_vol(model, ZeroRate(0.01), mc, -1.0)
+    end
+end
+
+# A Float32 model gives a Float32 price (#45): the inner samples, nodes and grids take the type of the paths.
+@testset "Float32" begin
+    und = Underlying(100.0f0, 0.0f0)
+    rf32 = ZeroRate(0.01f0)
+    opt32 = EuropeanOption(1.0f0, 100.0f0)
+    bs = BlackScholesProcess(0.2f0, und)
+    mc = MonteCarloConfiguration(200, 4)
+    anti = MonteCarloConfiguration(200, 4; sampling = FinancialMonteCarlo.AntitheticMC())
+    sobol = MonteCarloConfiguration(200, 4; sampling = FinancialMonteCarlo.SobolMC())
+    cases = [
+        ("Black Scholes, MC inner", bs, Vibrato(mc, VibratoMonteCarloStandard(32))),
+        ("Black Scholes, antithetic MC inner", bs, Vibrato(anti, VibratoMonteCarloStandard(32))),
+        ("Black Scholes, Sobol MC inner", bs, Vibrato(sobol, VibratoMonteCarloStandard(32))),
+        ("Black Scholes, Gauss-Legendre", bs, Vibrato(mc, VibratoMonteCarloGaussLegendre())),
+        ("Black Scholes, Gauss-Hermite", bs, Vibrato(mc, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(64))),
+        ("Black Scholes, Analytic", bs, Vibrato(mc, VibratoMonteCarloAnalytic())),
+        ("Heston, antithetic", HestonProcess(0.2f0, 0.2f0, 0.0f0, 0.2f0, 0.2f0, 0.2f0, und), Vibrato(anti, VibratoMonteCarloGaussLegendre())),
+        ("Kou, VibratoSaltando", KouProcess(0.2f0, 3.0f0, 0.4f0, 10.0f0, 5.0f0, und), VibratoSaltando(mc, VibratoMonteCarloGaussLegendre())),
+        ("VG, FFT density", VarianceGammaProcess(0.2f0, -0.1f0, 0.2f0, und), Vibrato(mc, VibratoMonteCarloAnalytic())),
+        ("PureLRM, Black Scholes", bs, PureLRM(mc, VibratoMonteCarloGaussLegendre())),
+    ]
+    @testset "$name" for (name, model, method) in cases
+        @test pricer(model, rf32, method, opt32) isa Float32
+    end
+end

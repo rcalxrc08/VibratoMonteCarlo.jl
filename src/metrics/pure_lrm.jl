@@ -10,7 +10,7 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     drift_rn = r - d - drift_correction(mcProcess)
     # one point, on the device of the configuration: the integration of lrm_paths, as for the paths of Vibrato
     mu = on_device(mcBaseData, mcProcess, [@muladd(log(mcProcess.underlying.S0) + drift_rn * T)])
-    Z = init_lrm_vec(vb_mc, mcBaseData)
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu)
     sigma_jump = σ * sqrt(T)
     args = LRMInterfaceArguments(Z, eu_opt)
     result = path_mean(lrm_paths(mu, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)

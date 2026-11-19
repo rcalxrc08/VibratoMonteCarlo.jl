@@ -12,9 +12,9 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
     (T_jump, X_jump) = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
     drift_rn = (r - d) - drift_correction(mcProcess)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
-    args = LRMInterfaceArguments(Z, eu_opt)
     mu_jump = @muladd @. X_jump + drift_rn * (T - T_jump)
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
+    args = LRMInterfaceArguments(Z, eu_opt)
     sigma_jump = @. σ * sqrt(T - T_jump)
     result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
 
@@ -40,7 +40,7 @@ function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve:
     drift_rn = r - d - drift_correction(mcProcess)
     mu_jump = @muladd @. log(S0) + drift_rn * T + θ * G_T
     sigma_jump = @. σ * sqrt(G_T)
-    Z = init_lrm_vec(vb_mc, mcBaseData)
+    Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     args = LRMInterfaceArguments(Z, eu_opt)
     discount = exp(-r * T)
     result = subordinator_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc) .* discount, weight)

@@ -30,7 +30,7 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         mu = hyper.(log(100.0) .+ 0.2 .* randn(2_000), 1.0, 1.0, 0.0)
         sigma = hyper(0.06, 0.0, 0.0, 0.0)
         for vb_mc in (gl, VibratoMonteCarloAnalytic(), VMC.VibratoMonteCarloGaussHermite(64)), opt in (eu, bin, smile)
-            args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(vb_mc, cpu()), opt)
+            args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(vb_mc, cpu(), mu), opt)
             host = VMC.lrm_paths(mu, sigma, args, cpu(), vb_mc)
             host = host isa AbstractVector{<:AbstractVector} ? permutedims(reduce(hcat, host)) : host
             device = Array(VMC.lrm_paths(CuArray(mu), sigma, args, gpu(), vb_mc))
@@ -236,7 +236,7 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         S = hyper.(100.0 .* exp.(0.2 .* randn(2_000, 5)), 1.0, 1.0, 0.0)
         paths = collect(1:3:2_000)
         cols = rand(1:5, length(paths))
-        args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(VibratoMonteCarloAnalytic(), cpu()), put)
+        args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(VibratoMonteCarloAnalytic(), cpu(), S), put)
         f = FinancialFFT.density(kou(hyper_of(100.0)), rf, FinancialMonteCarlo.with_mode(FFTDensityInverter(), FinancialMonteCarlo.CudaMode()), 0.1)
         device_laws = VMC.FrozenFFT(VMC.fft_step_law(f), VMC.value_law(f))
         host_f = FinancialFFT.adapt(Array, f)
@@ -244,7 +244,7 @@ cpu(method = FinancialMonteCarlo.StandardMC(); n = 100_000, steps = 10) = MonteC
         V = hyper.(0.04 .+ 0.01 .* rand(2_000, 5), 0.0, 0.0, 0.0)
         heston_laws(V) = VMC.FrozenHeston(hyper(0.02, 0.0, 0.0, 0.0), V, VMC.v_value.(V), 0.1)
         for (host_laws, device_laws, vb_mc) in ((host_laws, device_laws, VibratoMonteCarloAnalytic()), (heston_laws(V), heston_laws(CuArray(V)), gl)), values in (Val(true), Val(false))
-            args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(vb_mc, cpu()), put)
+            args = VMC.LRMInterfaceArguments(VMC.init_lrm_vec(vb_mc, cpu(), S), put)
             host_S = values isa Val{true} ? VMC.v_value.(S) : S
             host = VMC.step_payoffs(host_laws, values, host_S, paths, cols, args, cpu(), vb_mc)
             device = Array(VMC.step_payoffs(device_laws, values, CuArray(host_S), paths, cols, args, gpu(), vb_mc))
