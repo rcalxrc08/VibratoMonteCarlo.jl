@@ -20,7 +20,7 @@ VibratoMonteCarlo = {path = ".."}
 Documenter = "1"
 DocumenterCitations = "1"
 FinancialFFT = "0.6"
-FinancialMonteCarlo = "0.7"
+FinancialMonteCarlo = "0.7, 0.8"
 FinancialToolbox = "0.7, 0.8"
 ForwardDiff = "0.10, 1"
 HyperDualNumbers = "4"
