@@ -1,6 +1,7 @@
 include("utils.jl")
 
 @testset "VibratoMonteCarlo" begin
+    include("context.jl")
     include("backends.jl")
     include("vibrato_models.jl")
     include("forwarddiff.jl")
