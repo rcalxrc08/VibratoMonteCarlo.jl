@@ -12,6 +12,8 @@ Find the task, open the contract it points to, and load only the inputs listed t
 | A new AD number type, Mooncake rules | `ext/CONTEXT.md` |
 | Adding or running tests, seeds, tolerances, the GPU tests | `test/CONTEXT.md` |
 | Documentation pages, formulas, figures | `docs/CONTEXT.md` |
+| README examples, `etc/readme.jl`, the logo | `etc/CONTEXT.md` |
+| The benchmark script | `bench/CONTEXT.md` |
 | Commands, CI, compat bumps, sub-environments, untracked files | `references/workflows.md` |
 
 Shared references (Layer 3), each loaded only when a contract lists it: `public_api.md`, `conventions.md`,

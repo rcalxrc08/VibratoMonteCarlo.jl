@@ -14,13 +14,13 @@ task needs.
 |:--|:--|:--|
 | 0 | this file | identity, map, rules that hold everywhere |
 | 1 | `CONTEXT.md` | which stage or folder a task belongs to, shared references |
-| 2 | `src/0N_*/CONTEXT.md`, `ext/`, `test/`, `docs/` | a contract per stage: inputs to read, process, outputs and tests |
+| 2 | `src/0N_*/CONTEXT.md`, `ext/`, `test/`, `docs/`, `etc/`, `bench/` | a contract per stage: inputs to read, process, outputs and tests |
 | 3 | `references/*.md` | stable facts and measurements, loaded when a contract lists them |
 
 Map: `src/VibratoMonteCarlo.jl` includes the stages in order, `01_methods` → `02_simulation` → `03_inner_integration` →
 `04_european` → `05_american`; `ext/` holds one extension per AD backend; `test/` the suite (`test/cuda/` the opt-in GPU
-tests); `docs/` the Documenter site; `bench/` a benchmark script; `examples/` the README examples; `etc/` the logo and
-`readme.jl`. `src/deps/` and other untracked files are experiments, not package code (`references/workflows.md`).
+tests); `docs/` the Documenter site; `bench/` a benchmark script run by hand; `examples/` the README examples, copied into
+`README.md` by `etc/readme.jl`; `etc/` also the logo. `src/deps/` and other untracked files are experiments, not package code (`references/workflows.md`).
 
 Rules for every change (details in `references/conventions.md` and `references/autodiff.md`):
 

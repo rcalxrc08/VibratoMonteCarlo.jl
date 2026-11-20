@@ -8,7 +8,7 @@ using Test
 @testset "Context layers" begin
     root = normpath(joinpath(@__DIR__, ".."))
     rel(path) = replace(relpath(path, root), '\\' => '/')
-    contracts = vcat([joinpath(root, d, "CONTEXT.md") for d in ("ext", "test", "docs")], [joinpath(root, "src", d, "CONTEXT.md") for d in readdir(joinpath(root, "src")) if isdir(joinpath(root, "src", d)) && occursin(r"^\d\d_", d)])
+    contracts = vcat([joinpath(root, d, "CONTEXT.md") for d in ("ext", "test", "docs", "bench", "etc")], [joinpath(root, "src", d, "CONTEXT.md") for d in readdir(joinpath(root, "src")) if isdir(joinpath(root, "src", d)) && occursin(r"^\d\d_", d)])
     routing = read(joinpath(root, "CONTEXT.md"), String)
     layer0 = read(joinpath(root, "CLAUDE.md"), String)
     listed = Set{String}()
