@@ -15,6 +15,8 @@ Find the task, open the contract it points to, and load only the inputs listed t
 | README examples, `etc/readme.jl`, the logo | `etc/CONTEXT.md` |
 | The benchmark script | `bench/CONTEXT.md` |
 | Commands, CI, compat bumps, sub-environments, untracked files | `references/workflows.md` |
+| What is being worked on, open issues by priority, known problems | `state/STATUS.md` |
+| Whether a change fits the package's goals; why a rule or structure exists | `references/mission.md`, `references/decisions.md` |
 
 Shared references (Layer 3), each loaded only when a contract lists it: `public_api.md`, `conventions.md`,
 `autodiff.md`, `gpu.md`, `dependencies.md`, `workflows.md`, `testing.md`, `method_limits.md`, and one per stage:
