@@ -13,7 +13,6 @@ integration allocations) is closed with the weights fix 698ddbd.
 | Item | Branch | Issue | Next step |
 |:--|:--|:--|:--|
 | Device-only code split | `master` | #75 | list the device-only functions per stage, then move them with their contracts |
-| Context layer 4, mission, decisions | `context-state` | — | review, then merge |
 
 ## Known issues
 
@@ -21,7 +20,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 |:--|:--|:--|
 | #70 | `log_gamma` promotes Float32 to Float64 | — |
 | #67 | VibratoSaltando on VG/NIG and American options price Float32 models in Float64 | — |
-| #68 | Vibrato/PureLRM drift `r - d` assumes scalar rates (FinancialMonteCarlo#81) | scalar rates only |
+| #68 | Vibrato/PureLRM drift `r - d` assumes scalar rates | scalar rates only; unblocked: FinancialMonteCarlo#81 (lazy `r - d`, no arithmetic between curves) shipped in 0.9.0, so fix with `integral(r, T) - integral(d, T)` and a curve test |
 | #54 | FFT density path: binaries converge only O(dx) | finer grid |
 | #34 | Kou `vibrato_saltando` misses the 1e-3 tolerance in `check/accuracy.jl` | — |
 | #28 | FFT vibrato cannot differentiate κ of VG and NIG | — |
@@ -37,5 +36,5 @@ integration allocations) is closed with the weights fix 698ddbd.
 ## Working notes
 
 Notes of an active initiative go next to this file as `state/YYYY-MM-DD-<topic>.md`; when it ends, what stays true
-moves to `references/` or `references/decisions.md` and the note is deleted. Untracked at the repo root today:
-`fourier_greeks_method.md`, `examples/plot_implied_vol.jl` (not touched by this change).
+moves to `references/` or `references/decisions.md` and the note is deleted. Untracked today (none is included by the module):
+`fourier_greeks_method.md`, `examples/plot_implied_vol.jl`, `pluto/`, `src/deps/`.
