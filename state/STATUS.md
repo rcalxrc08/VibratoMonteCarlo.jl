@@ -28,7 +28,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 ## Technical debt and enhancements
 
 - #71 ChainRulesCore is a stale hard dependency.
-- #62 remaining multiply-adds without `muladd`; #61 Heston antithetic Euler step (reuse FinancialMonteCarlo kernels).
+- #61 Heston antithetic Euler step (reuse FinancialMonteCarlo kernels).
 - #57 American bisection → `FinancialFFT.brent_root`; #44 reuse FinancialMonteCarlo's jumps from uniforms.
 - #53 GPU: antithetic G_T of VG/NIG drawn on the host; #59 exact Heston last step; #60 Brownian bridge for barriers.
 - #33 generic `ItoProcess` methods; #32 λ and T derivatives for Kou/Merton; #38 docs: dual spectral theorem.

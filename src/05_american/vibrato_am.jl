@@ -2,7 +2,7 @@ using LinearAlgebra
 
 # Continuation value regressed on 1, x, x^2 (Longstaff-Schwartz), values only.
 continuation_coefficients(x, y) = hcat(one.(x), x, x .^ 2) \ y
-continuation_value(α, x) = α[1] + x * (α[2] + x * α[3])
+continuation_value(α, x) = evalpoly(x, (α[1], α[2], α[3]))
 
 # American options: see the docstring of Vibrato.
 # The regressions run on the host on the values of the paths, taken there once; the smoothed payoffs (the vibrato
@@ -185,7 +185,7 @@ const BRIDGE_Z = GAUSS_LEGENDRE_Z
 function lrm_segment(za, zb, m, s, h)
     c = (za + zb) / 2
     hw = (zb - za) / 2
-    return sum(BRIDGE_WEIGHTS[j] * hw * bridge_integrand(c + hw * BRIDGE_NODES[j], m, s, h) for j in eachindex(BRIDGE_NODES))
+    return sum(BRIDGE_WEIGHTS[j] * hw * bridge_integrand(@muladd(c + hw * BRIDGE_NODES[j]), m, s, h) for j in eachindex(BRIDGE_NODES))
 end
 function bridge_integrand(z, m, s, h)
     x = @muladd v_value(m) + v_value(s) * z
@@ -224,7 +224,7 @@ function bridge_vibrato(W, m, s, region, am_opt, discount)
     end
     a < BRIDGE_Z && push!(continuation, (a, BRIDGE_Z))
     stay = isempty(continuation) ? zero(payoff_integral) : segments_integral(continuation, m, s, UnitPayoff())
-    return discount * payoff_integral + W * stay
+    return @muladd discount * payoff_integral + W * stay
 end
 
 # One exercise date for all the paths: bridge_vibrato path by path on the host.

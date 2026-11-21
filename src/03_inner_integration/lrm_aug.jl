@@ -66,7 +66,7 @@ end
 function aug_block(law::FFTStepLaw, option, z_row, w_row, St)
     log_St = log.(St)
     centre = @. v_value(log_St) + law.mean
-    x = @. centre + law.std * z_row
+    x = @muladd @. centre + law.std * z_row
     dens = FinancialFFT.density_values(law.density, x .- log_St)
     return aug_columns(x, centre, dens, w_row, option)
 end
