@@ -25,7 +25,7 @@ value_law(f::FinancialFFT.FFTDensity) = fft_step_law(FinancialFFT.FFTDensity(v_v
 # The inner integral of one path. As for Gaussian processes, x_min and x_max are in standard deviations of the log
 # increment around its mean, and the grid is built from values only, so it carries no derivative.
 function lrm_interface_aug!(law::FFTStepLaw, eu_opt, mc::VibratoMonteCarloAnalytic, St)
-    z = init_lrm_vec(mc, nothing, St)
+    z = analytic_grid(mc, St)
     centre = v_value(log(St)) + law.mean
     # a vector, not a range: shifting a range by an AD number makes a range of AD numbers, which TaylorSeries cannot index
     x = collect(centre .+ law.std .* z)
@@ -55,7 +55,7 @@ aug_paths(law, option, vb_mc, S_end, mcBaseData) = map(St -> lrm_interface_aug!(
 # paths go in blocks of AUG_BLOCK_NODES nodes (32 MB per array with hyper duals), which keeps the memory bounded.
 const AUG_BLOCK_NODES = 2^20
 function aug_paths(law::FFTStepLaw, option, mc::VibratoMonteCarloAnalytic, S_end::AbstractVector, ::CudaConfig)
-    z = init_lrm_vec(mc, nothing, S_end)
+    z = analytic_grid(mc, S_end)
     # trapezoid: weights 1, 2, ..., 2, 1 times dx / 2, with dx = std * step(z)
     trapezoid = trapezoid_weights(mc.Npoints) .* (law.std * step(z) / 2)
     z_row = node_row(S_end, z)

@@ -50,9 +50,14 @@ struct VibratoMonteCarloAnalytic <: AbstractVibrato
 end
 Base.broadcastable(x::T) where {T <: AbstractVibrato} = Ref(x)
 
+# The uniform grid of VibratoMonteCarloAnalytic, in the floating point type of the paths (#45).
+analytic_grid(x::VibratoMonteCarloAnalytic, paths) = (U = rng_type(paths); range(U(x.x_min), length = x.Npoints, stop = U(x.x_max)))
+
+# The nodes and their weights against the standard normal density, trapezoid weights × φ(z) × step / 2 (#69): the same
+# for every path, so computed once per price instead of an exp per node and path (#74).
 function init_lrm_vec(x::VibratoMonteCarloAnalytic, ::Any, paths)
-    U = rng_type(paths)
-    return range(U(x.x_min), length = x.Npoints, stop = U(x.x_max))
+    z = analytic_grid(x, paths)
+    return collect(z), collect(trapezoid_weights(length(z)) .* exp.(log_density_default.(z)) .* (step(z) / 2))
 end
 
 """

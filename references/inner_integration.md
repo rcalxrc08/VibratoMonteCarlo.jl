@@ -48,7 +48,9 @@ All of this sits in `src/03_inner_integration/lrm.jl`:
 - any config × `VibratoMonteCarloAnalytic`: the trapezoid rule on a uniform grid `[x_min, x_max]` of `Npoints` (default
   200 on ±7), always in standard deviations of the log increment around its mean, with the weights 1, 2, ..., 2, 1 of
   `trapezoid_weights` (a `PatternVector`) times `step / 2`, the step read from the range (it was the rectangle rule, with
-  the step from two reductions, until #69). On Gaussian paths that is the standard normal variable. In
+  the step from two reductions, until #69). `init_lrm_vec` returns the nodes and these weights times the normal density,
+  computed once per price: an `exp` per node and path made the rule twice as slow (#74; 16 ms for a binary on 10 000
+  hyper-dual paths with 20 nodes). The FFT density path takes the range itself (`analytic_grid`). On Gaussian paths that is the standard normal variable. In
   `lrm_interface_aug!` (`lrm_aug.jl`: FFT density, non-Ito processes) the integral is the same trapezoid over the nodes
   of one path, evaluated with one call of the vectorized
   `FinancialFFT.density_values` and a broadcast of the integrand; the mean and std come from the FFT density

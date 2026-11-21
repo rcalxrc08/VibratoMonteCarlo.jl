@@ -110,13 +110,12 @@ inner_mean(integrand::F, Z, mu, sigma, smile::FinancialMonteCarlo.AbstractSmile)
 # isbits, O(1) memory, on any device and under every AD backend (#69).
 trapezoid_weights(n::Integer) = PatternVector(n, PaddedFillPattern(Int8(1), Int8(2), Int8(1)))
 
-# The trapezoid rule on the uniform grid Z (a range: its step without a reduction), against the standard normal density,
-# as lrm_interface_aug! (#69); a sum without an array of the values (#74).
+# The trapezoid rule on the uniform grid, against the standard normal density (#69), with the weights of init_lrm_vec,
+# which include the density: a sum without an array of the values (#74).
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloAnalytic)
-    Z = received_args.Z
+    z, w = received_args.Z
     args = IntegrandArguments(mu, sigma, received_args.option)
-    weights = trapezoid_weights(length(Z))
-    return step(Z) * sum(i -> weights[i] * exp(log_density_default(Z[i])) * integrand_lrm_vec(Z[i], args), eachindex(Z, weights)) / 2
+    return sum(i -> w[i] * integrand_lrm_vec(z[i], args), eachindex(z, w))
 end
 
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloGaussHermite)
@@ -202,7 +201,7 @@ device_paths(mu, sigma, samples, smile::FinancialMonteCarlo.AbstractSmile, vb_mc
 
 node_row(mu, x) = permutedims(copyto!(similar(mu, rng_type(mu), length(x)), collect(rng_type(mu), x)))
 device_samples(mu, Z, _, ::VibratoMonteCarloGaussLegendre) = (node_row(mu, Z[1]), node_row(mu, Z[2]))
-device_samples(mu, Z, _, ::VibratoMonteCarloAnalytic) = (node_row(mu, Z), node_row(mu, trapezoid_weights(length(Z)) .* (step(Z) / 2)))
+device_samples(mu, (z, w), _, ::VibratoMonteCarloAnalytic) = (node_row(mu, z), node_row(mu, w))
 device_samples(mu, Z, _, ::VibratoMonteCarloGaussHermite) = (node_row(mu, Z[1] .* sqrt2), node_row(mu, Z[2]))
 # Fresh inner samples for every path, as on the CPU, from the CURAND generator seeded by set_seed!, and antithetic pairs
 # with AntitheticMC.
@@ -225,7 +224,7 @@ function device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGauss
     bounds = segment_bounds(z_min, cuts, z_max)
     return sum(map((za, zb) -> sum_nodes(@muladd @. w * (zb - za) / 2 * weighted_integrand_at((za + zb) / 2 + (zb - za) / 2 * x, mu, sigma, option)), segment_starts(bounds), segment_ends(bounds)))
 end
-device_option_paths(mu, sigma, (z, w), option, ::VibratoMonteCarloAnalytic) = sum_nodes(@. weighted_integrand_at(z, mu, sigma, option) * w)
+device_option_paths(mu, sigma, (z, w), option, ::VibratoMonteCarloAnalytic) = sum_nodes(@. integrand_at(z, mu, sigma, option) * w)
 device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGaussHermite) = sum_nodes(@. integrand_at(x, mu, sigma, option) * w) / sqrtπ
 function device_option_paths(mu, sigma, (Z, antithetic), option, ::VibratoMonteCarloStandard)
     f = antithetic ? (@. integrand_at_anti(Z, mu, sigma, option)) : (@. integrand_at(Z, mu, sigma, option))
