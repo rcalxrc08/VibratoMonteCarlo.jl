@@ -6,7 +6,7 @@ The vibrato step: the payoff integrated against the density of the last step, de
 
 | Load | Why |
 |:--|:--|
-| `lrm.jl` | `log_density`, `v_value`, `v_mod`, `eps_value`, `carries_derivatives`, the integrand with its baseline, `lrm_interface_vec!` per config × inner integration, `singular_points`, `lrm_paths` and the device matrices |
+| `lrm.jl` | `log_density`, `v_value`, `v_mod`, `eps_value`, `carries_derivatives`, `SmileStrike`/`map_strikes`, the integrand with its baseline, `lrm_interface_vec!` per config × inner integration (`inner_samples!`, `inner_mean` for `Standard`), `trapezoid_weights`, `singular_points`, `lrm_paths` and the device matrices |
 | `lrm_aug.jl` | the FFT density of the last step: `FFTStepLaw`, `fft_step_law`, `value_law`, `lrm_interface_aug!`, `aug_paths` (blocks of `AUG_BLOCK_NODES` on the device), `floor_density` |
 | `references/inner_integration.md` | the core idea, the rules, smiles, inference |
 | `references/autodiff.md` | `v_value` must strip every level; Mooncake overlays `v_mod` and `carries_derivatives` |
@@ -19,7 +19,10 @@ The vibrato step: the payoff integrated against the density of the last step, de
 - Keep the baseline: the value is unchanged, the derivative noise is cut 10-80×.
 - `LRMInterfaceArguments`/`IntegrandArguments` keep `@.` broadcasting over the paths only.
 - The host loop and the device matrix of a rule must agree (tested to ≤ 4e-11): change both together.
-- A smile is one integral per option on shared nodes (fixed-node rules), one column per option on the device.
+- A smile is integrated strike by strike (`map_strikes`, a `SmileStrike` per strike, no vector of options): on shared
+  nodes (fixed-node rules), on the samples drawn once per path (`Standard`), on the density of the path (FFT), one
+  column per strike on the device. No array of the integrand per path on the host (#74).
+- Uniform grids integrate with `trapezoid_weights` (PatternVectors), never with reductions over the nodes (#69).
 
 ## Outputs
 

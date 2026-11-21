@@ -10,10 +10,11 @@ Base.broadcastable(x::LRMInterfaceArguments) = Ref(x)
 
 # A smile with an inner rule on fixed nodes: one integral per option, on the same nodes. The integrand of a whole smile
 # builds its options and two vectors at every node (a vector per node and path); Gauss-Legendre also splits each option
-# at its own strike only. Not VibratoMonteCarloStandard, which draws new samples at every call.
+# at its own strike only (#42). Not VibratoMonteCarloStandard, which draws new samples at every call: it draws them once
+# per path and integrates the options of the smile on them in lrm.jl (#74).
 for inner in (:VibratoMonteCarloGaussLegendre, :VibratoMonteCarloAnalytic, :VibratoMonteCarloGaussHermite)
     @eval function lrm_interface_vec!(mu, sigma, received_args::LRMInterfaceArguments{<:Any, <:FinancialMonteCarlo.AbstractSmile}, mcBaseData, vb_mc::$inner)
-        return map(opt -> lrm_interface_vec!(mu, sigma, LRMInterfaceArguments(received_args.Z, opt), mcBaseData, vb_mc), FinancialMonteCarlo.smile_to_options(received_args.option))
+        return map_strikes(strike -> lrm_interface_vec!(mu, sigma, LRMInterfaceArguments(received_args.Z, strike), mcBaseData, vb_mc), received_args.option)
     end
 end
 

@@ -33,17 +33,24 @@ v_mod(::AbstractFloat) = 1
 payout_f_base_v_value(s, eu_opt) = v_value(FinancialMonteCarlo.payout(s, eu_opt))
 
 payout_f(z, eu_opt) = payout_f_base_v_value(exp(z), eu_opt)
-payout_f(z, smile::FinancialMonteCarlo.AbstractSmile) = payout_f_base_v_value.(exp(z), FinancialMonteCarlo.smile_to_options(smile))
+
+# One strike of a smile. Its payoff is FinancialMonteCarlo's payout_strike, the formula a smile and its single options
+# share: a smile is integrated strike by strike, without a vector of options per path nor the payoffs of the whole smile
+# at every node (#42, #74). Isbits, so it also enters a GPU broadcast.
+struct SmileStrike{O, K_}
+    K::K_
+    isCall::Bool
+end
+# a scalar in broadcasts, as FinancialMonteCarlo's options: the device kernels broadcast over the paths, not the strike
+Base.broadcastable(strike::SmileStrike) = Ref(strike)
+# f of every strike of the smile, in a vector: the only allocation of a smile per path
+map_strikes(f::F, smile::FinancialMonteCarlo.AbstractSmile{O}) where {F, O} = map((K, isCall) -> f(SmileStrike{O, typeof(K)}(K, isCall)), smile.K, smile.isCall)
+payout_f(z, strike::SmileStrike{O}) where {O} = v_value(FinancialMonteCarlo.payout_strike(exp(z), strike.K, strike.isCall, O))
 # The density integrates to one for any parameter, so the score terms in v_mod have zero mean and a constant baseline
 # (the payoff at the centre of the density, with no derivative) can be subtracted from the payoff and added back:
 # the value is unchanged, the derivatives only see payoff - baseline, which removes the baseline times the integration
 # error of the score terms (the noise or the bias of the inner integration).
 integrand_lrm_base(log_s, log_density_val, eu_opt, baseline) = @muladd (payout_f(log_s, eu_opt) - baseline) * v_mod(log_density_val) + baseline
-function integrand_lrm_base(log_s, log_density_val, smile::FinancialMonteCarlo.AbstractSmile, baseline)
-    payoffs = payout_f(log_s, smile)
-    weight = v_mod(log_density_val)
-    return @. (payoffs - baseline) * weight + baseline
-end
 
 struct IntegrandArguments{num_1, num_2, num_3}
     mu::num_1
@@ -83,25 +90,33 @@ end
 # With VibratoMonteCarloStandard the inner samples are drawn again for every outer path (Z is only a buffer):
 # sharing them would turn their error into a bias that does not average out over the outer paths.
 # A CudaMode configuration does not land here: every caller goes through lrm_paths, whose device method draws with CURAND.
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, ::VibratoMonteCarloStandard)
-    Z = randn!(FinancialMonteCarlo.host_rng(mcBaseData), received_args.Z)
-    eu_opt = received_args.option
-    args = IntegrandArguments(mu, sigma, eu_opt)
-    output = mean(integrand_lrm_vec.(Z, args))
-    return output
+# The samples of a path are drawn once, then every option of a smile is integrated on them, one option at a time: the
+# integrand of a whole smile builds its options and two vectors at every sample (12 allocations per sample, #74).
+function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloStandard)
+    Z, integrand = inner_samples!(received_args.Z, mcBaseData)
+    return inner_mean(integrand, Z, mu, sigma, received_args.option)
 end
 
-function midpoint_definite_integral_vec(x, f)
-    dx = (maximum(x) - minimum(x)) / (length(x) - 1)
-    return sum(f) * dx
-end
+# The inner samples of one path, in the buffer, and the integrand that uses them: antithetic pairs with AntitheticMC and
+# with SobolMC (each point paired with its reflection).
+inner_samples!(Z, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration) = (randn!(FinancialMonteCarlo.host_rng(mcBaseData), Z), integrand_lrm_vec)
+inner_samples!(Z, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}) = (randn!(FinancialMonteCarlo.host_rng(mcBaseData), Z), integrand_lrm_vec_anti)
 
+# A mean of the integrand at the samples, without an array of its values (#74); one per option for a smile.
+inner_mean(integrand::F, Z, mu, sigma, option) where {F} = mean(Base.Fix2(integrand, IntegrandArguments(mu, sigma, option)), Z)
+inner_mean(integrand::F, Z, mu, sigma, smile::FinancialMonteCarlo.AbstractSmile) where {F} = map_strikes(strike -> inner_mean(integrand, Z, mu, sigma, strike), smile)
+
+# The trapezoid rule on a uniform grid of n nodes: weights 1, 2, ..., 2, 1, to be multiplied by step / 2. A PatternVector:
+# isbits, O(1) memory, on any device and under every AD backend (#69).
+trapezoid_weights(n::Integer) = PatternVector(n, PaddedFillPattern(Int8(1), Int8(2), Int8(1)))
+
+# The trapezoid rule on the uniform grid Z (a range: its step without a reduction), against the standard normal density,
+# as lrm_interface_aug! (#69); a sum without an array of the values (#74).
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloAnalytic)
     Z = received_args.Z
-    eu_opt = received_args.option
-    args = IntegrandArguments(mu, sigma, eu_opt)
-    f = @. integrand_lrm_vec(Z, args) * exp(log_density_default(Z))
-    return midpoint_definite_integral_vec(Z, f)
+    args = IntegrandArguments(mu, sigma, received_args.option)
+    weights = trapezoid_weights(length(Z))
+    return step(Z) * sum(i -> weights[i] * exp(log_density_default(Z[i])) * integrand_lrm_vec(Z[i], args), eachindex(Z, weights)) / 2
 end
 
 function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonteCarloGaussHermite)
@@ -109,8 +124,7 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     eu_opt = received_args.option
     x, w = Z
     args = IntegrandArguments(mu, sigma, eu_opt)
-    output = sum(@. integrand_lrm_vec(x * sqrt2, args) * w) / sqrtπ
-    return output
+    return sum(((xj, wj),) -> integrand_lrm_vec(xj * sqrt2, args) * wj, zip(x, w)) / sqrtπ
 end
 
 """
@@ -120,7 +134,7 @@ Log-prices where the payoff of `option` is not smooth (the kink of a call or a p
 VibratoMonteCarloGaussLegendre splits the integral there. Payoffs without a method are integrated as smooth.
 """
 singular_points(opt::Union{EuropeanOption, BinaryEuropeanOption, FinancialMonteCarlo.AmericanOption, FinancialMonteCarlo.BinaryAmericanOption}) = (v_value(log(opt.K)),)
-singular_points(smile::FinancialMonteCarlo.AbstractSmile) = sort!(unique([p for opt in FinancialMonteCarlo.smile_to_options(smile) for p in singular_points(opt)]))
+singular_points(strike::SmileStrike) = (v_value(log(strike.K)),)
 singular_points(::Any) = ()
 
 # ∫_{za}^{zb} of the integrand against the standard normal density, with the Gauss-Legendre nodes x and weights w of [-1, 1].
@@ -160,13 +174,6 @@ function lrm_interface_vec!(mu, sigma, received_args, mcBaseData, ::VibratoMonte
     return sum(map((za, zb) -> gauss_legendre_segment(za, zb, x, w, args), segment_starts(bounds), segment_ends(bounds)))
 end
 
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}, ::VibratoMonteCarloStandard)
-    Z = randn!(FinancialMonteCarlo.host_rng(mcBaseData), received_args.Z)
-    eu_opt = received_args.option
-    args = IntegrandArguments(mu, sigma, eu_opt)
-    output = mean(integrand_lrm_vec_anti.(Z, args))
-    return output
-end
 using Sobol, StatsFuns
 # Inner samples from a one dimensional Sobol sequence (cld(Nsim_lrm, 2) uniforms, each point paired with its reflection),
 # randomly shifted modulo 1 for every outer path (Cranley-Patterson rotation): each path gets an unbiased estimate
@@ -177,14 +184,10 @@ function init_lrm_vec(x::VibratoMonteCarloStandard, ::FinancialMonteCarlo.SobolC
     return (U, similar(U))
 end
 
-function lrm_interface_vec!(mu, sigma, received_args, mcBaseData::FinancialMonteCarlo.SobolConfig, ::VibratoMonteCarloStandard)
-    U, Z = received_args.Z
-    eu_opt = received_args.option
+function inner_samples!((U, Z), mcBaseData::FinancialMonteCarlo.SobolConfig)
     shift = rand(FinancialMonteCarlo.host_rng(mcBaseData))
     @. Z = norminvcdf(mod(U + shift, 1))
-    args = IntegrandArguments(mu, sigma, eu_opt)
-    output = mean(integrand_lrm_vec_anti.(Z, args))
-    return output
+    return Z, integrand_lrm_vec_anti
 end
 
 # Inner expectation of every outer path, one lrm_interface_vec! per path.
@@ -195,11 +198,11 @@ lrm_paths(mu, sigma, args, mcBaseData, vb_mc) = @. lrm_interface_vec!(mu, sigma,
 # nodes go to the device with one copy. A smile gives one column per option, on the same inner samples.
 lrm_paths(mu::AbstractVector, sigma, args, mcBaseData::CudaConfig, vb_mc) = device_paths(mu, sigma, device_samples(mu, args.Z, mcBaseData, vb_mc), args.option, vb_mc)
 device_paths(mu, sigma, samples, option, vb_mc) = device_option_paths(mu, sigma, samples, option, vb_mc)
-device_paths(mu, sigma, samples, smile::FinancialMonteCarlo.AbstractSmile, vb_mc) = reduce(hcat, [device_option_paths(mu, sigma, samples, opt, vb_mc) for opt in FinancialMonteCarlo.smile_to_options(smile)])
+device_paths(mu, sigma, samples, smile::FinancialMonteCarlo.AbstractSmile, vb_mc) = reduce(hcat, map_strikes(strike -> device_option_paths(mu, sigma, samples, strike, vb_mc), smile))
 
 node_row(mu, x) = permutedims(copyto!(similar(mu, rng_type(mu), length(x)), collect(rng_type(mu), x)))
 device_samples(mu, Z, _, ::VibratoMonteCarloGaussLegendre) = (node_row(mu, Z[1]), node_row(mu, Z[2]))
-device_samples(mu, Z, _, ::VibratoMonteCarloAnalytic) = (node_row(mu, Z), (maximum(Z) - minimum(Z)) / (length(Z) - 1))
+device_samples(mu, Z, _, ::VibratoMonteCarloAnalytic) = (node_row(mu, Z), node_row(mu, trapezoid_weights(length(Z)) .* (step(Z) / 2)))
 device_samples(mu, Z, _, ::VibratoMonteCarloGaussHermite) = (node_row(mu, Z[1] .* sqrt2), node_row(mu, Z[2]))
 # Fresh inner samples for every path, as on the CPU, from the CURAND generator seeded by set_seed!, and antithetic pairs
 # with AntitheticMC.
@@ -217,14 +220,12 @@ function device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGauss
     z_min = -convert(eltype(v_sigma), GAUSS_LEGENDRE_Z)
     z_max = @. v_sigma - z_min
     cuts = map(p -> (@. clamp((p - v_mu) / v_sigma, z_min, z_max)), singular_points(option))
-    bounds = (z_min, cuts..., z_max)
-    return sum(1:(length(bounds)-1)) do i
-        za = bounds[i]
-        zb = bounds[i+1]
-        sum_nodes(@muladd @. w * (zb - za) / 2 * weighted_integrand_at((za + zb) / 2 + (zb - za) / 2 * x, mu, sigma, option))
-    end
+    # The bounds mix scalars (z_min, and z_max for a scalar sigma) and columns over the paths (the cuts): pieces taken by
+    # map over the front and the tail of the tuple, as on the host, are inferred; bounds[i] with i known at run time is not.
+    bounds = segment_bounds(z_min, cuts, z_max)
+    return sum(map((za, zb) -> sum_nodes(@muladd @. w * (zb - za) / 2 * weighted_integrand_at((za + zb) / 2 + (zb - za) / 2 * x, mu, sigma, option)), segment_starts(bounds), segment_ends(bounds)))
 end
-device_option_paths(mu, sigma, (z, dz), option, ::VibratoMonteCarloAnalytic) = sum_nodes(@. weighted_integrand_at(z, mu, sigma, option)) * dz
+device_option_paths(mu, sigma, (z, w), option, ::VibratoMonteCarloAnalytic) = sum_nodes(@. weighted_integrand_at(z, mu, sigma, option) * w)
 device_option_paths(mu, sigma, (x, w), option, ::VibratoMonteCarloGaussHermite) = sum_nodes(@. integrand_at(x, mu, sigma, option) * w) / sqrtπ
 function device_option_paths(mu, sigma, (Z, antithetic), option, ::VibratoMonteCarloStandard)
     f = antithetic ? (@. integrand_at_anti(Z, mu, sigma, option)) : (@. integrand_at(Z, mu, sigma, option))

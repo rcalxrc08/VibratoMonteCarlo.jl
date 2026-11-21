@@ -34,8 +34,8 @@ end
 """
     VibratoMonteCarloAnalytic(Npoints = 200, x_min = -7.0, x_max = 7.0)
 
-Inner integration by quadrature on a uniform grid of `Npoints` in `[x_min, x_max]`, in standard deviations of the log
-increment around its mean. The only inner integration of the FFT density (Lévy processes with `Vibrato` and `PureLRM`).
+Inner integration by the trapezoid rule on a uniform grid of `Npoints` in `[x_min, x_max]`, in standard deviations of
+the log increment around its mean. The only inner integration of the FFT density (Lévy processes with `Vibrato` and `PureLRM`).
 """
 struct VibratoMonteCarloAnalytic <: AbstractVibrato
     Npoints::Int

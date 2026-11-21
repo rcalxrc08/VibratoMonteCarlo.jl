@@ -45,10 +45,12 @@ All of this sits in `src/03_inner_integration/lrm.jl`:
 - With `VibratoMonteCarloStandard` the inner samples are drawn again for every outer path from
   `FinancialMonteCarlo.host_rng(mcBaseData)` (the `Z` from `init_lrm_vec` is only a buffer). Sharing them across paths
   turns their error into a bias that does not average out (deltas were 8-15% off).
-- any config × `VibratoMonteCarloAnalytic`: quadrature on a uniform grid `[x_min, x_max]` of `Npoints` (default 200 on
-  ±7), always in standard deviations of the log increment around its mean. On Gaussian paths that is the standard
-  normal variable. In `lrm_interface_aug!` (`lrm_aug.jl`: FFT density, non-Ito processes) the integral is a trapezoid
-  with `PatternVector` weights over the nodes of one path, evaluated with one call of the vectorized
+- any config × `VibratoMonteCarloAnalytic`: the trapezoid rule on a uniform grid `[x_min, x_max]` of `Npoints` (default
+  200 on ±7), always in standard deviations of the log increment around its mean, with the weights 1, 2, ..., 2, 1 of
+  `trapezoid_weights` (a `PatternVector`) times `step / 2`, the step read from the range (it was the rectangle rule, with
+  the step from two reductions, until #69). On Gaussian paths that is the standard normal variable. In
+  `lrm_interface_aug!` (`lrm_aug.jl`: FFT density, non-Ito processes) the integral is the same trapezoid over the nodes
+  of one path, evaluated with one call of the vectorized
   `FinancialFFT.density_values` and a broadcast of the integrand; the mean and std come from the FFT density
   (`FFTStepLaw`, built by `fft_step_law`). Outside the Chernoff range of the density its value is zero, floored at `eps`
   (`floor_density`).
@@ -63,10 +65,16 @@ All of this sits in `src/03_inner_integration/lrm.jl`:
 
 ## Smiles and inference
 
-Inner integration of a smile with an inner rule on fixed nodes (Gauss-Legendre, Analytic, Gauss-Hermite): one integral
-per option on the same nodes (`vibrato.jl`), not the integrand of the whole smile, which built its options and two
-vectors at every node (182 MB for 2000 paths, now 0.8 MB, 9 times faster); `VibratoMonteCarloStandard` keeps the whole
-smile, since it draws new samples at every call. Gauss-Legendre sums its pieces with `map` over
+A smile is integrated strike by strike on every path (`map_strikes`): each strike is a `SmileStrike{O}(K, isCall)`,
+whose payoff is FinancialMonteCarlo's `payout_strike`, the formula a smile shares with its single options, so no vector
+of options is built per path (`smile_to_options` is not used). Fixed-node rules (Gauss-Legendre, Analytic,
+Gauss-Hermite) integrate each strike on the same nodes (`vibrato.jl`, #42: the integrand of the whole smile built its
+options and two vectors at every node, 182 MB for 2000 paths); `VibratoMonteCarloStandard` draws its samples once per
+path and integrates each strike on them (`inner_samples!`, `inner_mean`), the FFT density path computes the density of
+the path once and sums each strike on it (`trapezoid_sum`). The sums take the integrand at each node without an array of
+its values. Allocations per path, 1000 paths, Float64 and hyper duals alike (#74): a single option 2 → 0, a smile of two
+with `Standard` 227-447 → 4, with the fixed-node rules 6-10 → 4, on the FFT density (VG) 293 → 46; prices unchanged to
+2e-15. Gauss-Legendre sums its pieces with `map` over
 `segment_starts`/`segment_ends` (a tuple for an option, a vector for a smile), not a filtered generator, which is not
 inferred: zero-length pieces contribute zero. Every pricer is inferred (`test/quality.jl`, with Aqua), on Julia 1.10
 too: there a generator whose elements build a closure is not inferred (see `references/american.md` for the bridge).

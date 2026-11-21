@@ -1,7 +1,7 @@
 module VibratoMonteCarlo
 # AD backends are supported through package extensions, see ext/. The stages, in order (contracts in src/0N_*/CONTEXT.md):
 # methods and inner integrations, outer simulation, inner integration of the last step, European pricers, American pricers.
-using FinancialMonteCarlo, Statistics, MuladdMacro, IrrationalConstants
+using FinancialMonteCarlo, Statistics, MuladdMacro, IrrationalConstants, PatternVectors
 using FastGaussQuadrature: gausshermite, gausslegendre
 include("01_methods/utils.jl")
 include("01_methods/methods.jl")

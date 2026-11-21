@@ -1,4 +1,4 @@
-using FinancialFFT, PatternVectors
+using FinancialFFT
 
 # The law of one step of the log price for the processes without a closed form density: the FFT density of FinancialFFT
 # (FFTDensityInverter), with the mean and the standard deviation of the log increment, values only, used to place the
@@ -33,13 +33,18 @@ function lrm_interface_aug!(law::FFTStepLaw, eu_opt, mc::VibratoMonteCarloAnalyt
     # pathwise derivatives. The density is zero outside its range: the floor keeps the logarithm finite there.
     dens = FinancialFFT.density_values(law.density, x .- log(St))
     density_val = floor_density.(dens, eps_value(first(dens)))
-    # Ref: the baseline (a vector for a smile) is not broadcast over; the option broadcasts as a scalar already
-    baseline = Ref(payout_f(centre, eu_opt))
-    f_vals = @. v_value(density_val) * integrand_lrm_base(x, log(density_val), eu_opt, baseline)
+    log_density = log.(density_val)
     # trapezoid: weights 1, 2, ..., 2, 1 times dx / 2
-    weights = PatternVector(mc.Npoints, PaddedFillPattern(Int8(1), Int8(2), Int8(1)))
-    return law.std * step(z) * sum(weights .* f_vals) / 2
+    return law.std * step(z) * trapezoid_sum(x, density_val, log_density, trapezoid_weights(mc.Npoints), centre, eu_opt) / 2
 end
+
+# The weighted sum of the integrand at the nodes, without an array of its values; a smile shares the density of the path
+# and is summed strike by strike (#74).
+function trapezoid_sum(x, density_val, log_density, weights, centre, option)
+    baseline = payout_f(centre, option)
+    return sum(i -> weights[i] * v_value(density_val[i]) * integrand_lrm_base(x[i], log_density[i], option, baseline), eachindex(x, density_val, log_density))
+end
+trapezoid_sum(x, density_val, log_density, weights, centre, smile::FinancialMonteCarlo.AbstractSmile) = map_strikes(strike -> trapezoid_sum(x, density_val, log_density, weights, centre, strike), smile)
 
 # The inner integrals of the paths S_end: one lrm_interface_aug! per path on the host, a vector (of vectors for a smile).
 aug_paths(law, option, vb_mc, S_end, mcBaseData) = map(St -> lrm_interface_aug!(law, option, vb_mc, St), S_end)
@@ -52,7 +57,7 @@ const AUG_BLOCK_NODES = 2^20
 function aug_paths(law::FFTStepLaw, option, mc::VibratoMonteCarloAnalytic, S_end::AbstractVector, ::CudaConfig)
     z = init_lrm_vec(mc, nothing, S_end)
     # trapezoid: weights 1, 2, ..., 2, 1 times dx / 2, with dx = std * step(z)
-    trapezoid = PatternVector(mc.Npoints, PaddedFillPattern(Int8(1), Int8(2), Int8(1))) .* (law.std * step(z) / 2)
+    trapezoid = trapezoid_weights(mc.Npoints) .* (law.std * step(z) / 2)
     z_row = node_row(S_end, z)
     w_row = node_row(S_end, trapezoid)
     block = max(1, div(AUG_BLOCK_NODES, mc.Npoints))
@@ -66,7 +71,7 @@ function aug_block(law::FFTStepLaw, option, z_row, w_row, St)
     return aug_columns(x, centre, dens, w_row, option)
 end
 aug_columns(x, centre, dens, w_row, option) = (density_eps = eps_value(zero(eltype(dens))); sum_nodes(@. aug_integrand(x, centre, dens, density_eps, option) * w_row))
-aug_columns(x, centre, dens, w_row, smile::FinancialMonteCarlo.AbstractSmile) = reduce(hcat, [aug_columns(x, centre, dens, w_row, opt) for opt in FinancialMonteCarlo.smile_to_options(smile)])
+aug_columns(x, centre, dens, w_row, smile::FinancialMonteCarlo.AbstractSmile) = reduce(hcat, map_strikes(strike -> aug_columns(x, centre, dens, w_row, strike), smile))
 # The density floored at eps (a float), in the type of the density: max(::Hyper, ::Float64) returns either argument
 # unconverted, so it is not inferred (#52), and a broadcast on the GPU needs a concrete type.
 floor_density(dens, density_eps) = ifelse(v_value(dens) < density_eps, zero(dens) + density_eps, dens)
