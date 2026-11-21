@@ -36,7 +36,8 @@ bs = BlackScholesProcess(sigma, Underlying(S0, d));
 @btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $EUData);
 @btime pricer($bs, $rfCurve, $mc, $EUData);
 
-eudatas = [EUData, EUData]
+# two strikes: a smile, the European methods take one payoff or a smile (#72)
+eudatas = FinancialMonteCarlo.BinaryEuropeanOptionSmile(T, [K, D], [true, true])
 @btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $eudatas);
 @btime pricer($bs, $rfCurve, $mc, $eudatas);
 vb_mc2 = VibratoMonteCarloStandard(Nsim2)
