@@ -26,3 +26,11 @@ The paths up to the last step, with the extra state a pricer conditions on.
 Paths and state on the device of the configuration. Checked by `test/regressions.jl` (alignment of the last jump,
 antithetic and Sobol on jumps and `G_T`), `test/levy.jl` (`log_gamma`, `subordinator_log_density`),
 `test/cuda/runtests.jl`.
+
+## Verify (Kaimon)
+
+Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs = BlackScholesProcess(0.2, Underlying(100.0, 0.01))`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
+
+| Check | Expect |
+|:--|:--|
+| `run_tests()` (regressions, levy, CUDA opt-in) | pass; the summary reports Julia 1.13 and `Manifest-v1.13.toml` |

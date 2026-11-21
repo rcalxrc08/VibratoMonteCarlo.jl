@@ -15,12 +15,12 @@ task needs.
 |:--|:--|:--|
 | 0 | this file | identity, map, rules that hold everywhere |
 | 1 | `CONTEXT.md` | which stage or folder a task belongs to, shared references |
-| 2 | `src/0N_*/CONTEXT.md`, `ext/`, `test/`, `docs/`, `etc/`, `bench/` | a contract per stage: inputs to read, process, outputs and tests |
+| 2 | `src/0N_*/CONTEXT.md`, `ext/`, `test/`, `docs/`, `etc/`, `bench/` | a contract per stage: inputs to read, process, outputs, runtime checks |
 | 3 | `references/*.md` | stable facts, decisions and measurements, loaded when a contract lists them |
 | 4 | `state/STATUS.md` | what is in flight: current focus, open issues by priority, known problems |
 
 Startup: read `state/STATUS.md`, then route the task through `CONTEXT.md`. Runtime truth comes from a Kaimon session
-for this project (`kaimon.toml` pins the Julia).
+for this project (`kaimon.toml` pins the Julia); each contract's Verify table lists the checks to run after a change.
 
 Map: `src/VibratoMonteCarlo.jl` includes the stages in order, `01_methods` → `02_simulation` → `03_inner_integration` →
 `04_european` → `05_american`; `ext/` holds one extension per AD backend; `test/` the suite (`test/cuda/` the opt-in GPU

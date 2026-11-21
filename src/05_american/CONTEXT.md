@@ -21,3 +21,11 @@
 
 `pricer(process, rfCurve, Vibrato(mc, vb_mc), am_opt)`. Checked by `test/american.jl` (PDE of the Bermudan, calls
 without dividends, all backends) and `test/cuda/runtests.jl`.
+
+## Verify (Kaimon)
+
+Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs = BlackScholesProcess(0.2, Underlying(100.0, 0.01))`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
+
+| Check | Expect |
+|:--|:--|
+| `run_tests()` (american: PDE of the Bermudan, calls without dividends, all backends) | pass |

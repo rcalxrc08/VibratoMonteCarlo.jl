@@ -24,3 +24,11 @@ an inner integration of the last step.
 
 Method values passed to `pricer(process, rfCurve, method, payoff)`. Checked by `test/quality.jl` (validation, modes,
 inference, Aqua) and `test/backends.jl` (no ambiguities in `pricer`).
+
+## Verify (Kaimon)
+
+Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs = BlackScholesProcess(0.2, Underlying(100.0, 0.01))`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
+
+| Check | Expect |
+|:--|:--|
+| `VibratoMonteCarloAnalytic(0)`, `VibratoMonteCarloAnalytic(100, 3.0, -3.0)` | `ArgumentError` from the constructor, before any pricing |

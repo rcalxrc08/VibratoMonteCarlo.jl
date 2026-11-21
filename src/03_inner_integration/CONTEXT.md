@@ -29,3 +29,12 @@ The vibrato step: the payoff integrated against the density of the last step, de
 `lrm_paths(mu, sigma, args, mcBaseData, vb_mc)` and `aug_paths(law, option, vb_mc, S_end, mcBaseData)`: one undiscounted
 value per path (a matrix for a smile). Checked by `test/gauss_legendre.jl`, `test/taylor.jl`, `test/regressions.jl`,
 `test/quality.jl` (inference), `test/cuda/runtests.jl`.
+
+## Verify (Kaimon)
+
+Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs = BlackScholesProcess(0.2, Underlying(100.0, 0.01))`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
+
+| Check | Expect |
+|:--|:--|
+| `@inferred pricer(bs, ZeroRate(0.01), m, BinaryEuropeanOption(1.0, 80.0))` | `Float64`, 0.8333 against `blsbin` 0.8367 (Monte Carlo error at 10 000 paths) |
+| `run_tests()` (gauss_legendre, taylor, regressions, quality) | pass |
