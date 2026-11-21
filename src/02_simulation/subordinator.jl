@@ -3,13 +3,15 @@ using FinancialMonteCarlo, Random, Distributions;
 # The subordinator G_T of VG and NIG, for VibratoSaltando and ConditionalSaltando: X_T given G_T is Gaussian.
 
 # Stirling series, after shifting the argument above 16 with Γ(x + 1) = x Γ(x). Only elementary functions, because
-# DualNumbers, HyperDualNumbers and TaylorSeries do not define loggamma.
+# DualNumbers, HyperDualNumbers and TaylorSeries do not define loggamma. The constants are in the floating point type of
+# x (rationals and `log2π` converted to it, #70): a Float32 argument stays Float32.
 @muladd function log_gamma(x)
+    T = float(typeof(v_value(x)))
     shift = max(0, ceil(Int, 16 - v_value(x)))
     x_s = x + shift
     inv_x2 = inv(x_s^2)
-    series = evalpoly(inv_x2, (1 / 12, -1 / 360, 1 / 1260, -1 / 1680, 1 / 1188, -691 / 360360, 1 / 156)) / x_s
-    return (x_s - 1 / 2) * log(x_s) - x_s + log2π / 2 + series - sum(k -> log(x + k), 0:(shift-1); init = zero(x))
+    series = evalpoly(inv_x2, T.((1 // 12, -1 // 360, 1 // 1260, -1 // 1680, 1 // 1188, -691 // 360360, 1 // 156))) / x_s
+    return (x_s - T(1 // 2)) * log(x_s) - x_s + T(log2π) / 2 + series - sum(k -> log(x + k), 0:(shift-1); init = zero(x))
 end
 
 # Log density of FinancialMonteCarlo.compute_subordinator_law(mcProcess, κ, t) at g. Distributions.logpdf would need

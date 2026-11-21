@@ -82,4 +82,13 @@ end
     @testset "$name" for (name, model, method) in cases
         @test pricer(model, rf32, method, opt32) isa Float32
     end
+    # the log density of G_T, which weights the derivatives over κ and T of VG and NIG (#70)
+    @testset "log_gamma and the subordinator log density" begin
+        @test VibratoMonteCarlo.log_gamma(0.5f0) isa Float32
+        @test VibratoMonteCarlo.log_gamma(0.5f0) ≈ log(Float32(π)) / 2
+        @test VibratoMonteCarlo.log_gamma(20.0f0) isa Float32
+        @testset "$(nameof(typeof(model)))" for model in (VarianceGammaProcess(0.2f0, -0.1f0, 0.2f0, und), NormalInverseGaussianProcess(0.2f0, -0.1f0, 0.2f0, und))
+            @test @inferred(VibratoMonteCarlo.subordinator_log_density(model, 0.8f0, 1.0f0, model.κ)) isa Float32
+        end
+    end
 end
