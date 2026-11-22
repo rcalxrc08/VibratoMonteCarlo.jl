@@ -12,7 +12,6 @@ integration allocations) is closed with the weights fix 698ddbd.
 
 | Item | Branch | Issue | Next step |
 |:--|:--|:--|:--|
-| Rate curves in the European methods; Heston Euler step | `vibrato-fixes` | #68 #61 | review, merge, push |
 | Device-only code split | `master` | #75 | list the device-only functions per stage, then move them with their contracts |
 
 ## Known issues
