@@ -54,3 +54,14 @@ the reference each entry points to.
   allocation counts are not a proxy for speed.
 - **Consequences:** hot-loop changes are timed before and after in fresh processes (`bench/CONTEXT.md`).
 - **Status:** active
+
+## D-007 (2026-11-22, #68) Rates and dividends through their integrals
+
+- **Decision:** every drift over an interval and every discount goes through `interval_integral`, `add_drift`,
+  `discount_factor` and `mean_rate` (`src/01_methods/utils.jl`), exact for numbers and FinancialMonteCarlo curves; with
+  numbers they are the constant-rate formulas (dispatch), so constant-rate prices do not change. Code that needs one
+  rate for every step (Heston's Euler scheme, the frozen laws of American options) refuses curves with `constant_rate`.
+- **Why:** FinancialMonteCarlo 0.9 rates and dividends can be curves; `r * T` and `exp(-r * T)` on a curve failed with a
+  `MethodError` in every European method.
+- **Consequences:** rule in `CLAUDE.md`; `references/conventions.md`; `test/rate_curves.jl`.
+- **Status:** active

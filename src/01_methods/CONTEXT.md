@@ -7,7 +7,7 @@ an inner integration of the last step.
 
 | Load | Why |
 |:--|:--|
-| `utils.jl` | `AbstractVibrato`, the inner integrations (`VibratoMonteCarloStandard`, `Analytic`, `GaussHermite`, `GaussLegendre`) and their `init_lrm_vec`, `rng_type`, `check_argument`/`check_domain`, `CudaConfig`, `to_host`/`on_device`/`normals!`, `path_mean`, `drift_correction`, `analytic_pricer` |
+| `utils.jl` | `AbstractVibrato`, the inner integrations (`VibratoMonteCarloStandard`, `Analytic`, `GaussHermite`, `GaussLegendre`) and their `init_lrm_vec`, `rng_type`, `check_argument`/`check_domain`, `CudaConfig`, `to_host`/`on_device`/`normals!`, `path_mean`, `drift_correction`, `analytic_pricer`; rates as numbers or curves (#68): `interval_integral`, `add_drift`, `discount_factor`, `mean_rate`, `drifted_brownian(!)`, `constant_rate` |
 | `methods.jl` | the method types, `EuropeanLike`, `check_mode`, `execution_mode`/`with_mode` |
 | `references/public_api.md` | exports, which method prices which payoff on which process |
 | `references/inner_integration.md` | what each inner integration does, before adding one |

@@ -51,11 +51,11 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     λ = mcProcess.λ
     # r - d - ψ(-i)
     drift_rn = (r - d) - drift_correction(mcProcess)
-    zero_drift = drift_rn * 0 * T
+    zero_drift = interval_integral(drift_rn, zero(T), T) * 0
     Nsim = mcBaseData.Nsim
     dt = T / mcBaseData.Nstep
     X = FinancialMonteCarlo.get_matrix_type(mcBaseData, mcProcess, typeof(zero_drift))
-    FinancialMonteCarlo.simulate!(X, BrownianMotion(σ, drift_rn), mcBaseData, T)
+    drifted_brownian!(X, σ, drift_rn, mcBaseData, T)
     # room for the expected number of jumps and 4 standard deviations, as FinancialMonteCarlo
     expected = Nsim * v_value(λ * T)
     jumps = FinancialMonteCarlo.JumpList{typeof(zero_drift)}(ceil(Int, expected + 4 * sqrt(expected)))

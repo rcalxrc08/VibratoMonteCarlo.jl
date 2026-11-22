@@ -16,7 +16,11 @@ _Rules for every change._ (Layer 3 reference: stable facts, loaded only when a s
 - Write `a * b + c` under `@muladd` (or `muladd`) in new code.
 - The code uses `@muladd` (MuladdMacro), `@views`, and broadcast-heavy `@.` style. Constants come from
   IrrationalConstants (`log2π`, `sqrt2`, `sqrtπ`).
-- Prices are discounted with `exp(-r * T)` at the end of each pricer.
+- Rates and dividends are numbers or FinancialMonteCarlo curves (#68): drifts over an interval go through
+  `interval_integral`/`add_drift`, discounts through `discount_factor`, the rates of a Black-Scholes step through
+  `mean_rate`, a Brownian motion with a curve drift through `drifted_brownian` (`src/01_methods/utils.jl`); with numbers
+  they are the constant-rate formulas. Code that needs one rate for every step refuses curves with `constant_rate`
+  (Heston's simulation, American options). Prices are discounted with `discount_factor(r, T)` at the end of each pricer.
 - Input validation (#58, 0.6.0): never `@assert`, which throws a generic `AssertionError` and may be disabled.
   `check_argument` (`ArgumentError`) for a misconfigured method, in its constructor, so it fails before any pricing (and
   before a FinancialCalibrator run, whose loss turns every `DomainError` into `Inf`); `check_domain` (`DomainError`) for

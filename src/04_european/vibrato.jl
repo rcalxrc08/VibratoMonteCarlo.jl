@@ -31,13 +31,13 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     drift_rn = (r - d) - drift_correction(mcProcess)
     dt = T / mcBaseData.Nstep
     step_vibrato = dt
-    X = FinancialMonteCarlo.simulate(BrownianMotion(σ, drift_rn), mcBaseData, T - step_vibrato)
-    mu_jump = @views @muladd @. X[:, end] + drift_rn * step_vibrato + log(S0)
+    X = drifted_brownian(σ, drift_rn, mcBaseData, T - step_vibrato)
+    mu_jump = @views @. add_drift(X[:, end] + log(S0), $(Ref(drift_rn)), T - step_vibrato, T)
     sigma_jump = σ * sqrt(step_vibrato)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * discount_factor(r, T)
     return result
 end
 
@@ -52,7 +52,9 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     S_jump = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T_jump)
     S_jump_T = @views S_jump[:, end]
     drift_rn = 0
-    result = mean(@. analytic_pricer(S_jump_T, eu_opt, r, T, T_jump, σ, d, drift_rn)) * exp(-r * T_jump)
+    # the step from T_jump to T is Black-Scholes with the mean rates of the step (#68)
+    r_step, d_step = mean_rate(r, T_jump, T), mean_rate(d, T_jump, T)
+    result = mean(@. analytic_pricer(S_jump_T, eu_opt, r_step, T, T_jump, σ, d_step, drift_rn)) * discount_factor(r, T_jump)
     return result
 end
 
@@ -69,12 +71,12 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     step_vibrato = dt
     S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
     drift_rn = r - d - drift_correction(mcProcess)
-    mu_jump = @views @muladd @. log(S[:, end]) + drift_rn * step_vibrato
+    mu_jump = @views @. add_drift(log(S[:, end]), $(Ref(drift_rn)), T - step_vibrato, T)
     sigma_jump = σ * sqrt(step_vibrato)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     #We pack the arguments that could be vectors, but that we don't want to broadcast into a utility struct.
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * discount_factor(r, T)
     return result
 end
 
@@ -87,14 +89,14 @@ function pricer(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve::Financial
     d = FinancialMonteCarlo.dividend(mcProcess)
     T = get_unique_maturity(eu_opt)
     dt = T / mcBaseData.Nstep
+    drift_rn = constant_rate(r, "Vibrato on Heston") - constant_rate(d, "Vibrato on Heston")
     (vol, S) = simulate_with_last_vol(mcProcess, rfCurve, mcBaseData, T - dt)
     # if vol is too low, the method does not work.
-    drift_rn = r - d
     mu_jump = @views @. log(S[:, end]) + (drift_rn - vol / 2) * dt
     sigma_jump = @. sqrt(dt * vol)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * discount_factor(r, T)
     return result
 end
 
@@ -110,7 +112,7 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T - step_vibrato)
     S_end = @views S[:, end]
     # on the device of the paths in CudaMode, the density and the integration too
-    law = fft_step_law(mcProcess, rfCurve, step_vibrato, mcBaseData.mode)
-    result = path_mean(aug_paths(law, eu_opt, vb_mc, S_end, mcBaseData)) * exp(-r * T)
+    law = fft_step_law(mcProcess, step_zero_rate(rfCurve, mcProcess, T - step_vibrato, T), step_vibrato, mcBaseData.mode)
+    result = path_mean(aug_paths(law, eu_opt, vb_mc, S_end, mcBaseData)) * discount_factor(r, T)
     return result
 end

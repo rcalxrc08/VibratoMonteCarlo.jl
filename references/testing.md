@@ -49,6 +49,9 @@ about 4 min on an MX150.
 - `examples.jl`: README.md is up to date with the examples (`etc/readme.jl` copies `examples/<name>.jl` between
   `<!-- BEGIN examples/<name>.jl -->` and `<!-- END ... -->`: GitHub cannot include a file, so after changing an example
   run `julia etc/readme.jl`), and `examples/hello_world.jl` runs and matches `blsprice`.
+- `rate_curves.jl` (#68): every European method with a rate curve and a dividend curve equals, on the same seed, the
+  constant rates with the same integrals at `T` (rtol 1e-8); Heston's Vibrato and the American methods throw
+  `ArgumentError` with curves.
 - `quality.jl`: Aqua (`Aqua.test_all`), `@inferred` on every pricer family, the execution mode of the methods
   (`execution_mode`, `with_mode`, batched modes refused), the input validation (`ArgumentError` from the
   inner-integration constructors, `DomainError` for `T <= 0` in the Heston simulations), and Float32 prices from Float32

@@ -17,7 +17,7 @@
 ## Process
 
 - A pricer: `set_seed!`, smile to the host, simulate (stage 02), integrate the last step (stage 03), mean over the
-  paths, discount with `exp(-r * T)`.
+  paths, discount with `discount_factor(r, T)` (`exp(-r * T)` for a number, the integral of a curve, #68).
 - Drifts from `drift_correction`, never by hand; closed forms from FinancialToolbox.
 - Every pricer must stay inferred (`test/quality.jl`).
 

@@ -32,6 +32,8 @@ Rules for every change (details in `references/conventions.md` and `references/a
 - Sample points and payoffs from values only (`v_value`); every derivative flows through the density weight `v_mod`.
 - Generic number types: arrays built from the type of the inputs, no Float64 constants on the pricing path; Float32 in,
   Float32 out (#45, #70).
+- Rates and dividends are numbers or curves: drifts and discounts through `interval_integral`/`add_drift`/
+  `discount_factor` (`src/01_methods/utils.jl`, #68), never `r * T` on a rate.
 - Every pricer calls `set_seed!` first and stays inferred; validation by `ArgumentError`/`DomainError`, never `@assert`.
 - Reuse the author's packages (FinancialMonteCarlo for payoffs, paths and laws; FinancialFFT for densities and drifts;
   FinancialToolbox's `blsprice`/`blsbin`; PatternVectors for quadrature weights) and established libraries;

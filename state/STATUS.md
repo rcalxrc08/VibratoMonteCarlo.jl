@@ -1,7 +1,7 @@
 # Status
 
 _What is in flight. Layer 4: volatile, rewritten freely; GitHub issues are the source of truth, this file is the index
-an agent reads first._ Updated: 2026-11-21
+an agent reads first._ Updated: 2026-11-22
 
 ## Current focus
 
@@ -12,6 +12,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 
 | Item | Branch | Issue | Next step |
 |:--|:--|:--|:--|
+| Rate curves in the European methods; Heston Euler step | `vibrato-fixes` | #68 #61 | review, merge, push |
 | Device-only code split | `master` | #75 | list the device-only functions per stage, then move them with their contracts |
 
 ## Known issues
@@ -19,7 +20,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 | Issue | Symptom | Workaround |
 |:--|:--|:--|
 | #67 | VibratoSaltando on VG/NIG and American options price Float32 models in Float64 | — |
-| #68 | Vibrato/PureLRM drift `r - d` assumes scalar rates | scalar rates only; unblocked: FinancialMonteCarlo#81 (lazy `r - d`, no arithmetic between curves) shipped in 0.9.0, so fix with `integral(r, T) - integral(d, T)` and a curve test |
+| — | Heston Vibrato and American methods refuse rate or dividend curves (`ArgumentError`, #68) | constant rates |
 | #54 | FFT density path: binaries converge only O(dx) | finer grid |
 | #34 | Kou `vibrato_saltando` misses the 1e-3 tolerance in `check/accuracy.jl` | — |
 | #28 | FFT vibrato cannot differentiate κ of VG and NIG | — |

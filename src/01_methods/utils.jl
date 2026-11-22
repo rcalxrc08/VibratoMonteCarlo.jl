@@ -122,6 +122,40 @@ path_mean(x::AbstractMatrix) = vec(to_host(mean(x; dims = 1)))
 # log S is r - d - drift_correction (σ² / 2 for Black-Scholes, ψ for VG and NIG, σ² / 2 + λ E[e^J - 1] with jumps).
 drift_correction(mcProcess) = FinancialFFT.characteristic_exponent_i(1, mcProcess)
 
+# Rates and dividends are numbers or FinancialMonteCarlo curves (a ZeroRateCurve, a dividend Curve, their difference
+# r - d) (#68): a price needs only integrals of them over intervals, exact for both. With numbers these are the
+# constant-rate formulas, so the prices of constant rates do not change.
+interval_integral(x::Number, t0, t1) = x * (t1 - t0)
+interval_integral(x, t0, t1) = FinancialMonteCarlo.integral(x, t1) - FinancialMonteCarlo.integral(x, t0)
+# log price plus the drift integral over [t0, t1] (fused for a number drift)
+@muladd add_drift(x, drift::Number, t0, t1) = x + drift * (t1 - t0)
+add_drift(x, drift, t0, t1) = x + interval_integral(drift, t0, t1)
+discount_factor(r::Number, t) = exp(-r * t)
+discount_factor(r, t) = exp(-FinancialMonteCarlo.integral(r, t))
+# The constant rate with the same integral over [t0, t1]: what blsprice and blsbin take for the step from t0 to t1.
+mean_rate(x::Number, _, _) = x
+mean_rate(x, t0, t1) = interval_integral(x, t0, t1) / (t1 - t0)
+# A Brownian motion σ W_t + ∫₀ᵗ drift on the grid of mcBaseData up to T, written in X: FinancialMonteCarlo's
+# BrownianMotion takes a number as drift; with a curve, the driftless motion plus the integral of the drift at the grid
+# times (on the device of X).
+drifted_brownian!(X, σ, drift::Number, mcBaseData, T) = FinancialMonteCarlo.simulate!(X, BrownianMotion(σ, drift), mcBaseData, T)
+function drifted_brownian!(X, σ, drift, mcBaseData, T)
+    FinancialMonteCarlo.simulate!(X, BrownianMotion(σ, zero(σ)), mcBaseData, T)
+    dt = T / mcBaseData.Nstep
+    X .+= transpose(on_device(mcBaseData, nothing, [FinancialMonteCarlo.integral(drift, (j - 1) * dt) for j = 1:(mcBaseData.Nstep+1)]))
+    return nothing
+end
+drifted_brownian(σ, drift::Number, mcBaseData, T) = FinancialMonteCarlo.simulate(BrownianMotion(σ, drift), mcBaseData, T)
+function drifted_brownian(σ, drift, mcBaseData, T)
+    X = FinancialMonteCarlo.simulate(BrownianMotion(σ, zero(σ)), mcBaseData, T)
+    dt = T / mcBaseData.Nstep
+    return X .+ transpose(on_device(mcBaseData, nothing, [FinancialMonteCarlo.integral(drift, (j - 1) * dt) for j = 1:(mcBaseData.Nstep+1)]))
+end
+# Paths that read only constant rates (Heston's own simulation, the frozen laws of American options) refuse curves
+# explicitly, rather than with a MethodError deep inside (#68).
+constant_rate(x::Number, _) = x
+constant_rate(x, what) = throw(ArgumentError("$what supports constant rates and dividends only, not curves (#68)"))
+
 function analytic_pricer(S_jump, eu_opt::EuropeanOption, r, T, T_jump, σ, d, drift_rn)
     blsprice(S_jump, eu_opt.K, r, T - T_jump, σ, d + drift_rn)
 end

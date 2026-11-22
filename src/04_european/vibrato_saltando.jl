@@ -12,11 +12,11 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
     (T_jump, X_jump) = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
     drift_rn = (r - d) - drift_correction(mcProcess)
-    mu_jump = @muladd @. X_jump + drift_rn * (T - T_jump)
+    mu_jump = @. add_drift(X_jump, $(Ref(drift_rn)), T_jump, T)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     args = LRMInterfaceArguments(Z, eu_opt)
     sigma_jump = @. σ * sqrt(T - T_jump)
-    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc)) * discount_factor(r, T)
 
     return result
 end
@@ -38,11 +38,11 @@ function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve:
     T = get_unique_maturity(eu_opt)
     (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
     drift_rn = r - d - drift_correction(mcProcess)
-    mu_jump = @muladd @. log(S0) + drift_rn * T + θ * G_T
+    mu_jump = @muladd @. $(add_drift(log(S0), drift_rn, zero(T), T)) + θ * G_T
     sigma_jump = @. σ * sqrt(G_T)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
     args = LRMInterfaceArguments(Z, eu_opt)
-    discount = exp(-r * T)
+    discount = discount_factor(r, T)
     result = subordinator_mean(lrm_paths(mu_jump, sigma_jump, args, mcBaseData, vb_mc) .* discount, weight)
     return result
 end
@@ -60,7 +60,8 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     (T_jump, S_jump) = VibratoMonteCarlo.simulate_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
     # The jump part of the drift correction, paid as a dividend yield by the diffusion after the last jump.
     drift_rn = drift_correction(mcProcess) - σ^2 / 2
-    result = mean(@. analytic_pricer(S_jump, eu_opt, r, T, T_jump, σ, d, drift_rn) * exp(-r * T_jump))
+    # the step from T_jump to T is Black-Scholes with the mean rates of the step, per path (#68)
+    result = mean(@. analytic_pricer(S_jump, eu_opt, mean_rate($(Ref(r)), T_jump, T), T, T_jump, σ, mean_rate($(Ref(d)), T_jump, T), drift_rn) * discount_factor($(Ref(r)), T_jump))
     return result
 end
 
@@ -79,6 +80,7 @@ function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve:
     (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
     sigma_T = @. σ * sqrt(G_T / T)
     drift_rn = @muladd @. ψ - (θ + σ^2 / 2) * G_T / T
-    result = subordinator_mean((@. analytic_pricer(S0, eu_opt, r, T, 0, sigma_T, d, drift_rn)), weight)
+    r_T, d_T = mean_rate(r, zero(T), T), mean_rate(d, zero(T), T)
+    result = subordinator_mean((@. analytic_pricer(S0, eu_opt, r_T, T, 0, sigma_T, d_T, drift_rn)), weight)
     return result
 end

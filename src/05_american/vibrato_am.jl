@@ -11,7 +11,9 @@ continuation_value(α, x) = evalpoly(x, (α[1], α[2], α[3]))
 function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
-    r = rfCurve.r
+    # one frozen law and one discount per step serve every step: constant rates only (#68)
+    r = constant_rate(rfCurve.r, "Vibrato on American options")
+    constant_rate(FinancialMonteCarlo.dividend(mcProcess), "Vibrato on American options")
     T = am_opt.T
     Nstep = mcBaseData.Nstep
     dt = T / Nstep
@@ -97,12 +99,13 @@ frozen_laws(::FinancialMonteCarlo.ItoProcess, rfCurve, mcBaseData, T) = throw(Ar
 function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
-    r = rfCurve.r
+    # the exercise regions and the bridge steps use one rate and one dividend for every step: constant rates only (#68)
+    r = constant_rate(rfCurve.r, "Vibrato on American options")
     T = am_opt.T
     Nstep = mcBaseData.Nstep
     dt = T / Nstep
     σ = mcProcess.σ
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = constant_rate(FinancialMonteCarlo.dividend(mcProcess), "Vibrato on American options")
     S0 = mcProcess.underlying.S0
     # Pass 1: the exercise regions, from Longstaff-Schwartz on independent paths with values only.
     value_process = BlackScholesProcess(v_value(σ), Underlying(v_value(S0), v_value(d)))

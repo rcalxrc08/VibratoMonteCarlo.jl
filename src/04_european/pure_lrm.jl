@@ -9,11 +9,11 @@ function pricer(mcProcess::FinancialMonteCarlo.ItoProcess, rfCurve::FinancialMon
     T = get_unique_maturity(eu_opt)
     drift_rn = r - d - drift_correction(mcProcess)
     # one point, on the device of the configuration: the integration of lrm_paths, as for the paths of Vibrato
-    mu = on_device(mcBaseData, mcProcess, [@muladd(log(mcProcess.underlying.S0) + drift_rn * T)])
+    mu = on_device(mcBaseData, mcProcess, [add_drift(log(mcProcess.underlying.S0), drift_rn, zero(T), T)])
     Z = init_lrm_vec(vb_mc, mcBaseData, mu)
     sigma_jump = σ * sqrt(T)
     args = LRMInterfaceArguments(Z, eu_opt)
-    result = path_mean(lrm_paths(mu, sigma_jump, args, mcBaseData, vb_mc)) * exp(-r * T)
+    result = path_mean(lrm_paths(mu, sigma_jump, args, mcBaseData, vb_mc)) * discount_factor(r, T)
     return result
 end
 
@@ -32,5 +32,5 @@ function pure_lrm_fft(mcProcess, rfCurve, method::PureLRM, eu_opt_)
     # one point, S0, on the device of the configuration: in CudaMode the density is computed and evaluated there
     law = fft_step_law(mcProcess, rfCurve, T, mcBaseData.mode)
     S0 = on_device(mcBaseData, mcProcess, [mcProcess.underlying.S0])
-    return path_mean(aug_paths(law, eu_opt, vb_mc, S0, mcBaseData)) * exp(-r * T)
+    return path_mean(aug_paths(law, eu_opt, vb_mc, S0, mcBaseData)) * discount_factor(r, T)
 end

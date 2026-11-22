@@ -19,6 +19,15 @@ function fft_step_law(f::FinancialFFT.FFTDensity)
 end
 # The density is computed in the mode of the configuration: on the GPU in CudaMode, where it stays.
 fft_step_law(mcProcess, rfCurve, T, mode = FinancialMonteCarlo.SerialMode()) = fft_step_law(FinancialFFT.density(mcProcess, rfCurve, FinancialMonteCarlo.with_mode(FFTDensityInverter(), mode), T))
+# The zero rate for the law of the step [t0, t1], which FinancialFFT computes from 0 to t1 - t0 with the model's dividend:
+# with curves, the constant rate whose drift over the step, net of the dividend from 0 to t1 - t0, is the drift r - d of
+# the step itself (#68); with numbers the rate as it is.
+step_zero_rate(rfCurve, mcProcess, t0, t1) = step_zero_rate(rfCurve.r, FinancialMonteCarlo.dividend(mcProcess), rfCurve, t0, t1)
+step_zero_rate(::Number, ::Number, rfCurve, _, _) = rfCurve
+function step_zero_rate(r, d, rfCurve, t0, t1)
+    Δ = t1 - t0
+    return ZeroRate((interval_integral(r - d, t0, t1) + interval_integral(d, zero(Δ), Δ)) / Δ)
+end
 # The same law with values only: the regressions of the American options see no derivative.
 value_law(f::FinancialFFT.FFTDensity) = fft_step_law(FinancialFFT.FFTDensity(v_value.(f.values), f.a, f.b, f.dx))
 

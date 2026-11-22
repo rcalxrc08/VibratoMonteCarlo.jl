@@ -29,7 +29,8 @@ Pkg.Registry.add("General")
 - **0.9** (VibratoMonteCarlo 0.6.1; compat `"0.7, 0.8, 0.9"` in the package, tests, `test/cuda`, docs and `bench`): no
   change of the code. Its antithetic jumps no longer draw a uniform for the type of their table (FinancialMonteCarlo#54),
   which shifts the stream: the antithetic Kou test of `regressions.jl` was retuned (`references/testing.md`). Its curves
-  are isbits and two curves only add or subtract (lazily); the drifts still assume scalar rates (#68).
+  are isbits and two curves only add or subtract (lazily); the European methods take them since #68 (integrals over
+  the steps, `references/conventions.md`).
 - **0.8** (#63, VibratoMonteCarlo 0.5.1; compat `"0.7, 0.8"`): no change of the code was needed, the whole suite passes
   on it with FinancialFFT 0.6.1 (the only FFT release accepting 0.8). Its changes (invalid inputs throw
   `DomainError`/`DimensionMismatch`/`ArgumentError` instead of `AssertionError`, `ShiftedLogNormalMixture` removed,

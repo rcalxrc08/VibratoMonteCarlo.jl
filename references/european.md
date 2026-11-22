@@ -4,7 +4,7 @@ _Stage 04 reference._ (Layer 3 reference: stable facts, loaded only when a stage
 
 Every pricer calls `FinancialMonteCarlo.set_seed!(mcBaseData)` first, takes a smile to the host
 (`to_mode(…, SerialMode())`), computes `path_mean(lrm_paths(…))` (or `aug_paths`, `subordinator_mean`) and discounts
-with `exp(-r * T)` at the end. Drifts come from `drift_correction` (`references/conventions.md`). Limits measured against
+with `discount_factor(r, T)` at the end. Drifts come from `drift_correction` (`references/conventions.md`). Limits measured against
 Lewis: `references/method_limits.md`.
 
 ## `src/04_european/vibrato.jl`: `pricer(process, rfCurve, Vibrato(mc, vb_mc), option)`
@@ -42,5 +42,10 @@ device vector.
 
 ## Rates
 
-FinancialMonteCarlo 0.9 curves are isbits and two curves only add or subtract (lazily); `r - d - drift_correction` in
-`pure_lrm.jl`, `vibrato.jl`, `vibrato_am.jl` still assumes scalar rates (#68).
+FinancialMonteCarlo 0.9 curves are isbits and two curves only add or subtract (lazily). Every European method takes a
+rate curve and a dividend curve (#68): the drift of the last step and the discount are integrals of the curves, the
+Conditional methods price the step with its mean rates, and the FFT density of the last step gets the constant rate
+whose drift over the step is the step's (`step_zero_rate`). On the same seed the prices equal those of the constant
+rates with the same integrals at `T` (`test/rate_curves.jl`, to 1e-8). Heston's Vibrato (its own Euler scheme) and the
+American methods (one frozen law and discount for every step) refuse curves with an `ArgumentError`. Before #68 every
+curve case failed with a `MethodError`.
