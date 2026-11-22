@@ -13,7 +13,7 @@ _What each of the author's packages provides, the registry, and what each Financ
   used for closed-form checks and `analytic_pricer`.
 - **PatternVectors.jl**: the trapezoid weights of the FFT density path (`lrm_aug.jl`).
 - External: FastGaussQuadrature (`gausshermite`, `gausslegendre`), Distributions, Sobol, StatsFuns, MuladdMacro,
-  IrrationalConstants. Interpolations and FFTW are no longer dependencies; ForwardDiff is a weak one
+  IrrationalConstants. Interpolations, FFTW and ChainRulesCore (nothing used it, #71) are no longer dependencies; ForwardDiff is a weak one
   (`references/autodiff.md`).
 
 Some dependencies come from a private registry. Add it before `Pkg.instantiate()`:
