@@ -29,16 +29,13 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     isDualZero_eps = isDualZeroVol + eps_value(isDualZeroVol)
     e1 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero)), Nsim)
     e2_rho = similar(e1)
-    e2 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero) + zero(ρ)), Nsim)
-    tmp_cost = sqrt(1 - ρ^2)
+    drift, sqrt_dt, ρ_orthogonal = (r - d) * dt, sqrt(dt), sqrt(1 - ρ^2)
     for j = 1:Nstep
-        v_m = @view V[:, j]
         normals!(mcBaseData, e1)
         normals!(mcBaseData, e2_rho)
-        @. e2 = e1 * ρ + e2_rho * tmp_cost
-        @views @. X[:, j+1] = X[:, j] + ((r - d) - v_m / 2) * dt + sqrt(v_m) * sqrt(dt) * e1
-        #when v_m = 0.0, the derivative becomes NaN
-        @views @. V[:, j+1] = max(v_m + κ_s * (θ_s - v_m) * dt + σ * sqrt(v_m) * sqrt(dt) * e2, isDualZero_eps)
+        # FinancialMonteCarlo's Euler step of the log price and of the variance (fused, with its AD rules, #61); the floor
+        # eps_value keeps the variance positive (when v = 0 the derivative of sqrt(v) is NaN)
+        heston_columns!(X, V, j, e1, e2_rho, drift, dt, sqrt_dt, κ_s, θ_s, σ, ρ, ρ_orthogonal, isDualZero_eps)
     end
     ## Conclude
     @. X = S0 * exp(X)
@@ -79,17 +76,14 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     Vm = @views V[(Nsim_2+1):end, :]
     e1 = similar(X, typeof(FinancialMonteCarlo.get_rng_type(isDualZero)), Nsim_2)
     e2_rho = similar(e1)
-    e2 = similar(e1)
+    drift, sqrt_dt, ρ_orthogonal = (r - d) * dt, sqrt(dt), sqrt(1 - ρ^2)
     for j = 1:Nstep
-        v_m_1 = @view Vp[:, j]
-        v_m_2 = @view Vm[:, j]
         normals!(mcBaseData, e1)
         normals!(mcBaseData, e2_rho)
-        @. e2 = e1 * ρ + e2_rho * sqrt(1 - ρ * ρ)
-        @views @. Xp[:, j+1] = Xp[:, j] + ((r - d) - v_m_1 / 2) * dt + sqrt(v_m_1) * sqrt(dt) * e1
-        @views @. Xm[:, j+1] = Xm[:, j] + ((r - d) - v_m_2 / 2) * dt - sqrt(v_m_2) * sqrt(dt) * e1
-        @views @. Vp[:, j+1] = max(v_m_1 + κ_s * (θ_s - v_m_1) * dt + σ * sqrt(v_m_1) * sqrt(dt) * e2, isDualZero_eps)
-        @views @. Vm[:, j+1] = max(v_m_2 + κ_s * (θ_s - v_m_2) * dt - σ * sqrt(v_m_2) * sqrt(dt) * e2, isDualZero_eps)
+        # the two halves from the same normals with opposite signs: FinancialMonteCarlo's kernels take the sign in the
+        # scale a = ±sqrt(dt) of the increments (#61)
+        heston_columns!(Xp, Vp, j, e1, e2_rho, drift, dt, sqrt_dt, κ_s, θ_s, σ, ρ, ρ_orthogonal, isDualZero_eps)
+        heston_columns!(Xm, Vm, j, e1, e2_rho, drift, dt, -sqrt_dt, κ_s, θ_s, σ, ρ, ρ_orthogonal, isDualZero_eps)
     end
     ## Conclude
     @. X = S0 * exp(X)
@@ -128,22 +122,29 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     seq = SobolSeq(2 * Nstep)
     skip(seq, Nstep * Nsim)
     z = Array{typeof(FinancialMonteCarlo.get_rng_type(isDualZero))}(undef, 2 * Nstep)
-    tmp_cost = sqrt(1 - ρ^2)
+    ρ_orthogonal = sqrt(1 - ρ^2)
+    drift = (r - d) * dt
     for i = 1:Nsim
         next!(seq, z)
         @. z = norminvcdf(z)
         for j = 1:Nstep
             v_m = V[i, j]
-            e1 = z[j]
-            e2 = @muladd e1 * ρ + z[Nstep+j] * tmp_cost
-            X[i, j+1] = @muladd X[i, j] + ((r - d) - v_m / 2) * dt + sqrt(v_m) * sqrt_dt * e1
-            #when v_m = 0.0, the derivative becomes NaN
-            V[i, j+1] = max(@muladd(v_m + κ_s * (θ_s - v_m) * dt + σ * sqrt(v_m) * sqrt_dt * e2), isDualZero_eps)
+            X[i, j+1] = FinancialMonteCarlo.heston_log_step(X[i, j], v_m, z[j], drift, dt, sqrt_dt)
+            V[i, j+1] = max(FinancialMonteCarlo.heston_variance_step(v_m, z[j], z[Nstep+j], dt, sqrt_dt, κ_s, θ_s, σ, ρ, ρ_orthogonal), isDualZero_eps)
         end
     end
     ## Conclude
     @. X = S0 * exp(X)
     return (V, X)
+end
+
+# One Euler step from column j to column j + 1 of the log prices X and of the variances V, with FinancialMonteCarlo's
+# scalar kernels (#61): a = ±sqrt(dt) scales the increments (the sign makes the antithetic half), the variance is floored.
+function heston_columns!(X, V, j, e1, e2_rho, drift, dt, a, κ, θ, σ, ρ, ρ_orthogonal, v_floor)
+    v = @view V[:, j]
+    @views @. X[:, j+1] = FinancialMonteCarlo.heston_log_step(X[:, j], v, e1, drift, dt, a)
+    @views @. V[:, j+1] = max(FinancialMonteCarlo.heston_variance_step(v, e1, e2_rho, dt, a, κ, θ, σ, ρ, ρ_orthogonal), v_floor)
+    return nothing
 end
 
 # Heston paths with the variance at T only.

@@ -36,7 +36,13 @@ Files of `src/02_simulation/`: custom simulators that return extra state the pri
 `simulate_with_vol` returns `(V, S)`, `V[:, j]` the variance at the time of `S[:, j]`. Serial, Antithetic and Sobol
 configs (`simulate_with_vol` has one method each: the generic `MonteCarloConfiguration` one matches any sampling, so a
 missing one silently falls back to the rng), `ZeroRate` only, `DomainError` for `T <= 0`. The same code runs on the GPU
-(`normals!`).
+(`normals!`). The Euler step is FinancialMonteCarlo's (`heston_log_step`, `heston_variance_step`, through
+`heston_columns!`; #61): fused, the antithetic half by the scale `a = -sqrt(dt)` of the increments, the variance floored
+at `eps_value` as before (FinancialMonteCarlo floors at `variance_floor`; the floor is outside the kernels, so each
+package keeps its own). Same prices as the hand-written step (same seed, to the last digits); measured 2026-11-22 (Julia
+1.13.4, Windows laptop; 20000 paths, 50 steps, three interleaved rounds, minimum): ForwardDiff gradient 217-221 ms →
+183-196 ms, price within noise (68-80 → 64-75 ms). The antithetic method kept `e2 = e1 ρ + e2_rho sqrt(1 - ρ²)` in a
+`Float64` buffer, so a derivative in `ρ` failed with a `MethodError`: fixed by the kernels (test in `vibrato_models.jl`).
 
 ## Subordinator of VG and NIG (`subordinator.jl`)
 

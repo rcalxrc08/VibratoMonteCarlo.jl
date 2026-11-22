@@ -87,3 +87,21 @@ end
     price(method, x) = pricer(heston(x[2], x[1], 0.01), rfCurve, method, EuropeanOption(1.0, 100.0))
     @test ForwardDiff.gradient(x -> price(PureLRM(mc, VibratoMonteCarloAnalytic(800, -10.0, 10.0)), x), [100.0, 0.2]) ≈ ForwardDiff.gradient(x -> price(lewis, x), [100.0, 0.2]) rtol = 1e-5
 end
+
+# The Heston Euler step is FinancialMonteCarlo's kernel (#61) in every sampling. The antithetic one used to keep the
+# correlated normal in a Float64 buffer, so a derivative in ρ failed with a MethodError. The gradient in every parameter
+# is finite in both samplings; the components Monte Carlo resolves at 20000 paths (delta, ∂σ₀, ∂θ) are against Lewis.
+# The ρ and vol of vol derivatives are too noisy at this size (ρ: 0.21 standard, 0.27 antithetic, 0.19 Lewis).
+@testset "Heston Vibrato: gradient in every parameter, standard and antithetic (#61)" begin
+    model(x) = HestonProcess(x[1], x[2], 0.0, x[3], x[4], x[5], Underlying(x[6], 0.01))
+    x0 = [0.3, 0.2, 1.5, -0.7, 0.04, 100.0]
+    opt = EuropeanOption(1.0, 100.0)
+    lewis = ForwardDiff.gradient(x -> pricer(model(x), ZeroRate(0.02), LewisMethod(100.0, 4001), opt), x0)
+    @testset "$(nameof(typeof(sampling)))" for sampling in (FinancialMonteCarlo.StandardMC(), FinancialMonteCarlo.AntitheticMC())
+        mc = MonteCarloConfiguration(20_000, 20; sampling = sampling, seed = 1)
+        g = ForwardDiff.gradient(x -> pricer(model(x), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloGaussLegendre(16)), opt), x0)
+        @test all(isfinite, g)
+        @test g[6] ≈ lewis[6] rtol = 1e-2
+        @test g[[2, 5]] ≈ lewis[[2, 5]] rtol = 5e-2
+    end
+end
