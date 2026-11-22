@@ -42,6 +42,15 @@ first (`references/dependencies.md`).
 - A FinancialMonteCarlo compat bump goes in the package, tests, `test/cuda`, docs and `bench` together
   (`references/dependencies.md`).
 
+## Releases
+
+Bump `version`, push to `master`, wait for CI, then register the commit on the private registry `localregistry`
+(`rcalxrc08/LocalRegistry`, not General) with `LocalRegistry.register`, from Julia 1.12, where LocalRegistry.jl is
+installed (`julia +1.12`), and push the registry. The private registry has no TagBot: tag `vX.Y.Z` on the registered
+commit and create the GitHub release by hand, on `origin` (GitHub; never the GitLab mirror `origin2`). FinancialFFT is
+in `localregistry` too; FinancialMonteCarlo and FinancialToolbox are in General. When FinancialFFT makes a breaking
+release, widen its compat here and in `docs/`, `test/` and `test/cuda/`.
+
 ## Untracked and experimental files: not package code
 
 `src/VibratoMonteCarlo.jl` does not include `src/deps/zygote_dependencies.jl` (untracked, marked `#wrong`), nor the
