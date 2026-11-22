@@ -179,6 +179,8 @@ function positive_intervals(f, lo, hi; npts = 4001)
     return intervals
 end
 
+# The Gauss-Legendre rule of the bridge and its bound in standard deviations, Float64 constants converted to the type of
+# the paths where they are used, so that a Float32 model is priced in Float32 (#67).
 const BRIDGE_NODES, BRIDGE_WEIGHTS = gausslegendre(48)
 const BRIDGE_Z = GAUSS_LEGENDRE_Z
 
@@ -187,7 +189,8 @@ const BRIDGE_Z = GAUSS_LEGENDRE_Z
 function lrm_segment(za, zb, m, s, h)
     c = (za + zb) / 2
     hw = (zb - za) / 2
-    return sum(BRIDGE_WEIGHTS[j] * hw * bridge_integrand(@muladd(c + hw * BRIDGE_NODES[j]), m, s, h) for j in eachindex(BRIDGE_NODES))
+    T = typeof(hw)
+    return sum(T(BRIDGE_WEIGHTS[j]) * hw * bridge_integrand(@muladd(c + hw * T(BRIDGE_NODES[j])), m, s, h) for j in eachindex(BRIDGE_NODES))
 end
 function bridge_integrand(z, m, s, h)
     x = @muladd v_value(m) + v_value(s) * z
@@ -209,22 +212,23 @@ segments_integral(segments, m, s, h) = sum(segment -> lrm_segment(segment[1], se
 function bridge_vibrato(W, m, s, region, am_opt, discount)
     mv = v_value(m)
     sv = v_value(s)
+    Z = convert(typeof(mv), BRIDGE_Z)
     exercise = Tuple{typeof(mv), typeof(mv)}[]
     for (lo, hi) in region
-        a = max((lo - mv) / sv, -BRIDGE_Z)
-        b = min((hi - mv) / sv, BRIDGE_Z)
+        a = max((lo - mv) / sv, -Z)
+        b = min((hi - mv) / sv, Z)
         a < b && push!(exercise, (a, b))
     end
     # All the bridge mass in the continuation region.
     isempty(exercise) && return W
     payoff_integral = segments_integral(exercise, m, s, PayoffAt(am_opt))
     continuation = Tuple{typeof(mv), typeof(mv)}[]
-    a = -BRIDGE_Z
+    a = -Z
     for (lo, hi) in exercise
         lo > a && push!(continuation, (a, lo))
         a = hi
     end
-    a < BRIDGE_Z && push!(continuation, (a, BRIDGE_Z))
+    a < Z && push!(continuation, (a, Z))
     stay = isempty(continuation) ? zero(payoff_integral) : segments_integral(continuation, m, s, UnitPayoff())
     return @muladd discount * payoff_integral + W * stay
 end
@@ -240,14 +244,15 @@ function bridge_step(W, m, s, region, am_opt, discount, mcBaseData::CudaConfig)
     w_row = node_row(m, BRIDGE_WEIGHTS)
     mv = v_value.(m)
     sv = v_value(s)
-    cut(y) = @. clamp((y - mv) / sv, -BRIDGE_Z, BRIDGE_Z)
+    Z = convert(eltype(mv), BRIDGE_Z)
+    cut(y) = @. clamp((y - mv) / sv, -Z, Z)
     starts = [cut(lo) for (lo, _) in region]
     ends = [cut(hi) for (_, hi) in region]
     segment(za, zb, h) = device_bridge_segment(za, zb, m, s, h, x_row, w_row)
     payoff_integral = sum(segment(za, zb, PayoffAt(am_opt)) for (za, zb) in zip(starts, ends))
     # the continuation region: the gaps [-Z, a_1], [b_1, a_2], ..., [b_n, Z]
-    lower = fill!(similar(mv), -BRIDGE_Z)
-    upper = fill!(similar(mv), BRIDGE_Z)
+    lower = fill!(similar(mv), -Z)
+    upper = fill!(similar(mv), Z)
     stay = sum(segment(za, zb, UnitPayoff()) for (za, zb) in zip([[lower]; ends], [starts; [upper]]))
     # a path whose bridge mass is all in the continuation region keeps W, as in bridge_vibrato
     exercised = reduce((e, (za, zb)) -> e .| (za .< zb), zip(starts, ends); init = false)

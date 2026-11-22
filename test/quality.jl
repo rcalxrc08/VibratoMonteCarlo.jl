@@ -82,6 +82,10 @@ end
     @testset "$name" for (name, model, method) in cases
         @test pricer(model, rf32, method, opt32) isa Float32
     end
+    # American options: the bridge bounds and nodes in the type of the paths (#67)
+    @testset "American, $name" for (name, model, method) in (("Black Scholes", bs, Vibrato(mc, VibratoMonteCarloGaussLegendre())), ("VG, FFT density", VarianceGammaProcess(0.2f0, -0.1f0, 0.2f0, und), Vibrato(mc, VibratoMonteCarloAnalytic())))
+        @test pricer(model, rf32, method, AmericanOption(1.0f0, 105.0f0, false)) isa Float32
+    end
     # the log density of G_T, which weights the derivatives over κ and T of VG and NIG (#70)
     @testset "log_gamma and the subordinator log density" begin
         @test VibratoMonteCarlo.log_gamma(0.5f0) isa Float32

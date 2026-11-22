@@ -18,7 +18,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 
 | Issue | Symptom | Workaround |
 |:--|:--|:--|
-| #67 | VibratoSaltando on VG/NIG and American options price Float32 models in Float64 | — |
+| #67 | VibratoSaltando on VG/NIG prices Float32 models in Float64 (the American part is fixed) | — |
 | — | Heston Vibrato and American methods refuse rate or dividend curves (`ArgumentError`, #68) | constant rates |
 | #54 | FFT density path: binaries converge only O(dx) | finer grid |
 | #34 | Kou `vibrato_saltando` misses the 1e-3 tolerance in `check/accuracy.jl` | — |
@@ -26,7 +26,7 @@ integration allocations) is closed with the weights fix 698ddbd.
 
 ## Technical debt and enhancements
 
-- #57 American bisection → `FinancialFFT.brent_root`; #44 reuse FinancialMonteCarlo's jumps from uniforms.
+- #44 reuse FinancialMonteCarlo's jumps from uniforms.
 - #53 GPU: antithetic G_T of VG/NIG drawn on the host; #59 exact Heston last step; #60 Brownian bridge for barriers.
 - #33 generic `ItoProcess` methods; #32 λ and T derivatives for Kou/Merton; #38 docs: dual spectral theorem.
 
