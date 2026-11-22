@@ -18,7 +18,6 @@ integration allocations) is closed with the weights fix 698ddbd.
 
 | Issue | Symptom | Workaround |
 |:--|:--|:--|
-| #70 | `log_gamma` promotes Float32 to Float64 | — |
 | #67 | VibratoSaltando on VG/NIG and American options price Float32 models in Float64 | — |
 | #68 | Vibrato/PureLRM drift `r - d` assumes scalar rates | scalar rates only; unblocked: FinancialMonteCarlo#81 (lazy `r - d`, no arithmetic between curves) shipped in 0.9.0, so fix with `integral(r, T) - integral(d, T)` and a curve test |
 | #54 | FFT density path: binaries converge only O(dx) | finer grid |
