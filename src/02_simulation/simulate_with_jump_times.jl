@@ -64,7 +64,7 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     # the diffusion at the grid point before the step of the last jump, X[i, last_step[i] - 1], gathered by linear index
     grid_point = on_device(mcBaseData, mcProcess, @. (1:Nsim) + Nsim * (last_step - 2))
     zero_time = 0 * λ
-    T_jumps = on_device(mcBaseData, mcProcess, @. zero_time + (last_step - 2) * dt)
+    T_jumps = on_device(mcBaseData, mcProcess, @muladd @. zero_time + (last_step - 2) * dt)
     X_f = @. log(mcProcess.underlying.S0) + $(X[grid_point]) + $(on_device(mcBaseData, mcProcess, jump_sum))
     return T_jumps, X_f
 end
