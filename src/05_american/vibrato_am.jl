@@ -154,18 +154,17 @@ function exercise_regions(S, am_opt, df, scale, width)
     return regions
 end
 
-# Intervals where f > 0 on a grid of [lo, hi], with the ends refined by bisection; intervals touching lo or hi are unbounded.
+# Intervals where f > 0 on a grid of [lo, hi], with the ends refined by FinancialFFT's bracketed Brent root finder from
+# the values already known at the grid points (#57; it never evaluates f outside the bracket and falls back to bisection
+# where interpolation does not shrink it, so the jump of f where the payoff vanishes is found as by bisection); intervals
+# touching lo or hi are unbounded, ±Inf in the type of the grid (#67).
 function positive_intervals(f, lo, hi; npts = 4001)
     xs = range(lo, hi, length = npts)
-    inside = f.(xs) .> 0
-    function bisect(a, b)
-        for _ = 1:80
-            m = (a + b) / 2
-            (f(m) > 0) == (f(a) > 0) ? (a = m) : (b = m)
-        end
-        return (a + b) / 2
-    end
-    intervals = Tuple{eltype(xs), eltype(xs)}[]
+    fx = f.(xs)
+    inside = fx .> 0
+    T = eltype(xs)
+    edge(i) = FinancialFFT.brent_root(f, xs[i], xs[i+1], fx[i], fx[i+1], zero(T))
+    intervals = Tuple{T, T}[]
     j = 1
     while j <= npts
         if inside[j]
@@ -173,7 +172,7 @@ function positive_intervals(f, lo, hi; npts = 4001)
             while j < npts && inside[j+1]
                 j += 1
             end
-            push!(intervals, (first_in == 1 ? -Inf : bisect(xs[first_in-1], xs[first_in]), j == npts ? Inf : bisect(xs[j], xs[j+1])))
+            push!(intervals, (first_in == 1 ? typemin(T) : edge(first_in - 1), j == npts ? typemax(T) : edge(j)))
         end
         j += 1
     end
