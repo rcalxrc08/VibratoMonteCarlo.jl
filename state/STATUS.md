@@ -1,12 +1,15 @@
 # Status
 
 _What is in flight. Layer 4: volatile, rewritten freely; GitHub issues are the source of truth, this file is the index
-an agent reads first._ Updated: 2026-11-22
+an agent reads first._ Updated: 2026-11-23
 
 ## Current focus
 
 Separate the device-only code from the host code: files, names, contracts (#75), now that #74 (Standard inner
 integration allocations) is closed with the weights fix 698ddbd.
+
+Last release: 0.6.2 (2026-11-23): rate and dividend curves in every European method (#68), muladd (#62), log_gamma
+in Float32 (#70), ChainRulesCore dropped (#71), FinancialFFT 0.7, American pricer in the float type of the model.
 
 ## Active work
 

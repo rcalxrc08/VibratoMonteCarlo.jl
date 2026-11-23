@@ -1,6 +1,6 @@
 name = "VibratoMonteCarlo"
 uuid = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Nicola <nicola.scaramuzzino@yandex.com> and contributors"]
 
 [deps]
