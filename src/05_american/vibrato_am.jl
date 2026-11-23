@@ -189,8 +189,9 @@ const BRIDGE_Z = GAUSS_LEGENDRE_Z
 function lrm_segment(za, zb, m, s, h)
     c = (za + zb) / 2
     hw = (zb - za) / 2
-    T = typeof(hw)
-    return sum(T(BRIDGE_WEIGHTS[j]) * hw * bridge_integrand(@muladd(c + hw * T(BRIDGE_NODES[j])), m, s, h) for j in eachindex(BRIDGE_NODES))
+    # oftype, not a type T = typeof(hw) captured by the generator: a captured type is a DataType field of the closure,
+    # and the sum is not inferred on Julia 1.10
+    return sum(oftype(hw, BRIDGE_WEIGHTS[j]) * hw * bridge_integrand(@muladd(c + hw * oftype(hw, BRIDGE_NODES[j])), m, s, h) for j in eachindex(BRIDGE_NODES))
 end
 function bridge_integrand(z, m, s, h)
     x = @muladd v_value(m) + v_value(s) * z
