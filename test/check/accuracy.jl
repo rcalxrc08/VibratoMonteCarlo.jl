@@ -17,13 +17,7 @@
     bump_S0(x) = (kou(σ, x, d; λ = 50.0), ZeroRate(r))
     bump_r(x) = (kou(σ, S0, d; λ = 50.0), ZeroRate(x))
 
-    cases = [
-        (name = "PureLRM, European, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false),
-        (name = "PureLRM, Binary, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = BinaryEuropeanOption(T, K), abs_derivatives = true),
-        (name = "PureLRM, European, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = EuropeanOption(T, K), abs_derivatives = false),
-        (name = "PureLRM, Binary, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = BinaryEuropeanOption(T, K), abs_derivatives = false),
-        (name = "vibrato saltando, European, S0", metric = saltando, mc = mc_vibrato, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false),
-    ]
+    cases = [(name = "PureLRM, European, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false), (name = "PureLRM, Binary, S0", metric = lrm, mc = mc_lrm, inputs = bump_S0, x0 = S0, opt = BinaryEuropeanOption(T, K), abs_derivatives = true), (name = "PureLRM, European, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = EuropeanOption(T, K), abs_derivatives = false), (name = "PureLRM, Binary, r", metric = lrm, mc = mc_lrm, inputs = bump_r, x0 = r, opt = BinaryEuropeanOption(T, K), abs_derivatives = false), (name = "vibrato saltando, European, S0", metric = saltando, mc = mc_vibrato, inputs = bump_S0, x0 = S0, opt = EuropeanOption(T, K), abs_derivatives = false)]
 
     @testset "$(c.name)" for c in cases
         ref = pricer(c.inputs(hyper(c.x0, 1.0, 1.0, 0.0))..., lewis, c.opt)

@@ -1,6 +1,6 @@
 name = "VibratoMonteCarlo"
 uuid = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["Nicola <nicola.scaramuzzino@yandex.com> and contributors"]
 
 [deps]
@@ -26,6 +26,10 @@ Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 
+[sources]
+FinancialFFT = {path = "C:\\Users\\Nicola\\.julia\\dev\\FinancialFFT"}
+FinancialMonteCarlo = {path = "C:\\Users\\Nicola\\.julia\\dev\\FinancialMonteCarlo"}
+
 [extensions]
 VibratoMonteCarloDualNumbersExt = "DualNumbers"
 VibratoMonteCarloForwardDiffExt = "ForwardDiff"
@@ -38,8 +42,8 @@ VibratoMonteCarloTaylorSeriesExt = "TaylorSeries"
 Distributions = "0.25"
 DualNumbers = "0.5, 0.6"
 FastGaussQuadrature = "0.4, 0.5, 1"
-FinancialFFT = "0.6, 0.7"
-FinancialMonteCarlo = "0.7, 0.8, 0.9"
+FinancialFFT = "0.8"
+FinancialMonteCarlo = "0.10"
 FinancialToolbox = "0.8"
 ForwardDiff = "0.10, 1"
 HyperDualNumbers = "2, 3, 4"

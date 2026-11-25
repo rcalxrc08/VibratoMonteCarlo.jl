@@ -8,6 +8,7 @@
     K = 105.0
     T = 1.0
     d = 0.0
+    und = Underlying(S0, d)
     mc = MonteCarloConfiguration(100_000, 30; sampling = FinancialMonteCarlo.AntitheticMC())
     vb_mc = VibratoMonteCarloAnalytic(100, -5.0, 5.0)
     rfCurve = ZeroRate(r)
@@ -17,12 +18,12 @@
 
     @testset "Merton, vibrato saltando" begin
         model = merton(σ, S0, d)
-        res = pricer(model, rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
-        test_close(res, pricer(model, rfCurve, mc, eu_opt); rtol = 2e-2)
+        res = pricer(model..., rfCurve, VibratoSaltando(mc, vb_mc), eu_opt)
+        test_close(res, pricer(model..., rfCurve, mc, eu_opt); rtol = 2e-2)
     end
 
     @testset "Black Scholes, vibrato" begin
-        res = pricer(BlackScholesProcess(σ, Underlying(S0, d)), rfCurve, Vibrato(mc, vb_mc), eu_opt)
+        res = pricer(BlackScholesProcess(σ), und, rfCurve, Vibrato(mc, vb_mc), eu_opt)
         test_close(res, blsprice(S0, K, r, T, σ, d); rtol = 2e-2)
     end
 end

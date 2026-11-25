@@ -8,6 +8,7 @@ r = 0.02;
 # r = hyper(0.02, 1.0, 1.0, 0.0);
 T = 1.0;
 d = 0.01;
+und = Underlying(S0, d);
 D = 90.0;
 
 Nsim = 10_000;
@@ -27,18 +28,18 @@ mc1 = MonteCarloConfiguration(Nsim, Nstep; sampling = FinancialMonteCarlo.Antith
 rfCurve = ZeroRate(r);
 
 EUData = BinaryEuropeanOption(T, K)
-Model = KouProcess(sigma, lam, p, lamp, lamm, Underlying(S0, d));
+Model = KouProcess(sigma, lam, p, lamp, lamm);
 vb_mc = VibratoMonteCarloAnalytic(Nsim2, -5.0, 5.0)
-@btime pricer($Model, $rfCurve, VibratoSaltando($mc, $vb_mc), $EUData);
-@btime pricer($Model, $rfCurve, $mc, $EUData);
+@btime pricer($Model, und, $rfCurve, VibratoSaltando($mc, $vb_mc), $EUData);
+@btime pricer($Model, und, $rfCurve, $mc, $EUData);
 
-bs = BlackScholesProcess(sigma, Underlying(S0, d));
-@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $EUData);
-@btime pricer($bs, $rfCurve, $mc, $EUData);
+bs = BlackScholesProcess(sigma);
+@btime pricer($bs, und, $rfCurve, Vibrato($mc, $vb_mc), $EUData);
+@btime pricer($bs, und, $rfCurve, $mc, $EUData);
 
 # two strikes: a smile, the European methods take one payoff or a smile (#72)
 eudatas = FinancialMonteCarlo.BinaryEuropeanOptionSmile(T, [K, D], [true, true])
-@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc), $eudatas);
-@btime pricer($bs, $rfCurve, $mc, $eudatas);
+@btime pricer($bs, und, $rfCurve, Vibrato($mc, $vb_mc), $eudatas);
+@btime pricer($bs, und, $rfCurve, $mc, $eudatas);
 vb_mc2 = VibratoMonteCarloStandard(Nsim2)
-@btime pricer($bs, $rfCurve, Vibrato($mc, $vb_mc2), $eudatas);
+@btime pricer($bs, und, $rfCurve, Vibrato($mc, $vb_mc2), $eudatas);

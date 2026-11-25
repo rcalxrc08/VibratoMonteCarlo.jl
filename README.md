@@ -23,7 +23,7 @@ It currently contains the following capabilities:
     - Binary European Options
     - Smiles of European and Binary European Options (one maturity, many strikes)
     - American Options (exercise at the time steps, Longstaff-Schwartz policy)
-- Support for the following pricing methods, passed to FinancialMonteCarlo's `pricer(model, zero_rate, method, payoff)` (as FinancialFFT's `LewisMethod`):
+- Support for the following pricing methods, passed to FinancialMonteCarlo's `pricer(model, underlying, zero_rate, method, payoff)` (as FinancialFFT's `LewisMethod`):
     - `PureLRM(mc, vb_mc)`: likelihood ratio method on the density at maturity (Gaussian or from the FFT).
     - `Vibrato(mc, vb_mc)`: vibrato montecarlo method, for Black Scholes, Heston and any Levy process (FFT density of the last step).
     - `VibratoSaltando(mc, vb_mc)`: vibrato conditioned on the last jump time (Kou, Merton) or on the subordinator (Variance Gamma, Normal Inverse Gaussian, with derivatives over `κ` and `T` too); exact for any number of steps.
@@ -82,10 +82,10 @@ underlying = Underlying(S0, d); #Underlying relative data
 #Define The Option
 EU_payoff = EuropeanOption(T, K)
 #Define the Model
-Model = BlackScholesProcess(σ, underlying);
+Model = BlackScholesProcess(σ);
 
 #Price and sensitivity
-@show EuPrice = pricer(Model, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);
+@show EuPrice = pricer(Model, underlying, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);
 ```
 <!-- END examples/hello_world.jl -->
 

@@ -3,7 +3,7 @@
 VibratoMonteCarlo.jl computes option prices **and sensitivities of any order** with Monte Carlo methods that stay smooth
 (C^∞) under automatic differentiation: AD numbers (DualNumbers, HyperDualNumbers, ForwardDiff, ReverseDiff,
 TaylorSeries) go in as model or market inputs and the derivatives come out of the price; Mooncake differentiates the
-plain `Float64` call. The methods plug into FinancialMonteCarlo's `pricer(model, zero_rate, method, payoff)`, as
+plain `Float64` call. The methods plug into FinancialMonteCarlo's `pricer(model, underlying, zero_rate, method, payoff)`, as
 FinancialFFT's `LewisMethod` does; paths come from FinancialMonteCarlo, densities from FinancialFFT, closed forms from
 FinancialToolbox (`references/dependencies.md`, with the private registry to add before `Pkg.instantiate()`). Goals, success criteria
 and non-goals: `references/mission.md`; why things are the way they are: `references/decisions.md`.

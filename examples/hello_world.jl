@@ -24,7 +24,7 @@ underlying = Underlying(S0, d); #Underlying relative data
 #Define The Option
 EU_payoff = EuropeanOption(T, K)
 #Define the Model
-Model = BlackScholesProcess(σ, underlying);
+Model = BlackScholesProcess(σ);
 
 #Price and sensitivity
-@show EuPrice = pricer(Model, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);
+@show EuPrice = pricer(Model, underlying, zeroRate, PureLRM(mc, VibratoMonteCarlo.VibratoMonteCarloAnalytic(20000, -9.0, 19.0)), EU_payoff);

@@ -5,10 +5,10 @@ using DualNumbers, HyperDualNumbers, ForwardDiff, TaylorSeries, FastGaussQuadrat
 const TEST_UTILS_LOADED = true
 
 # Model parameters shared by all tests, only the differentiated inputs vary.
-kou(σ, S0, d; λ = 5.0) = KouProcess(σ, λ, 0.3, 30.0, 20.0, Underlying(S0, d))
-merton(σ, S0, d) = MertonProcess(σ, 5.0, 0.03, 0.02, Underlying(S0, d))
-heston(σ, S0, d) = HestonProcess(σ, 0.2, 0.0, 0.2, 0.2, 0.2, Underlying(S0, d))
-variance_gamma(σ, S0, d) = VarianceGammaProcess(σ, 0.1, 0.01, Underlying(S0, d))
+kou(σ, S0, d; λ = 5.0) = (KouProcess(σ, λ, 0.3, 30.0, 20.0), Underlying(S0, d))
+merton(σ, S0, d) = (MertonProcess(σ, 5.0, 0.03, 0.02), Underlying(S0, d))
+heston(σ, S0, d) = (HestonProcess(σ, 0.2, 0.0, 0.2, 0.2, 0.2), Underlying(S0, d))
+variance_gamma(σ, S0, d) = (VarianceGammaProcess(σ, 0.1, 0.01), Underlying(S0, d))
 
 rel_err(x, ref) = abs(x - ref) / abs(ref)
 

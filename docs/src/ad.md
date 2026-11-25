@@ -35,7 +35,7 @@ ForwardDiff covers nested duals, so `ForwardDiff.hessian` gives the second deriv
 using VibratoMonteCarlo, FinancialMonteCarlo, ForwardDiff
 
 mc = MonteCarloConfiguration(20_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
-price(x) = pricer(BlackScholesProcess(x[2], Underlying(x[1], 0.0)), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloGaussLegendre()), BinaryEuropeanOption(1.0, 100.0))
+price(x) = pricer(BlackScholesProcess(x[2]), Underlying(x[1], 0.0), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloGaussLegendre()), BinaryEuropeanOption(1.0, 100.0))
 ForwardDiff.hessian(price, [100.0, 0.2])
 ```
 
@@ -45,7 +45,7 @@ TaylorSeries gives every derivative up to an order in one evaluation, `Taylor1` 
 using TaylorSeries
 
 S0 = Taylor1([100.0, 1.0], 4)   # S0 + t, up to t^4
-p = pricer(BlackScholesProcess(0.2, Underlying(S0, 0.0)), ZeroRate(0.02), PureLRM(mc, VibratoMonteCarloGaussLegendre()), EuropeanOption(1.0, 100.0))
+p = pricer(BlackScholesProcess(0.2), Underlying(S0, 0.0), ZeroRate(0.02), PureLRM(mc, VibratoMonteCarloGaussLegendre()), EuropeanOption(1.0, 100.0))
 [factorial(k) * p[k] for k = 0:4]   # value, delta, gamma, speed, fourth derivative
 ```
 
@@ -70,7 +70,7 @@ the last step on the GPU:
 ```julia
 using CUDA
 mc = MonteCarloConfiguration(100_000, 10; sampling = FinancialMonteCarlo.StandardMC(), mode = FinancialMonteCarlo.CudaMode())
-pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option)
+pricer(model, underlying, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option)
 ```
 
 - On the device: the paths of FinancialMonteCarlo.jl, the variance of Heston, the subordinator ``G_T`` of VG and NIG with

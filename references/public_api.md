@@ -11,7 +11,7 @@ analytic-pricer baseline, Black–Scholes only) and `VibratoMonteCarlo.Condition
 
 ## Methods
 
-The package plugs into FinancialMonteCarlo's interface, `pricer(mcProcess, rfCurve, method, payoff)`, as FinancialFFT's
+The package plugs into FinancialMonteCarlo's interface, `pricer(mcProcess, underlying, rfCurve, method, payoff)` (since 0.7, FinancialMonteCarlo 0.10), as FinancialFFT's
 `LewisMethod` does: each estimator is a method type in `src/01_methods/methods.jl`, subtype of
 `FinancialMonteCarlo.AbstractMethod` (through `AbstractVibratoMethod`), holding the `MonteCarloConfiguration` (`mc`) and,
 where there is one, the inner integration (`vb_mc`). The free functions `vibrato`, `vibrato_saltando`, `vibrato_am`,

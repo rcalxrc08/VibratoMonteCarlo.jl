@@ -15,7 +15,7 @@ quadrature, so AD numbers that go in as model or market inputs come out as exact
 - Sensitivities of any order (DualNumbers, HyperDualNumbers, ForwardDiff, ReverseDiff, TaylorSeries) of the price of
   European and American options, for Black–Scholes, Heston and the Lévy models of FinancialMonteCarlo.
 - Mooncake differentiates the plain `Float64` call.
-- The methods plug into FinancialMonteCarlo's `pricer(model, zero_rate, method, payoff)`, so FinancialCalibrator can
+- The methods plug into FinancialMonteCarlo's `pricer(model, underlying, zero_rate, method, payoff)`, so FinancialCalibrator can
   calibrate with them.
 - CPU and CUDA from the same code; Float32 in, Float32 out.
 

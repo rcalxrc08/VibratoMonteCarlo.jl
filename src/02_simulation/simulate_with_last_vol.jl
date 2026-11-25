@@ -1,10 +1,10 @@
 using FinancialMonteCarlo, Random;
 # Heston paths with the whole variance path: returns (V, S), V[:, j] is the variance at the time of S[:, j]. The same code
 # runs on the GPU: the arrays come from FinancialMonteCarlo (CuArrays with CudaMode) and the normals from normals!.
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.ZeroRate{<:Number}, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration, T::numb) where {numb <: Number}
     r = rfCurve.r
-    S0 = mcProcess.underlying.S0
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    S0 = und.S0
+    d = FinancialMonteCarlo.dividend(und)
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     σ = mcProcess.σ
@@ -42,10 +42,10 @@ function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarl
     return (V, X)
 end
 
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.ZeroRate{<:Number}, mcBaseData::FinancialMonteCarlo.MonteCarloConfiguration{<:FinancialMonteCarlo.AntitheticMC}, T::numb) where {numb <: Number}
     r = rfCurve.r
-    S0 = mcProcess.underlying.S0
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    S0 = und.S0
+    d = FinancialMonteCarlo.dividend(und)
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     σ = mcProcess.σ
@@ -93,10 +93,10 @@ end
 # Quasi Monte Carlo, as the Sobol Heston of FinancialMonteCarlo: one Sobol point of dimension 2 Nstep per path, the first
 # Nstep coordinates drive the price and the others, correlated through ρ, the variance. Without this method a Sobol
 # configuration would fall into the MonteCarloConfiguration one above, which matches any sampling, and use the rng.
-function simulate_with_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData::FinancialMonteCarlo.SobolConfig, T::numb) where {numb <: Number}
+function simulate_with_vol(mcProcess::HestonProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.ZeroRate{<:Number}, mcBaseData::FinancialMonteCarlo.SobolConfig, T::numb) where {numb <: Number}
     r = rfCurve.r
-    S0 = mcProcess.underlying.S0
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    S0 = und.S0
+    d = FinancialMonteCarlo.dividend(und)
     Nsim = mcBaseData.Nsim
     Nstep = mcBaseData.Nstep
     σ = mcProcess.σ
@@ -148,7 +148,7 @@ function heston_columns!(X, V, j, e1, e2_rho, drift, dt, a, κ, θ, σ, ρ, ρ_o
 end
 
 # Heston paths with the variance at T only.
-function simulate_with_last_vol(mcProcess::HestonProcess, rfCurve::FinancialMonteCarlo.ZeroRate, mcBaseData, T::numb) where {numb <: Number}
-    (V, X) = simulate_with_vol(mcProcess, rfCurve, mcBaseData, T)
+function simulate_with_last_vol(mcProcess::HestonProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.ZeroRate{<:Number}, mcBaseData, T::numb) where {numb <: Number}
+    (V, X) = simulate_with_vol(mcProcess, und, rfCurve, mcBaseData, T)
     return (V[:, end], X)
 end

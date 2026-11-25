@@ -1,4 +1,4 @@
-# Pricing methods for FinancialMonteCarlo's interface: pricer(mcProcess, rfCurve, method, payoff), as FinancialFFT's LewisMethod.
+# Pricing methods for FinancialMonteCarlo's interface: pricer(mcProcess, und, rfCurve, method, payoff), as FinancialFFT's LewisMethod.
 import FinancialMonteCarlo: pricer
 abstract type AbstractVibratoMethod <: FinancialMonteCarlo.AbstractMethod end
 # A method is a scalar under broadcasting, like AbstractVibrato and FinancialFFT's methods: pricer.(models, rfCurve, method, payoffs)
@@ -19,7 +19,7 @@ Vibrato Monte Carlo: `mc` (a `MonteCarloConfiguration`) simulates the path up to
 (`VibratoMonteCarloGaussLegendre`, `VibratoMonteCarloAnalytic`, `VibratoMonteCarloStandard`) integrates the payoff
 against the density of the last step with the likelihood ratio method.
 
-`pricer(mcProcess, rfCurve, Vibrato(mc, vb_mc), payoff)`:
+`pricer(mcProcess, und, rfCurve, Vibrato(mc, vb_mc), payoff)`:
 - `BlackScholesProcess` and `HestonProcess`: Gaussian last step (for Heston with the simulated variance).
 - Lévy processes: FFT density of the last step (requires `VibratoMonteCarloAnalytic`).
 - an `AmericanPayoff` (`AmericanOption`, `BinaryAmericanOption`): exercise at the `Nstep` grid dates, policy from

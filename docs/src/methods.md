@@ -40,7 +40,8 @@ using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, HyperDualNumbers
 
 S0 = hyper(100.0, 1.0, 1.0, 0.0)
 K, r, d, T, σ = 105.0, 0.02, 0.01, 1.0, 0.2
-model = BlackScholesProcess(σ, Underlying(S0, d))
+model = BlackScholesProcess(σ)
+und = Underlying(S0, d) # spot and dividends, passed next to the model
 zero_rate = ZeroRate(r)
 option = BinaryEuropeanOption(T, K)
 mc = MonteCarloConfiguration(50_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
@@ -48,7 +49,7 @@ exact = blsbin(S0, K, r, T, σ, d)
 
 methods = [Vibrato(mc, VibratoMonteCarloGaussLegendre()), PureLRM(mc, VibratoMonteCarloGaussLegendre()), VibratoMonteCarlo.Conditional(mc)]
 errors(price) = (value = price.value - exact.value, delta = price.epsilon1 - exact.epsilon1, gamma = price.epsilon12 - exact.epsilon12)
-[nameof(typeof(method)) => errors(pricer(model, zero_rate, method, option)) for method in methods]
+[nameof(typeof(method)) => errors(pricer(model, und, zero_rate, method, option)) for method in methods]
 ```
 
 `PureLRM` on Black and Scholes is one integral against the density at maturity: with Gauss-Legendre it is exact up to
@@ -105,7 +106,7 @@ A smile of strikes with one maturity is priced on the same paths, with one price
 
 ```@example methods
 smile = FinancialMonteCarlo.EuropeanOptionSmile(T, [90.0, 100.0, 110.0], [false, true, true])
-prices = pricer(model, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), smile)
+prices = pricer(model, und, zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), smile)
 [(value = p.value, delta = p.epsilon1, gamma = p.epsilon12) for p in prices]
 ```
 
@@ -117,7 +118,7 @@ the likelihood ratio method over a Brownian bridge, so that the gamma is unbiase
 
 ```@example methods
 put = AmericanOption(T, K, false)
-price = pricer(model, zero_rate, Vibrato(MonteCarloConfiguration(20_000, 10), VibratoMonteCarloGaussLegendre()), put)
+price = pricer(model, und, zero_rate, Vibrato(MonteCarloConfiguration(20_000, 10), VibratoMonteCarloGaussLegendre()), put)
 (value = price.value, delta = price.epsilon1, gamma = price.epsilon12)
 ```
 

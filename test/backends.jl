@@ -3,7 +3,7 @@ using ReverseDiff
 
 @testset "AD backends agree" begin
     mc = MonteCarloConfiguration(2_000, 10)
-    price(S0) = pricer(BlackScholesProcess(0.2, Underlying(S0, 0.0)), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloAnalytic(50, -5.0, 5.0)), EuropeanOption(1.0, 100.0))
+    price(S0) = pricer(BlackScholesProcess(0.2), Underlying(S0, 0.0), ZeroRate(0.02), Vibrato(mc, VibratoMonteCarloAnalytic(50, -5.0, 5.0)), EuropeanOption(1.0, 100.0))
     (val, delta, gamma) = value_and_derivatives(price(hyper(100.0, 1.0, 1.0, 0.0)))
     @test price(100.0) ≈ val rtol = 1e-12
 

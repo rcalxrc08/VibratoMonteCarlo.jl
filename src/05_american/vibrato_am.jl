@@ -8,16 +8,16 @@ continuation_value(α, x) = evalpoly(x, (α[1], α[2], α[3]))
 # The regressions run on the host on the values of the paths, taken there once; the smoothed payoffs (the vibrato
 # expectations over one step, values only for the regressions, with derivatives for the cash flows) are computed for a
 # set of paths at a time by step_payoffs, on the device of the paths in CudaMode.
-function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
+function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     # one frozen law and one discount per step serve every step: constant rates only (#68)
     r = constant_rate(rfCurve.r, "Vibrato on American options")
-    constant_rate(FinancialMonteCarlo.dividend(mcProcess), "Vibrato on American options")
+    constant_rate(FinancialMonteCarlo.dividend(und), "Vibrato on American options")
     T = am_opt.T
     Nstep = mcBaseData.Nstep
     dt = T / Nstep
-    S, laws = frozen_laws(mcProcess, rfCurve, mcBaseData, T)
+    S, laws = frozen_laws(mcProcess, und, rfCurve, mcBaseData, T)
     S_value = v_value.(S)
     S_value_host = to_host(S_value)
     Nsim = size(S, 1)
@@ -25,7 +25,7 @@ function pricer(mcProcess::FinancialMonteCarlo.BaseProcess, rfCurve::FinancialMo
     # the smoothed values of the paths `paths` at the column k, on the host
     smoothed_values(paths, k) = to_host(step_payoffs(laws, Val(true), S_value, paths, k, args, mcBaseData, vb_mc))
     df = exp(-v_value(r) * dt)
-    scale = v_value(mcProcess.underlying.S0)
+    scale = v_value(und.S0)
     # Column k of S is t_{k-1}. Each path is exercised at t_{exercise_idx}, with cash flow (at that date) cash_flow.
     exercise_idx = fill(Nstep, Nsim)
     cash_flow = smoothed_values(1:Nsim, Nstep)
@@ -83,20 +83,20 @@ function step_payoffs(laws::FrozenHeston, values, S, paths, cols, args, mcBaseDa
 end
 
 # Paths and laws of one step for the frozen method, on the device of the configuration.
-function frozen_laws(mcProcess, rfCurve, mcBaseData, T)
-    f = FinancialFFT.density(mcProcess, rfCurve, FinancialMonteCarlo.with_mode(FFTDensityInverter(), mcBaseData.mode), T / mcBaseData.Nstep)
-    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mcBaseData, T)
+function frozen_laws(mcProcess, und, rfCurve, mcBaseData, T)
+    f = FinancialFFT.density(mcProcess, und, rfCurve, FinancialMonteCarlo.with_mode(FFTDensityInverter(), mcBaseData.mode), T / mcBaseData.Nstep)
+    S = FinancialMonteCarlo.simulate(mcProcess, und, rfCurve, mcBaseData, T)
     return S, FrozenFFT(fft_step_law(f), value_law(f))
 end
-function frozen_laws(mcProcess::FinancialMonteCarlo.HestonProcess, rfCurve, mcBaseData, T)
+function frozen_laws(mcProcess::FinancialMonteCarlo.HestonProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve, mcBaseData, T)
     dt = T / mcBaseData.Nstep
-    rd = rfCurve.r - FinancialMonteCarlo.dividend(mcProcess)
-    (V, S) = simulate_with_vol(mcProcess, rfCurve, mcBaseData, T)
+    rd = rfCurve.r - FinancialMonteCarlo.dividend(und)
+    (V, S) = simulate_with_vol(mcProcess, und, rfCurve, mcBaseData, T)
     return S, FrozenHeston(rd, V, v_value.(V), dt)
 end
-frozen_laws(::FinancialMonteCarlo.ItoProcess, rfCurve, mcBaseData, T) = throw(ArgumentError("Vibrato on American options supports BlackScholesProcess, HestonProcess and Lévy processes."))
+frozen_laws(::FinancialMonteCarlo.ItoProcess, und, rfCurve, mcBaseData, T) = throw(ArgumentError("Vibrato on American options supports BlackScholesProcess, HestonProcess and Lévy processes."))
 
-function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
+function pricer(mcProcess::BlackScholesProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::Vibrato, am_opt::FinancialMonteCarlo.AmericanPayoff)
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     # the exercise regions and the bridge steps use one rate and one dividend for every step: constant rates only (#68)
@@ -105,18 +105,18 @@ function pricer(mcProcess::BlackScholesProcess, rfCurve::FinancialMonteCarlo.Abs
     Nstep = mcBaseData.Nstep
     dt = T / Nstep
     σ = mcProcess.σ
-    d = constant_rate(FinancialMonteCarlo.dividend(mcProcess), "Vibrato on American options")
-    S0 = mcProcess.underlying.S0
+    d = constant_rate(FinancialMonteCarlo.dividend(und), "Vibrato on American options")
+    S0 = und.S0
     # Pass 1: the exercise regions, from Longstaff-Schwartz on independent paths with values only.
-    value_process = BlackScholesProcess(v_value(σ), Underlying(v_value(S0), v_value(d)))
+    value_process = BlackScholesProcess(v_value(σ))
     # The regressions index single paths: they run on the host, on values (with CudaMode the paths come to the host).
-    S_policy = to_host(FinancialMonteCarlo.simulate(value_process, ZeroRate(v_value(r)), mcBaseData, T))
+    S_policy = to_host(FinancialMonteCarlo.simulate(value_process, FinancialMonteCarlo.Underlying(v_value(S0), v_value(d)), ZeroRate(v_value(r)), mcBaseData, T))
     regions = exercise_regions(S_policy, am_opt, exp(-v_value(r) * dt), v_value(S0), v_value(σ) * sqrt(T))
     # Pass 2: paths on the half steps. Column 2k is s_k = (k - 1/2) dt, the exercise date t_k = k dt is the midpoint
     # of [s_k, s_{k+1}] and given its ends log S_{t_k} is Gaussian (Brownian bridge).
     # same sampling, mode and random state (the default constructor, with every field), twice the steps
     mc_half = FinancialMonteCarlo.MonteCarloConfiguration(mcBaseData.Nsim, 2 * Nstep, mcBaseData.sampling, mcBaseData.mode, mcBaseData.rng, mcBaseData.reseed)
-    S = FinancialMonteCarlo.simulate(mcProcess, rfCurve, mc_half, T)
+    S = FinancialMonteCarlo.simulate(mcProcess, und, rfCurve, mc_half, T)
     args = LRMInterfaceArguments(init_lrm_vec(vb_mc, mcBaseData, S), am_opt)
     drift = r - d - drift_correction(mcProcess)
     bridge_std = σ * sqrt(dt) / 2

@@ -11,6 +11,6 @@ Nstep = 30;
 sigma = 0.2;
 mc = MonteCarloConfiguration(Nsim, Nstep);
 
-@show result = gradient((S0,K,r,T,sigma) -> vibrato_z(BlackScholesProcess(sigma, Underlying(S0, d)), ZeroRate(r), mc, EuropeanOption(T, K), VibratoMonteCarloAnalytic(Nsim2, -5.0, 5.0)),S0,K,r,T,sigma);
+@show result = gradient((S0, K, r, T, sigma) -> vibrato_z(BlackScholesProcess(sigma), ZeroRate(r), mc, EuropeanOption(T, K), VibratoMonteCarloAnalytic(Nsim2, -5.0, 5.0)), S0, K, r, T, sigma);
 
 nothing

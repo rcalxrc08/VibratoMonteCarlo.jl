@@ -37,7 +37,7 @@ function binary_greeks_figure(theme)
     mc = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
     option = BinaryEuropeanOption(T, K)
     exact(S0) = value_delta_gamma(blsbin(hyper_of(S0), K, r, T, σ, d))
-    vibrato(S0) = value_delta_gamma(pricer(BlackScholesProcess(σ, Underlying(hyper_of(S0), d)), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option))
+    vibrato(S0) = value_delta_gamma(pricer(BlackScholesProcess(σ), Underlying(hyper_of(S0), d), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option))
     estimates = vibrato.(spots)
     panels = map(((2, "delta"), (3, "gamma"))) do (k, name)
         p = base_plot(theme; title = "$name of a binary call, K = 100, T = 1", xlabel = "S₀", ylabel = name, legend = k == 2 ? :topright : :bottomleft)
@@ -52,11 +52,11 @@ end
 # is the error of the quadrature, here on the gamma of a binary call, whose payoff jumps at the strike.
 function quadrature_figure(theme)
     option = BinaryEuropeanOption(T, K)
-    model = BlackScholesProcess(σ, Underlying(hyper_of(K), d))
+    model = BlackScholesProcess(σ)
     mc = MonteCarloConfiguration(1, 1)
     exact = value_delta_gamma(blsbin(hyper_of(K), K, r, T, σ, d))[3]
     floor_error = 1e-16
-    error(vb) = max(abs(value_delta_gamma(pricer(model, zero_rate, PureLRM(mc, vb), option))[3] - exact) / abs(exact), floor_error)
+    error(vb) = max(abs(value_delta_gamma(pricer(model, Underlying(hyper_of(K), d), zero_rate, PureLRM(mc, vb), option))[3] - exact) / abs(exact), floor_error)
     families = ["VibratoMonteCarloGaussLegendre(n), split at the strike" => [(2n, VibratoMonteCarloGaussLegendre(n)) for n in [2, 4, 6, 8, 12, 16, 24, 32, 48]], "VibratoMonteCarlo.VibratoMonteCarloGaussHermite(n)" => [(n, VibratoMonteCarlo.VibratoMonteCarloGaussHermite(n)) for n in [4, 8, 16, 32, 64, 128, 200]], "VibratoMonteCarloAnalytic(n), uniform grid on ±7" => [(n, VibratoMonteCarloAnalytic(n)) for n in [8, 16, 32, 64, 128, 256, 512, 1024]], "VibratoMonteCarloStandard(n), Monte Carlo" => [(n, VibratoMonteCarloStandard(n)) for n in [8, 32, 128, 512, 2048, 8192]]]
     p = base_plot(theme; title = "Relative error of the gamma of a binary call (K = S₀ = 100, T = 1), one inner integral", xlabel = "integration nodes", ylabel = "relative error", xscale = :log10, yscale = :log10, legend = :outerright, size = (1000, 430), ylims = (1e-16, 10), yticks = 10.0 .^ (-16:2:0))
     for (j, (name, family)) in enumerate(families)
@@ -69,14 +69,14 @@ end
 # the subordinator and does not depend on the time grid. Error of the gamma of a call against the Lewis formula.
 function variance_gamma_figure(theme)
     κ = 0.2
-    model = VarianceGammaProcess(0.2, -0.15, κ, Underlying(hyper_of(100.0), d))
+    model = VarianceGammaProcess(0.2, -0.15, κ)
     option = EuropeanOption(T, K)
-    exact = value_delta_gamma(pricer(model, zero_rate, LewisMethod(400.0, 200_000), option))[3]
+    exact = value_delta_gamma(pricer(model, Underlying(hyper_of(100.0), d), zero_rate, LewisMethod(400.0, 200_000), option))[3]
     steps = [2, 4, 8, 16, 32]
     mc(n) = MonteCarloConfiguration(20_000, n; sampling = FinancialMonteCarlo.AntitheticMC())
     rel(x) = abs(value_delta_gamma(x)[3] - exact) / abs(exact)
-    fft = [rel(pricer(model, zero_rate, Vibrato(mc(n), VibratoMonteCarloAnalytic()), option)) for n in steps]
-    saltando = [rel(pricer(model, zero_rate, VibratoSaltando(mc(n), VibratoMonteCarloGaussLegendre()), option)) for n in steps]
+    fft = [rel(pricer(model, Underlying(hyper_of(100.0), d), zero_rate, Vibrato(mc(n), VibratoMonteCarloAnalytic()), option)) for n in steps]
+    saltando = [rel(pricer(model, Underlying(hyper_of(100.0), d), zero_rate, VibratoSaltando(mc(n), VibratoMonteCarloGaussLegendre()), option)) for n in steps]
     ratio = (T ./ steps) ./ κ
     p = base_plot(theme; title = "Variance Gamma call (κ = 0.2, T = 1): relative error of the gamma, 2 × 10⁴ paths", xlabel = "dt / κ of the last step", ylabel = "relative error", xscale = :log10, yscale = :log10, legend = :outerright, size = (1000, 430), xflip = true, xticks = (ratio, string.(round.(ratio, sigdigits = 3))), ylims = (1e-4, 1e5), yticks = 10.0 .^ (-4:2:4))
     plot!(p, ratio, fft; label = "Vibrato, FFT density of the last step", color = theme.series[1], linewidth = 2, marker = MARKERS[1], markersize = 5, markerstrokewidth = 0)
@@ -93,10 +93,10 @@ function hero_figure(theme)
     spots = collect(range(70.0, 130.0; length = 31))
     option = BinaryEuropeanOption(T, K)
     mc = MonteCarloConfiguration(10_000, 10; sampling = FinancialMonteCarlo.AntitheticMC())
-    plain(S) = pricer(BlackScholesProcess(σ, Underlying(S, d)), zero_rate, mc, option)
+    plain(S) = pricer(BlackScholesProcess(σ), Underlying(S, d), zero_rate, mc, option)
     h = 1.0
     finite_differences = [(plain(S + h) - 2 * plain(S) + plain(S - h)) / h^2 for S in spots]
-    vibrato = [pricer(BlackScholesProcess(σ, Underlying(hyper_of(S), d)), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option).epsilon12 for S in spots]
+    vibrato = [pricer(BlackScholesProcess(σ), Underlying(hyper_of(S), d), zero_rate, Vibrato(mc, VibratoMonteCarloGaussLegendre()), option).epsilon12 for S in spots]
     fine = range(70.0, 130.0; length = 301)
     exact = [blsbin(hyper_of(S), K, r, T, σ, d).epsilon12 for S in fine]
     p = base_plot(theme; size = (760, 600), xlabel = "spot", ylabel = "gamma of a binary call", legend = :topright, xlims = (68, 132), ylims = (-0.0022, 0.0026))

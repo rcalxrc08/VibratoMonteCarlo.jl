@@ -44,9 +44,9 @@ function last_jumps(jumps::FinancialMonteCarlo.JumpList, Nsim, zero_drift)
     return last_step, jump_sum
 end
 
-function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
+function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = FinancialMonteCarlo.dividend(und)
     σ = mcProcess.σ
     λ = mcProcess.λ
     # r - d - ψ(-i)
@@ -65,11 +65,11 @@ function simulate_log_with_jump_times(mcProcess::finiteActivityProcess, rfCurve:
     grid_point = on_device(mcBaseData, mcProcess, @. (1:Nsim) + Nsim * (last_step - 2))
     zero_time = 0 * λ
     T_jumps = on_device(mcBaseData, mcProcess, @muladd @. zero_time + (last_step - 2) * dt)
-    X_f = @. log(mcProcess.underlying.S0) + $(X[grid_point]) + $(on_device(mcBaseData, mcProcess, jump_sum))
+    X_f = @. log(und.S0) + $(X[grid_point]) + $(on_device(mcBaseData, mcProcess, jump_sum))
     return T_jumps, X_f
 end
-function simulate_with_jump_times(mcProcess::finiteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
-    T_jumps, X_f = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
+function simulate_with_jump_times(mcProcess::finiteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, mcBaseData::FinancialMonteCarlo.AbstractMonteCarloConfiguration, T::numb) where {finiteActivityProcess <: FinancialMonteCarlo.FiniteActivityProcess, numb <: Number}
+    T_jumps, X_f = simulate_log_with_jump_times(mcProcess, und, rfCurve, mcBaseData, T)
     S_jumps = @. exp(X_f)
     return T_jumps, S_jumps
 end

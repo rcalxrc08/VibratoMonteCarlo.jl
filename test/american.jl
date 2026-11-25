@@ -47,13 +47,13 @@ end
     rfCurve = ZeroRate(r)
     Nstep = 10
     mc = MonteCarloConfiguration(40_000, Nstep; sampling = FinancialMonteCarlo.AntitheticMC())
-    bs_model = BlackScholesProcess(σ, Underlying(S0, 0.0))
+    bs_model = BlackScholesProcess(σ)
 
     # Vibrato over every exercise date. Errors observed over 8 seeds ≤ 6.0e-3 (value), 1.1e-2 (delta), 5.4e-2 (gamma);
     # freezing the exercise decisions gives a gamma 40% too low here.
     @testset "Black Scholes put against PDE" begin
         (value, delta, gamma) = bermudan_pde(S0_v, K, r, 0.0, σ, T, Nstep)
-        res = pricer(bs_model, rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), AmericanOption(T, K, false))
+        res = pricer(bs_model, Underlying(S0, 0.0), rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), AmericanOption(T, K, false))
         @test rel_err(res.value, value) < 1.5e-2
         @test rel_err(res.epsilon1, delta) < 2.5e-2
         @test rel_err(res.epsilon12, gamma) < 1.2e-1
@@ -62,24 +62,24 @@ end
     # Without dividends early exercise of a call is never optimal: the price is the European one, with all its derivatives.
     @testset "call without dividends is European" begin
         # Errors observed over 8 seeds ≤ 7.6e-3 (value), 9.5e-4 (delta), 7.3e-3 (gamma).
-        res = pricer(bs_model, rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
+        res = pricer(bs_model, Underlying(S0, 0.0), rfCurve, Vibrato(mc, VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
         test_value_and_derivatives(res, blsprice(S0, K, r, T, σ, 0.0); rtol = 1.5e-2, rtol_second = 2e-2)
         # Frozen decisions, FFT density of one step. Errors observed ≤ 1.4e-2 (value), 5.3e-3 (delta), 2.4e-2 (gamma).
         kou_model = kou(σ, S0, 0.0)
-        res = pricer(kou_model, rfCurve, Vibrato(MonteCarloConfiguration(20_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
-        test_value_and_derivatives(res, pricer(kou_model, rfCurve, LewisMethod(400.0, 200000), EuropeanOption(T, K)); rtol = 3e-2, rtol_second = 5e-2)
+        res = pricer(kou_model..., rfCurve, Vibrato(MonteCarloConfiguration(20_000, 10; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
+        test_value_and_derivatives(res, pricer(kou_model..., rfCurve, LewisMethod(400.0, 200000), EuropeanOption(T, K)); rtol = 3e-2, rtol_second = 5e-2)
         # Frozen decisions, Gaussian step with the simulated variance. The MC reference has no reliable second derivative.
         # Errors observed ≤ 9.8e-3 (value), 4.1e-3 (delta).
         heston_model = heston(σ, S0, 0.0)
-        res = pricer(heston_model, rfCurve, Vibrato(MonteCarloConfiguration(40_000, 25; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
-        heston_ref = pricer(heston_model, rfCurve, MonteCarloConfiguration(400_000, 25), EuropeanOption(T, K))
+        res = pricer(heston_model..., rfCurve, Vibrato(MonteCarloConfiguration(40_000, 25; sampling = FinancialMonteCarlo.AntitheticMC()), VibratoMonteCarloAnalytic()), AmericanOption(T, K, true))
+        heston_ref = pricer(heston_model..., rfCurve, MonteCarloConfiguration(400_000, 25), EuropeanOption(T, K))
         @test rel_err(res.value, heston_ref.value) < 2e-2
         @test rel_err(res.epsilon1, heston_ref.epsilon1) < 1e-2
     end
 
     @testset "AD backends agree" begin
         mc_small = MonteCarloConfiguration(2_000, 10)
-        price(x) = pricer(BlackScholesProcess(σ, Underlying(x, 0.0)), rfCurve, Vibrato(mc_small, VibratoMonteCarloAnalytic()), AmericanOption(T, K, false))
+        price(x) = pricer(BlackScholesProcess(σ), Underlying(x, 0.0), rfCurve, Vibrato(mc_small, VibratoMonteCarloAnalytic()), AmericanOption(T, K, false))
         (val, delta, gamma) = value_and_derivatives(price(S0))
         @test price(S0_v) ≈ val rtol = 1e-12
         @test DualNumbers.epsilon(price(dual(S0_v, 1.0))) ≈ delta rtol = 1e-12

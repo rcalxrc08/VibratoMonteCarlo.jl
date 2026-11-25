@@ -29,10 +29,10 @@ Checked by `test/vibrato_models.jl`, `test/levy.jl`, `test/conditional.jl`, `tes
 
 ## Verify (Kaimon)
 
-Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs = BlackScholesProcess(0.2, Underlying(100.0, 0.01))`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
+Run in a session of this project after a change here (`ex(q = false, ...)`; setup: `using VibratoMonteCarlo, FinancialMonteCarlo, FinancialToolbox, Test`; `bs, und = BlackScholesProcess(0.2), Underlying(100.0, 0.01)`, `m = Vibrato(MonteCarloConfiguration(10_000, 30), VibratoMonteCarloAnalytic(20, -5.0, 5.0))`). Observed 2026-11-21, Julia 1.13.4, FinancialMonteCarlo 0.9.0, FinancialFFT 0.6.3. The AD number types are test dependencies, not loadable from the project environment: derivatives are checked by `run_tests()`.
 
 | Check | Expect |
 |:--|:--|
-| `@inferred pricer(bs, ZeroRate(0.01), m, EuropeanOption(1.0, 80.0))` | `Float64`, 20.78 against `blsprice` 20.98 (Monte Carlo error at 10 000 paths) |
-| `@inferred pricer(bs, ZeroRate(0.01), m, FinancialMonteCarlo.EuropeanOptionSmile(1.0, [80.0, 100.0, 120.0], [false, true, true]))` | `Vector{Float64}` ≈ [1.199, 7.793, 2.123] against `blsprice` [1.174, 7.886, 2.126] |
-| the same pricer on `BlackScholesProcess(0.2f0, Underlying(100.0f0, 0.01f0))`, `ZeroRate(0.01f0)`, `EuropeanOption(1.0f0, 80.0f0)` | `Float32` (Float32 in, Float32 out) |
+| `@inferred pricer(bs, und, ZeroRate(0.01), m, EuropeanOption(1.0, 80.0))` | `Float64`, 20.78 against `blsprice` 20.98 (Monte Carlo error at 10 000 paths) |
+| `@inferred pricer(bs, und, ZeroRate(0.01), m, FinancialMonteCarlo.EuropeanOptionSmile(1.0, [80.0, 100.0, 120.0], [false, true, true]))` | `Vector{Float64}` ≈ [1.199, 7.793, 2.123] against `blsprice` [1.174, 7.886, 2.126] |
+| the same pricer on `BlackScholesProcess(0.2f0)`, `Underlying(100.0f0, 0.01f0)`, `ZeroRate(0.01f0)`, `EuropeanOption(1.0f0, 80.0f0)` | `Float32` (Float32 in, Float32 out) |

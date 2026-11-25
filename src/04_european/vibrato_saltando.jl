@@ -1,16 +1,16 @@
-function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
     # the single options of a smile are built on the host, in every mode: its strikes come to the host first
     eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = FinancialMonteCarlo.dividend(und)
     σ = mcProcess.σ
     λ = mcProcess.λ
     T = get_unique_maturity(eu_opt)
     !(typeof(λ) <: AbstractFloat) ? @warn("trying to differentiate over λ, this will lead to incorrect results") : nothing
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
-    (T_jump, X_jump) = simulate_log_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
+    (T_jump, X_jump) = simulate_log_with_jump_times(mcProcess, und, rfCurve, mcBaseData, T)
     drift_rn = (r - d) - drift_correction(mcProcess)
     mu_jump = @. add_drift(X_jump, $(Ref(drift_rn)), T_jump, T)
     Z = init_lrm_vec(vb_mc, mcBaseData, mu_jump)
@@ -21,7 +21,7 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
+function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::VibratoSaltando, eu_opt_::EuropeanLike)
     # the single options of a smile are built on the host, in every mode: its strikes come to the host first
     eu_opt = FinancialMonteCarlo.to_mode(eu_opt_, FinancialMonteCarlo.SerialMode())
     # X is a Brownian motion subordinated to G: X_T = log(S0) + drift_rn * T + θ * G_T + σ * W(G_T).
@@ -31,10 +31,10 @@ function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve:
     mcBaseData, vb_mc = method.mc, method.vb_mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = FinancialMonteCarlo.dividend(und)
     σ = mcProcess.σ
     θ = mcProcess.θ
-    S0 = mcProcess.underlying.S0
+    S0 = und.S0
     T = get_unique_maturity(eu_opt)
     (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
     drift_rn = r - d - drift_correction(mcProcess)
@@ -47,17 +47,17 @@ function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve:
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
+function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
     mcBaseData = method.mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = FinancialMonteCarlo.dividend(und)
     σ = mcProcess.σ
     λ = mcProcess.λ
     T = eu_opt.T
     !(typeof(λ) <: AbstractFloat) ? @warn("trying to differentiate over λ, this will lead to incorrect results") : nothing
     !(typeof(T) <: AbstractFloat) ? @warn("trying to differentiate over T, this will lead to incorrect results") : nothing
-    (T_jump, S_jump) = VibratoMonteCarlo.simulate_with_jump_times(mcProcess, rfCurve, mcBaseData, T)
+    (T_jump, S_jump) = VibratoMonteCarlo.simulate_with_jump_times(mcProcess, und, rfCurve, mcBaseData, T)
     # The jump part of the drift correction, paid as a dividend yield by the diffusion after the last jump.
     drift_rn = drift_correction(mcProcess) - σ^2 / 2
     # the step from T_jump to T is Black-Scholes with the mean rates of the step, per path (#68)
@@ -65,16 +65,16 @@ function pricer(mcProcess::FinancialMonteCarlo.FiniteActivityProcess, rfCurve::F
     return result
 end
 
-function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
+function pricer(mcProcess::FinancialMonteCarlo.InfiniteActivityProcess, und::FinancialMonteCarlo.AbstractUnderlying, rfCurve::FinancialMonteCarlo.AbstractZeroRateCurve, method::ConditionalSaltando, eu_opt::Union{EuropeanOption, BinaryEuropeanOption})
     # Given G_T the price is Black-Scholes with total variance σ² * G_T and mean of log(S_T) as in VibratoSaltando,
     # on the same subordinator draws: σ * sqrt(G_T / T) is the volatility over T, the rest of the drift is a dividend yield.
     mcBaseData = method.mc
     FinancialMonteCarlo.set_seed!(mcBaseData)
     r = rfCurve.r
-    d = FinancialMonteCarlo.dividend(mcProcess)
+    d = FinancialMonteCarlo.dividend(und)
     σ = mcProcess.σ
     θ = mcProcess.θ
-    S0 = mcProcess.underlying.S0
+    S0 = und.S0
     T = eu_opt.T
     ψ = drift_correction(mcProcess)
     (G_T, weight) = simulate_subordinator(mcProcess, mcBaseData, T)
