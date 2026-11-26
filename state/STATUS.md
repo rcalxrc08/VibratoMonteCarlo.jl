@@ -8,6 +8,8 @@ an agent reads first._ Updated: 2026-11-26
 Separate the device-only code from the host code: files, names, contracts (#75), now that #74 (Standard inner
 integration allocations) is closed with the weights fix 698ddbd.
 
+0.7.1 (2026-11-26): compat FinancialFFT 0.8, 0.9 (FinancialFFT 0.9: `LewisMethod(ε)`, the `grid` field).
+
 0.7.0 (2026-11-25, breaking): FinancialMonteCarlo 0.10 and FinancialFFT 0.8 (FinancialMonteCarlo#72): every pricer takes the
 underlying after the model, `pricer(model, underlying, zero_rate, method, payoff)`; the internal simulations and laws
 (`simulate_with_vol`, `simulate_log_with_jump_times`, `fft_step_law`, `step_zero_rate`, `frozen_laws`) take it too. In the

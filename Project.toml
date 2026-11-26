@@ -1,6 +1,6 @@
 name = "VibratoMonteCarlo"
 uuid = "e6fc01e8-e6d3-4c93-80cb-ea8d1c9bc714"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Nicola <nicola.scaramuzzino@yandex.com> and contributors"]
 
 [deps]
@@ -38,7 +38,7 @@ VibratoMonteCarloTaylorSeriesExt = "TaylorSeries"
 Distributions = "0.25"
 DualNumbers = "0.5, 0.6"
 FastGaussQuadrature = "0.4, 0.5, 1"
-FinancialFFT = "0.8"
+FinancialFFT = "0.8, 0.9"
 FinancialMonteCarlo = "0.10"
 FinancialToolbox = "0.8"
 ForwardDiff = "0.10, 1"
