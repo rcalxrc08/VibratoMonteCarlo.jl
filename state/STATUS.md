@@ -1,7 +1,7 @@
 # Status
 
 _What is in flight. Layer 4: volatile, rewritten freely; GitHub issues are the source of truth, this file is the index
-an agent reads first._ Updated: 2026-11-25
+an agent reads first._ Updated: 2026-11-26
 
 ## Current focus
 
@@ -11,7 +11,9 @@ integration allocations) is closed with the weights fix 698ddbd.
 0.7.0 (2026-11-25, breaking): FinancialMonteCarlo 0.10 and FinancialFFT 0.8 (FinancialMonteCarlo#72): every pricer takes the
 underlying after the model, `pricer(model, underlying, zero_rate, method, payoff)`; the internal simulations and laws
 (`simulate_with_vol`, `simulate_log_with_jump_times`, `fft_step_law`, `step_zero_rate`, `frozen_laws`) take it too. In the
-tests the spot-dependent model helpers return `(model, underlying)` pairs, splatted into the pricers.
+tests the spot-dependent model helpers return `(model, underlying)` pairs, splatted into the pricers. The opt-in GPU suite
+`test/cuda/runtests.jl` passes on 0.7.0 (2026-11-26, MX150, CUDA 6.5.1, Julia 1.13.4, fresh `test/cuda` manifest: 139
+passed, 4m46s).
 
 Previous release: 0.6.2 (2026-11-23): rate and dividend curves in every European method (#68), muladd (#62), log_gamma
 in Float32 (#70), ChainRulesCore dropped (#71), FinancialFFT 0.7, American pricer in the float type of the model.
