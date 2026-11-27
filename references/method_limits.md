@@ -31,8 +31,10 @@ _They are not bugs: keep them in mind when choosing test settings or a method._ 
 - `κ` derivatives through the law of `G_T` are the noisiest (standard deviation at 500k paths, baseline included): VG
   `∂κ` 3%, `∂κ²` 110%; NIG `∂κ` 1.2%, `∂κ²` 12%; `∂T` ≈ 0.1%, `∂T²` ≈ 1.6%.
 
-## Known issues in `test/check/accuracy.jl`
+## Accuracy of `test/check/accuracy.jl` (#34)
 
-- `VibratoSaltando` on Kou misses the `1e-3` tolerance with 80k paths (0.26% on the value, 0.33% on delta, 2.9% on
-  gamma, the same on `Taylor1` and `Hyper`). That is Monte Carlo noise, as the seed spread in `taylor.jl` shows, not a
-  defect. The `PureLRM` cases pass.
+- `PureLRM` with the analytic density gives the same number on every seed and is held to `1e-3` of Lewis.
+- `VibratoSaltando` on Kou (λ = 50) with 80k antithetic paths is unbiased but noisy: its standard deviation over 16
+  seeds is 0.62% of the value, 0.29% of delta and 1.8% of gamma (the mean is within 0.8 standard errors of Lewis;
+  measured 2026-11-27). A fixed `1e-3` failed on noise; the check is on the mean over 16 seeds (4 standard errors) and
+  on the spread (below twice the measured one), and `Taylor1` must match the hyper duals on the same seed.

@@ -1,7 +1,7 @@
 # Status
 
 _What is in flight. Layer 4: volatile, rewritten freely; GitHub issues are the source of truth, this file is the index
-an agent reads first._ Updated: 2026-11-26
+an agent reads first._ Updated: 2026-11-27
 
 ## Current focus
 
@@ -33,7 +33,6 @@ in Float32 (#70), ChainRulesCore dropped (#71), FinancialFFT 0.7, American price
 | #67 | VibratoSaltando on VG/NIG prices Float32 models in Float64 (the American part is fixed) | — |
 | — | Heston Vibrato and American methods refuse rate or dividend curves (`ArgumentError`, #68) | constant rates |
 | #54 | FFT density path: binaries converge only O(dx) | finer grid |
-| #34 | Kou `vibrato_saltando` misses the 1e-3 tolerance in `check/accuracy.jl` | — |
 | #28 | FFT vibrato cannot differentiate κ of VG and NIG | — |
 
 ## Technical debt and enhancements

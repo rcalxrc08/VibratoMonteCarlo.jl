@@ -16,7 +16,7 @@ include("utils.jl")
     include("examples.jl")
     include("quality.jl")
     include("rate_curves.jl")
-    # Tight accuracy checks, slow and currently failing, run with VIBRATO_TEST_ACCURACY=true.
+    # Accuracy checks against Lewis (a mean over 16 seeds for VibratoSaltando, #34), slow, run with VIBRATO_TEST_ACCURACY=true.
     if get(ENV, "VIBRATO_TEST_ACCURACY", "false") == "true"
         include("check/accuracy.jl")
     end

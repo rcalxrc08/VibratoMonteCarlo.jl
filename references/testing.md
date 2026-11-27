@@ -44,8 +44,8 @@ about 4 min on an MX150.
 - `mooncake.jl`: reverse gradients of a BS binary and of `VibratoSaltando` on VG (with `κ` and `T`) against ForwardDiff,
   forward gradient of the FFT `Vibrato` on VG against hyper duals (ForwardDiff against them too). Compiling the rules
   takes minutes, so it has few paths and few cases.
-- `check/accuracy.jl`: tight `1e-3` checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`). It currently fails
-  (`references/method_limits.md`).
+- `check/accuracy.jl`: checks against Lewis. **Opt-in** (`VIBRATO_TEST_ACCURACY=true`): `1e-3` for the deterministic
+  `PureLRM` cases, the mean and spread over 16 seeds for `VibratoSaltando` (#34, `references/method_limits.md`).
 - `examples.jl`: README.md is up to date with the examples (`etc/readme.jl` copies `examples/<name>.jl` between
   `<!-- BEGIN examples/<name>.jl -->` and `<!-- END ... -->`: GitHub cannot include a file, so after changing an example
   run `julia etc/readme.jl`), and `examples/hello_world.jl` runs and matches `blsprice`.
